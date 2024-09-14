@@ -133,7 +133,6 @@ module Describe =
                            |> Task.WhenAll
                            |> Task.map (Seq.concat >> Seq.toList)
                            |> Task.map (List.collect mapDescriptors)
-            printfn "Meta %A" meta
             return classes @ meta
         }
 

@@ -19,6 +19,7 @@ module SB =
 module MdFormatter =
     
     let write file data =
+        // TODO: check file extension
         IO.File.WriteAllText(file, data)
     let mdRowData (desc: Analysis.Descriptor) =
         match desc with
@@ -72,8 +73,6 @@ module MdFormatter =
                                         $"Rel({String.toLower x.System}, {String.toLower meta.System}, \"{x.DataDescription}\")"
                                     else $"Rel({String.toLower meta.System}, {String.toLower x.System}, \"{x.DataDescription}\")")
                             
-        // printfn "Descriptors %A" descriptors
-        // printfn "Meta %A" meta
         let diagram =
             SB.create "C4Context"
             |> SB.emptyLine
@@ -95,7 +94,7 @@ module MdFormatter =
         |> addBlockCode { Code = diagram; Language = Some("mermaid") }
     
   
-    let printCrc (descriptors: Analysis.Descriptor list) =
+    let sprintCrc cmd (descriptors: Analysis.Descriptor list) =
         let doc =
             emptyDocument
             |> addH1 "CRC"
@@ -104,9 +103,8 @@ module MdFormatter =
             |> addNewline
             |> buildCollaborators descriptors
             |> addNewline
-            |> mermaidC4Level1 descriptors
-        let content = render [(fun _ -> doc)]
-        write "CRC.md" content
+            |> fun d -> if cmd.IncludeL1Diagram then mermaidC4Level1 descriptors d else d
+        render [(fun _ -> doc)]
        
        
         
