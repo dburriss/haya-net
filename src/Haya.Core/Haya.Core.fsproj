@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Roslyn.fs" />
+        <Compile Include="Attributes.fs" />
+        <Compile Include="Describe.fs" />
+        <Compile Include="MdFormatter.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FSharpPlus" Version="1.6.1" />
+      <PackageReference Include="FuncyDown" Version="1.4.1" />
+      <PackageReference Include="Microsoft.Build" Version="17.11.4" />
+      <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.11.4" />
+      <PackageReference Include="Microsoft.CodeAnalysis" Version="4.11.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.11.0" />
+    </ItemGroup>
+
+</Project>

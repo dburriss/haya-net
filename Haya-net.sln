@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+#
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1AC50525-28BB-41A1-B557-F0AC3DE8CBAC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya.Cli", "src\Haya.Cli\Haya.Cli.fsproj", "{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya.Core", "src\Haya.Core\Haya.Core.fsproj", "{27EEC86F-48DE-47D3-A333-810E97BECBF3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A} = {1AC50525-28BB-41A1-B557-F0AC3DE8CBAC}
+		{27EEC86F-48DE-47D3-A333-810E97BECBF3} = {1AC50525-28BB-41A1-B557-F0AC3DE8CBAC}
+	EndGlobalSection
+EndGlobal
