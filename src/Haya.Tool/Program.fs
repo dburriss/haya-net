@@ -56,7 +56,7 @@ module Program =
         
         let parser = ArgumentParser.Create<CliArguments>(programName = "haya")
         try
-            let pr = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
+            let pr = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
             let result = 
                 match pr with
                 | IsCrcCommand cmd ->

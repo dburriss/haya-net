@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        
+        <Version>0.0.1</Version>
+        <VersionSuffix>alpha1</VersionSuffix>
+
+        <Title>Haya.Tool</Title>
+        <Description>
+            CLI tool for generating collaboration, responsibilities, and component documentation as markdown and mermaid C4 diagrams.
+        </Description>
+        <PackageTags>documentation,c4,mermaid,crc,tool,cli</PackageTags>
+        
+        <PackageId>Haya.Tool</PackageId>
+        <Authors>Devon Burriss</Authors>
+        <Copyright>Devon Burriss</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/dburriss/heya-net</RepositoryUrl>
+        
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>haya</ToolCommandName>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+        
+        <PublishAot>false</PublishAot>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="Program.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Haya.Core\Haya.Core.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Argu" Version="6.2.4" />
+    </ItemGroup>
+
+</Project>
