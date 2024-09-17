@@ -7,6 +7,18 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya.Tool", "src\Haya.Tool\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya.Core", "src\Haya.Core\Haya.Core.fsproj", "{27EEC86F-48DE-47D3-A333-810E97BECBF3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1F0560E9-C4A2-41C1-A85A-EF5E2B80797F}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{CE8A0A82-1E0E-4C76-94E7-31926F6DCA4A}"
+	ProjectSection(SolutionItems) = preProject
+		examples\README.md = examples\README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "examples\Example\Example.csproj", "{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +33,14 @@ Global
 		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27EEC86F-48DE-47D3-A333-810E97BECBF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{74261467-E2B1-4A8C-A21A-79C0AAAA2D3A} = {1AC50525-28BB-41A1-B557-F0AC3DE8CBAC}
 		{27EEC86F-48DE-47D3-A333-810E97BECBF3} = {1AC50525-28BB-41A1-B557-F0AC3DE8CBAC}
+		{2FE6E011-9EEC-4C10-B609-38BC8A94ED75} = {CE8A0A82-1E0E-4C76-94E7-31926F6DCA4A}
 	EndGlobalSection
 EndGlobal

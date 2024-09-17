@@ -77,14 +77,15 @@ module MdFormatter =
             SB.create "C4Context"
             |> SB.emptyLine
             |> SB.line $"title C4 System Diagram for {meta.System}"
-            // external systems
-            |> SB.lines externalSystems
+            
             // enterprise boundary
             |> SB.emptyLine
             |> SB.line "Enterprise_Boundary(Enterprise, Enterprise, \"The enterprise boundary\") {"
             |> SB.lines  internalSystems
             |> SB.line thisSystem
             |> SB.line "}"
+            // external systems
+            |> SB.lines externalSystems
             // relationships
             |> SB.emptyLine
             |> SB.lines relationships

@@ -1,5 +1,5 @@
 ﻿using Haya;
-[assembly:Meta(AppName = "ExampleApp", Description = "Example of using Haya", System = "Haya")]
+[assembly:Meta(AppName = "CheckoutApi", Description = "Handles processing payment for a shopping cart", System = "HayaEcomm")]
 
 namespace Example;
 
@@ -23,4 +23,13 @@ public class PaymentsController
     Description = "Handles payment processing of Visa cards",
     DataDescription = "Process payment")]
 public class VisaPaymentService
+{ }
+
+[Collaborator(AppName = "Shipping Service",
+    Relationship = Relationship.Internal,
+    Direction = Direction.Downstream,
+    System = "Shipping",
+    Description = "Handles shipping of orders",
+    DataDescription = "Ship order")]
+public class ShippingService
 { }
