@@ -107,10 +107,9 @@ module Crc =
             |> fun d -> if cmd.IncludeL1Diagram then mermaidC4Level1 descriptors d else d
         render [(fun _ -> doc)]
     
-    open System.Text.Json
     let private serialize o =
-        let opt = JsonSerializerOptions(WriteIndented = true)
-        opt.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter())
+        let opt = JsonSerializerOptions(WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
+        opt.Converters.Add(Serialization.JsonStringEnumConverter())
         JsonSerializer.Serialize(o, opt)
         
     let sprintJson cmd (descriptors: Descriptor list) =
