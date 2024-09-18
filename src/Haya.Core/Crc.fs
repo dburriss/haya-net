@@ -2,10 +2,12 @@ namespace Haya.Core
 
 open System
 open System.Text
+open System.Text.Json
 open FSharpPlus
 open FuncyDown.Document
 open FuncyDown.Element
 open Haya
+open Haya.Core.Analysis
 type SB = StringBuilder
 module SB =
     let empty = StringBuilder()
@@ -16,7 +18,7 @@ module SB =
     let emptyLine (sb: StringBuilder) = sb.AppendLine()
     let toString (sb: StringBuilder) = sb.ToString()
 
-module MdFormatter =
+module Crc =
     
     let write file data =
         // TODO: check file extension
@@ -27,7 +29,7 @@ module MdFormatter =
         | Analysis.Collaborator c -> [c.AppName; $"[{c.ComponentName}]({c.ComponentSource})"; c.Description] 
         | Analysis.Meta m -> []
 
-    let buildResponsibilities (descriptors: Analysis.Descriptor list) doc =
+    let buildResponsibilitiesForMd (descriptors: Analysis.Descriptor list) doc =
         
         let rows =
             descriptors
@@ -37,7 +39,7 @@ module MdFormatter =
         |> addH2 "Responsibilities"
         |> addTable ["Responsibility"; "Component"] rows
     
-    let buildCollaborators (descriptors: Analysis.Descriptor list) doc =
+    let buildCollaboratorsForMd (descriptors: Analysis.Descriptor list) doc =
         let rows =
             descriptors
             |> List.filter (fun x -> match x with | Analysis.Collaborator _ -> true | _ -> false)
@@ -49,13 +51,11 @@ module MdFormatter =
     
     let mermaidC4Level1 (descriptors: Analysis.Descriptor list) doc =
         let meta = descriptors
-                   |> List.filter (fun x -> match x with | Analysis.Meta _ -> true | _ -> false)
+                   |> Describe.metas
                    |> List.tryHead
-                   |> Option.defaultValue (Analysis.Meta {AppName = ""; Description = ""; Team = ""; System = ""; Repository = ""})
-                   |> (fun x -> match x with | Analysis.Meta m -> m | _ -> failwith "impossible")
+                   |> Option.defaultValue { AppName = ""; Description = ""; Team = ""; System = ""; Repository = "" }
                    
-        let collaborators = descriptors
-                              |> List.choose (function | Analysis.Collaborator c -> Some (c) | _ -> None)
+        let collaborators = descriptors |> Describe.collaborators
         let externalSystems = collaborators
                               |> List.filter (fun x -> x.Relationship = Relationship.External && x.System <> meta.System && x.System <> "")
                               |> List.distinctBy (_.System)
@@ -95,18 +95,34 @@ module MdFormatter =
         |> addBlockCode { Code = diagram; Language = Some("mermaid") }
     
   
-    let sprintCrc cmd (descriptors: Analysis.Descriptor list) =
+    let sprintMarkdown cmd (descriptors: Descriptor list) =
         let doc =
             emptyDocument
             |> addH1 "CRC"
             |> addParagraph "This document describes the components, responsibilities, and collaborators for a codebase."
-            |> buildResponsibilities descriptors
+            |> buildResponsibilitiesForMd descriptors
             |> addNewline
-            |> buildCollaborators descriptors
+            |> buildCollaboratorsForMd descriptors
             |> addNewline
             |> fun d -> if cmd.IncludeL1Diagram then mermaidC4Level1 descriptors d else d
         render [(fun _ -> doc)]
-       
+    
+    open System.Text.Json
+    let private serialize o =
+        let opt = JsonSerializerOptions(WriteIndented = true)
+        opt.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter())
+        JsonSerializer.Serialize(o, opt)
+        
+    let sprintJson cmd (descriptors: Descriptor list) =
+        let metaOpt = descriptors |> Describe.metas |> List.tryHead
+        let responsibilities = descriptors |> Describe.responsibilities
+        let collaborators = descriptors |> Describe.collaborators
+        let json =
+            {|
+              meta = metaOpt |> Option.map box |> Option.defaultValue null
+              collaborators = collaborators
+              responsibilities = responsibilities |}
+        json |> serialize 
        
         
         

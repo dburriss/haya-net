@@ -135,4 +135,12 @@ module Describe =
                            |> Task.map (List.collect mapDescriptors)
             return classes @ meta
         }
-
+    
+    let collaborators (descriptors: Descriptor list) =
+        descriptors |> List.choose (function | Collaborator x -> Some x | _ -> None)
+    
+    let responsibilities (descriptors: Descriptor list) =
+        descriptors |> List.choose (function | Responsibility x -> Some x | _ -> None) 
+    
+    let metas (descriptors: Descriptor list) =
+        descriptors |> List.choose (function | Meta x -> Some x | _ -> None) 

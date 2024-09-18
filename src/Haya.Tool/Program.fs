@@ -29,10 +29,11 @@ module Program =
     
     let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
         if parserResults.Contains(CliArguments.Crc) then
+            let defaultFile = function | CrcFormat.Md -> "./CRC.md" | CrcFormat.Json -> "./CRC.json"
             let pr = parserResults.GetResult(CliArguments.Crc)
             let sln = pr.GetResult(CrcArgs.PathToSln)
-            let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue "./CRC.md"
             let format = pr.TryGetResult(CrcArgs.Format) |> Option.defaultValue (CrcFormat.Md)
+            let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue (defaultFile format)
             let includeL1Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 0
             let includeL2Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 1
             Some { PathToSln = sln; OutputPath = outputPath; Format = format; IncludeL1Diagram = includeL1Diagram; IncludeL2Diagram = includeL2Diagram }
@@ -44,13 +45,19 @@ module Program =
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
                 sln |> Describe.getDescriptors Describe.attributeNames
-            MdFormatter.sprintCrc cmd descriptors
-            |> MdFormatter.write cmd.OutputPath
+            match cmd.Format with
+            | CrcFormat.Md ->
+                Crc.sprintMarkdown cmd descriptors
+                |> Crc.write cmd.OutputPath
+            | CrcFormat.Json ->
+                Crc.sprintJson cmd descriptors
+                |> Crc.write cmd.OutputPath
             return Ok(0, $"CRC successfully generated from {pathToSln}")
         else
             return Error(1, "Solution not found")
         
     }
+    
     [<EntryPoint>]
     let main argv =
         
