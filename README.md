@@ -16,7 +16,7 @@ or at the least have a minimum level for a new joiner to start exploring the cod
 ```bash
 dotnet tool install --global Haya.Tool
 ```
-2. Add the Haya attributes package to your project
+2. Add the Haya attributes package to your project.
 ```bash
 dotnet add package Haya.Core
 ```
@@ -27,7 +27,7 @@ haya --help
 
 ## Usage
 
-1. Add the Haya attributes to your codebase
+1. Add the Haya attributes to your codebase. See [Attributes docs](Attributes.md) for more information. 
 
 ```csharp
 using Haya;
@@ -50,5 +50,34 @@ public class PaymentsController
 ```
 Running the Haya CLI tool will generate a CRC document and a C4 Level 1 diagram.
 ```bash
-haya crc -f md -c ./Example.sln
+haya crc --format md --c4 ./Example.sln
+```
+
+```bash
+USAGE: haya crc [--help] [--outputpath <output path>] [--format <md|json>] [--c4] <path to sln>
+
+PATHTOSLN:
+
+    <path to sln>         Path to solution file
+
+OPTIONS:
+
+    --outputpath, -o <output path>
+                          Path to output folder or file (default: ./CRC.md)
+    --format, -f <md|json>
+                          Output format: md | json (default: md)
+    --c4, -c              Include diagram (markdown only). -c for C4 Level 1, -cc for C4 Level 2
+    --help                display this list of options.
+
+USAGE: haya [--help] [<subcommand> [<options>]]
+
+SUBCOMMANDS:
+
+    crc <options>         Generate Components, Responsibilities, and Collaborator data
+
+    Use 'haya <subcommand> --help' for additional information.
+
+OPTIONS:
+
+    --help                display this list of options.
 ```
