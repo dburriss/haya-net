@@ -27,6 +27,7 @@ type CollaboratorDescriptor = {
     Relationship: Relationship
     ComponentName: string
     ComponentSource: string
+    Repository: string
 }
 
 type MetaDescriptor = {
@@ -69,12 +70,13 @@ module Describe =
             attrs |> List.map (fun attr ->
                 let map = attr.NamedArguments |> namedArgumentsToMap
                 let direction = map |> Map.tryFind "Direction" |> Option.map parseEnum<Direction> |> Option.defaultValue Direction.Downstream
-                let tech = map |> Map.tryFind "Tech" |> Option.defaultValue "HTTPS" 
+                let tech = map |> Map.tryFind "Tech" |> Option.defaultValue "" 
                 let dataDescription = map |> Map.tryFind "DataDescription" |> Option.defaultValue ""
                 let description = map |> Map.tryFind "Description" |> Option.defaultValue ""
                 let appName = map |> Map.tryFind "AppName" |> Option.defaultValue ""
                 let system = map |> Map.tryFind "System" |> Option.defaultValue ""
                 let relationship = map |> Map.tryFind "Relationship" |> Option.map parseEnum<Relationship>|> Option.defaultValue Relationship.Internal
+                let repository = map |> Map.tryFind "Repository" |> Option.defaultValue ""
                 Collaborator {
                     Direction = direction
                     Tech = tech
@@ -85,6 +87,7 @@ module Describe =
                     Relationship = relationship
                     ComponentName = symbol.Name
                     ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath
+                    Repository = repository
                 }
             ) |> Some
         else

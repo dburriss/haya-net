@@ -13,12 +13,13 @@ type ResponsibilityAttribute() =
 type CollaboratorAttribute() =
     inherit Attribute()
     member val Direction = Direction.Downstream with get,set
-    member val Tech = "HTTPS" with get,set
+    member val Protocol = "HTTPS" with get,set
     member val DataDescription = "" with get,set
     member val Description = "" with get,set
     member val AppName = "" with get,set
     member val System = "" with get,set
     member val Relationship = Relationship.Internal with get,set
+    member val Repository = "" with get,set
 
 [<AttributeUsage(AttributeTargets.Assembly)>]
 type MetaAttribute() =
