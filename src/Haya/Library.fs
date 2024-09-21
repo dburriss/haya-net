@@ -2,7 +2,7 @@
 
 open System
 
-/// The direction of the of the data flow or dependency
+/// The direction of the data flow or dependency
 type Direction =
     /// The data flows from the collaborator to this system/application/component
     Upstream = 1

@@ -33,7 +33,6 @@
 
     <ItemGroup>
         <Compile Include="Roslyn.fs" />
-        <Compile Include="Attributes.fs" />
         <Compile Include="Describe.fs" />
         <Compile Include="Types.fs" />
         <Compile Include="Crc.fs" />
@@ -46,6 +45,10 @@
       <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.11.4" />
       <PackageReference Include="Microsoft.CodeAnalysis" Version="4.11.0" />
       <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.11.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Haya\Haya.fsproj" />
     </ItemGroup>
 
 </Project>
