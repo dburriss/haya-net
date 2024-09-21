@@ -29,10 +29,10 @@ module Program =
     
     let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
         if parserResults.Contains(CliArguments.Crc) then
-            let defaultFile = function | CrcFormat.Md -> "./CRC.md" | CrcFormat.Json -> "./CRC.json"
+            let defaultFile = function | CrcFormat.Md -> "./CRC.md" | CrcFormat.Json -> "./CRC.json" | _ -> ArgumentOutOfRangeException("format") |> raise
             let pr = parserResults.GetResult(CliArguments.Crc)
             let sln = pr.GetResult(CrcArgs.PathToSln)
-            let format = pr.TryGetResult(CrcArgs.Format) |> Option.defaultValue (CrcFormat.Md)
+            let format = pr.TryGetResult(CrcArgs.Format) |> Option.defaultValue CrcFormat.Md
             let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue (defaultFile format)
             let includeL1Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 0
             let includeL2Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 1
@@ -52,6 +52,7 @@ module Program =
             | CrcFormat.Json ->
                 Crc.sprintJson cmd descriptors
                 |> Crc.write cmd.OutputPath
+            | _ -> ArgumentOutOfRangeException("format") |> raise
             return Ok(0, $"CRC successfully generated from {pathToSln}")
         else
             return Error(1, "Solution not found")
