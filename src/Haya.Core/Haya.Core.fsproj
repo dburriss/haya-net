@@ -8,7 +8,7 @@
 
         <Title>Haya.Core</Title>
         <Description>
-        Attributes and helpers for generating the CRC, and Meraid C4 diagrams.
+        Library used by `Haya.Tool` for generating the CRC, and Meraid C4 diagrams.
         </Description>
         <PackageTags>documentation,c4,mermaid,crc</PackageTags>
 

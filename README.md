@@ -18,7 +18,7 @@ dotnet tool install --global Haya.Tool
 ```
 2. Add the Haya attributes package to your project.
 ```bash
-dotnet add package Haya.Core
+dotnet add package Haya
 ```
 3. Run the Haya CLI tool
 ```bash

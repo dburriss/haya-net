@@ -1,4 +1,4 @@
-name: Publish Haya.Core
+name: Publish Haya Attributes
 
 on:
   push:
@@ -19,14 +19,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Restore dependencies
-        run: dotnet restore src/Haya.Core/Haya.Core.fsproj
+        run: dotnet restore src/Haya/Haya.fsproj
       - name: Build
-        run: dotnet build src/Haya.Core/Haya.Core.fsproj --configuration Release --no-restore
+        run: dotnet build src/Haya/Haya.fsproj --configuration Release --no-restore
       - name: Run unit tests
         run: dotnet test --configuration Release
         working-directory: ./ 
       - name: Pack
-        run: dotnet pack src/Haya.Core/Haya.Core.fsproj --configuration Release --no-build --output ./nupkg
+        run: dotnet pack src/Haya/Haya.fsproj --configuration Release --no-build --output ./nupkg
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
         env:

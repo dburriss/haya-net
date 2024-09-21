@@ -2,6 +2,29 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
+
+        <Version>0.0.2</Version>
+        <VersionSuffix>alpha1</VersionSuffix>
+
+        <Title>Haya</Title>
+        <Description>
+            Attributes for generating the CRC, and Meraid C4 diagrams. 
+            Used in conjunction with the `Haya.Tool` dotnet tool.
+        </Description>
+        <PackageTags>documentation,c4,mermaid,crc</PackageTags>
+
+        <PackageId>Haya</PackageId>
+        <Authors>Devon Burriss</Authors>
+        <Copyright>Devon Burriss</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/dburriss/heya-net</RepositoryUrl>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+
+        <PublishAot>false</PublishAot>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
