@@ -46,6 +46,8 @@ type MetaAttribute() =
     inherit Attribute()
     /// The name of this application
     member val AppName = "" with get,set
+    /// The team responsible for this application
+    member val Team = "" with get,set
     /// A description of this application
     member val Description = "" with get,set
     /// The team responsible for this application
