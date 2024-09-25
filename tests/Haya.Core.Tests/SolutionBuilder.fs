@@ -1,8 +1,10 @@
 namespace Haya.Core.Tests
 
+open System
 open System.Text
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Code
 
 module SolutionBuilder =
     
@@ -17,7 +19,7 @@ module SolutionBuilder =
     
     let init () = {
         ``namespace`` = "TestNs"
-        assemblyName = "TestAssembly"
+        assemblyName = $"TestAssembly{Guid.NewGuid()}"
         usings = ["System"; "Haya"]
         references = [typeof<Haya.MetaAttribute>]
         source = StringBuilder()
@@ -47,8 +49,9 @@ module SolutionBuilder =
         let workspace = new AdhocWorkspace()
 
         // Create a new Solution
-        let solution = workspace.CurrentSolution
-
+        let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create())
+        let solution = workspace.AddSolution(solutionInfo)// seems like can only be one solution
+        
         // Define a project ID and project info
         let projectId = ProjectId.CreateNewId()
         let projectInfo = ProjectInfo.Create(
