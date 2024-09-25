@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add `Tech` field to the `CollaboratorAttribute` attribute.
+
 ### Changed
+
+- Json output of `componentSource` is now relative to the executing directory.
+- Added `protocol` field to the Descriptor, used in json output.
 
 ### Removed
 

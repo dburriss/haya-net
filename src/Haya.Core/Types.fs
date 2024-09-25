@@ -7,4 +7,5 @@ type CrcCommand = {
     Format: CrcFormat
     IncludeL1Diagram: bool
     IncludeL2Diagram: bool
+    CurrentDirectory: string
 }

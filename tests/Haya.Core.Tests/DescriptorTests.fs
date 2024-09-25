@@ -1,48 +1,56 @@
 module DescriptorTests
 
-open FSharpPlus
+open Example
+open Haya
 open Haya.Core.Analysis
-open Haya.Core.Tests
 open Xunit
 
-let responsibilityAttr = Haya.ResponsibilityAttribute(Description = "Handles order processing")
-let collaboratorAttr = Haya.CollaboratorAttribute(Direction = Haya.Direction.Upstream, Protocol = "HTTP", DataDescription = "JSON", Description = "Handles order processing", AppName = "OrderService", System = "Order", Relationship = Haya.Relationship.Shared, Repository = "OrderRepository")
-let metaAttr = Haya.MetaAttribute(AppName = "OrderService", Description = "Handles order processing", Team = "OrderTeam", System = "Order", Repository = "OrderRepository")
+let allDescriptors = task {
+                        let! sln = "../../../../../examples/Example.sln" |> Roslyn.openSolution
+                        return! sln |> Describe.getDescriptors "" Describe.attributeNames
+                        } |> Async.AwaitTask |> Async.RunSynchronously
+
+let filterToComponentName (componentName: string) (descriptors: Descriptor list) =
+    descriptors |> List.filter (function
+                                        | Responsibility r -> r.ComponentName = componentName
+                                        | Collaborator c -> c.ComponentName = componentName
+                                        | _ -> false)
+
+[<Fact>]
+let ``Can find solution for tests`` () =
+    let path = "../../../../../examples/Example.sln"
+    let exists = System.IO.File.Exists(path)
+    Assert.True(exists)
 
 [<Fact>]
 let ``Descriptors returned for ResponsibilityAttribute`` () = task {
-    let code = [
-                Code.attrString responsibilityAttr
-                Code.classString "CreditCardPaymentUsecase"
-               ] |> Code.init |> string
-    let sln = code |> SolutionBuilder.code |> SolutionBuilder.createSolution
-    let! descriptor = sln
-                       |> Describe.getDescriptors Describe.attributeNames
-                       |> Task.map(fun ds -> ds |> Describe.responsibilities)
-                       // |> Task.map(fun rs -> rs |> List.tryPick (fun r -> if r.Description = responsibilityAttr.Description then Some r else None))
-    // Assert.True(descriptor.IsSome)
-    Assert.True(false)
+    let descriptor = allDescriptors |> filterToComponentName (nameof(CreditCardPaymentUsecase)) |> Describe.responsibilities |> List.head
+    Assert.Equal("Handles order processing", descriptor.Description)
+    Assert.Equal(nameof(CreditCardPaymentUsecase), descriptor.ComponentName)
+    Assert.Contains("HayaEcomm.cs", descriptor.ComponentSource)
 }
 
 [<Fact>]
 let ``Descriptors returned for CollaboratorAttribute`` () = task {
-    let code = [
-                Code.attrString collaboratorAttr
-                Code.classString "OrderService"
-               ] |> Code.init |> string
-    let sln = code |> SolutionBuilder.code |> SolutionBuilder.createSolution
-    let! descriptors = sln |> Describe.getDescriptors Describe.attributeNames
-    Assert.Equal(1, descriptors |> List.length)
+    let descriptor = allDescriptors |> filterToComponentName (nameof(PaymentsController)) |> Describe.collaborators |> List.head
+    Assert.Equal(Direction.Upstream, descriptor.Direction)
+    Assert.Equal("TypeScript", descriptor.Tech)
+    Assert.Equal("HTTPS", descriptor.Protocol)
+    Assert.Equal("Request payment", descriptor.DataDescription)
+    Assert.Equal("Handles cart checkout for a customer", descriptor.Description)
+    Assert.Equal("Checkout", descriptor.AppName)
+    Assert.Equal("WebShop", descriptor.System)
+    Assert.Equal(Relationship.Internal, descriptor.Relationship)
+    Assert.Equal("org/checkout-api", descriptor.Repository)
 }
 
 [<Fact>]
-let ``Descriptors returned for MetaAttribute`` () = task {
-    let code = [
-                Code.attrString metaAttr
-               ] |> Code.init |> string
-    let sln = code |> SolutionBuilder.code |> SolutionBuilder.createSolution
-    let! descriptors = sln |> Describe.getDescriptors Describe.attributeNames
-    Assert.Equal(1, descriptors |> List.length)
-    let meta = descriptors |> Describe.metas |> List.head
-    Assert.Equal("OrderService", meta.AppName)
+let ``Descriptors returned for MetaAttribute`` () = task { 
+    let meta = allDescriptors |> Describe.metas |> List.head
+    Assert.Equal("PaymentsApi", meta.AppName)
+    Assert.Equal("Handles processing payment for a shopping cart", meta.Description)
+    Assert.Equal("Ordering Team", meta.Team)
+    Assert.Equal("Ordering", meta.System)
+    Assert.Equal("org/payment-api", meta.Repository)
 }
+

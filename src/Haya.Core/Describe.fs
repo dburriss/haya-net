@@ -20,6 +20,7 @@ type ResponsibilityDescriptor = {
 type CollaboratorDescriptor = {
     Direction: Direction
     Tech: string
+    Protocol: string
     DataDescription: string
     Description: string
     AppName: string
@@ -46,9 +47,13 @@ type Descriptor =
 
 module Describe =
     let attributeNames = [typeof<ResponsibilityAttribute>.FullName; typeof<CollaboratorAttribute>.FullName; typeof<MetaAttribute>.FullName]
+    let makeRelativePath (baseDir: string) (targetPath: string) =
+        let baseUri = Uri(baseDir.TrimEnd('/') + "/")
+        let targetUri = Uri(targetPath)
+        baseUri.MakeRelativeUri(targetUri).ToString()
     let namedArgumentsToMap (args: ImmutableArray<KeyValuePair<string, TypedConstant>>) =
         args |> Seq.map (fun x -> x.Key, x.Value.Value.ToString()) |> Map.ofSeq
-    let (|IsResponsibility|_|) (symbol: ISymbol) =
+    let (|IsResponsibility|_|) (rootPath: string) (symbol: ISymbol) =
         let attrs = symbol.GetAttributes() |> Roslyn.filterAttributes [typeof<ResponsibilityAttribute>.FullName]
         if attrs |> List.isEmpty |> not then
             attrs |> List.map (fun attr ->
@@ -57,20 +62,21 @@ module Describe =
                 Responsibility {
                     Description = description
                     ComponentName = symbol.Name
-                    ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath
+                    ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath |> makeRelativePath rootPath
                 }
             ) |> Some
         else
             None
     let private parseEnum<'a> (value: string) = Enum.Parse(typeof<'a>, value) :?> 'a
     
-    let (|IsCollaborator|_|) (symbol: ISymbol) =
+    let (|IsCollaborator|_|) (rootPath: string) (symbol: ISymbol) =
         let attrs = symbol.GetAttributes() |> Roslyn.filterAttributes [typeof<CollaboratorAttribute>.FullName]
         if attrs |> List.isEmpty |> not then
             attrs |> List.map (fun attr ->
                 let map = attr.NamedArguments |> namedArgumentsToMap
                 let direction = map |> Map.tryFind "Direction" |> Option.map parseEnum<Direction> |> Option.defaultValue Direction.Downstream
                 let tech = map |> Map.tryFind "Tech" |> Option.defaultValue "" 
+                let protocol = map |> Map.tryFind "Protocol" |> Option.defaultValue "" 
                 let dataDescription = map |> Map.tryFind "DataDescription" |> Option.defaultValue ""
                 let description = map |> Map.tryFind "Description" |> Option.defaultValue ""
                 let appName = map |> Map.tryFind "AppName" |> Option.defaultValue ""
@@ -80,13 +86,14 @@ module Describe =
                 Collaborator {
                     Direction = direction
                     Tech = tech
+                    Protocol = protocol 
                     DataDescription = dataDescription
                     Description = description
                     AppName = appName
                     System = system
                     Relationship = relationship
                     ComponentName = symbol.Name
-                    ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath
+                    ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath |> makeRelativePath rootPath
                     Repository = repository
                 }
             ) |> Some
@@ -116,26 +123,26 @@ module Describe =
             else None // no attributes
         else None // not an assembly
     
-    let mapDescriptors (symbol: ISymbol) =
+    let mapDescriptors (rootPath: string) (symbol: ISymbol) =
         match symbol with
-        | IsResponsibility xs -> xs
-        | IsCollaborator xs -> xs
+        | IsResponsibility rootPath xs -> xs
+        | IsCollaborator rootPath xs -> xs
         | IsMeta xs -> xs
         | _ -> []//failwith "Not implemented"
     
-    let getDescriptors (attributeNames: string list) (solution: Solution) =
+    let getDescriptors (rootPath: string) (attributeNames: string list) (solution: Solution) =
         task {
             let! classes = attributeNames
                            |> List.map (fun n -> Roslyn.findClassesWithAttribute n solution)
                            |> Task.WhenAll
                            |> Task.map (Seq.concat >> Seq.toList)
-                           |> Task.map (List.collect mapDescriptors)
+                           |> Task.map (List.collect (mapDescriptors rootPath))
             
             let! meta = attributeNames
                         |> List.map (fun n -> Roslyn.findAllAssembliesWithAttribute n solution)
                            |> Task.WhenAll
                            |> Task.map (Seq.concat >> Seq.toList)
-                           |> Task.map (List.collect mapDescriptors)
+                           |> Task.map (List.collect (mapDescriptors rootPath))
             return classes @ meta
         }
     

@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\examples\Example\Example.csproj" />
       <ProjectReference Include="..\..\src\Haya.Core\Haya.Core.fsproj" />
       <ProjectReference Include="..\..\src\Haya\Haya.fsproj" />
     </ItemGroup>

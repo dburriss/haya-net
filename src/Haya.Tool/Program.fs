@@ -29,6 +29,7 @@ module Program =
     
     let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
         if parserResults.Contains(CliArguments.Crc) then
+            let currentDir = Environment.CurrentDirectory
             let defaultFile = function | CrcFormat.Md -> "./CRC.md" | CrcFormat.Json -> "./CRC.json" | _ -> ArgumentOutOfRangeException("format") |> raise
             let pr = parserResults.GetResult(CliArguments.Crc)
             let sln = pr.GetResult(CrcArgs.PathToSln)
@@ -36,7 +37,11 @@ module Program =
             let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue (defaultFile format)
             let includeL1Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 0
             let includeL2Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 1
-            Some { PathToSln = sln; OutputPath = outputPath; Format = format; IncludeL1Diagram = includeL1Diagram; IncludeL2Diagram = includeL2Diagram }
+            Some { PathToSln = sln; OutputPath = outputPath
+                   Format = format
+                   IncludeL1Diagram = includeL1Diagram
+                   IncludeL2Diagram = includeL2Diagram
+                   CurrentDirectory = currentDir }
         else None
     
     let execCrcAsync cmd = task {
@@ -44,7 +49,7 @@ module Program =
         if IO.File.Exists(pathToSln) then
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
-                sln |> Describe.getDescriptors Describe.attributeNames
+                sln |> Describe.getDescriptors cmd.CurrentDirectory Describe.attributeNames
             match cmd.Format with
             | CrcFormat.Md ->
                 Crc.sprintMarkdown cmd descriptors

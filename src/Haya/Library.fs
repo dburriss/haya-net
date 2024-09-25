@@ -25,6 +25,8 @@ type CollaboratorAttribute() =
     inherit Attribute()
     /// The direction of the data flow or dependency
     member val Direction = Direction.Downstream with get,set
+    /// Then technology used by the collaborator
+    member val Tech = "" with get,set
     /// The technology or protocol used to communicate with the collaborator
     member val Protocol = "HTTPS" with get,set
     /// A description of the data or dependency flowing between the component and the collaborator
