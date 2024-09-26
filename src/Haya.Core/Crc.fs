@@ -118,6 +118,7 @@ module Crc =
         let collaborators = descriptors |> Describe.collaborators
         let json =
             {|
+              version = "0.0"
               meta = metaOpt |> Option.map box |> Option.defaultValue null
               collaborators = collaborators
               responsibilities = responsibilities |}
