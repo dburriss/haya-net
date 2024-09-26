@@ -10,7 +10,7 @@ type Direction =
     | Downstream = 2
 
 /// The type of relationship between the team and the application or system
-type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4
+type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4 | InternalUser = 5 | ExternalUser = 6
 
 /// The responsibility, usecase, or feature of the component
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = true)>]
@@ -26,7 +26,7 @@ type CollaboratorAttribute() =
     /// The direction of the data flow or dependency
     member val Direction = Direction.Downstream with get,set
     /// Then technology used by the collaborator
-    member val Tech = "" with get,set
+    member val Technology = "" with get,set
     /// The technology or protocol used to communicate with the collaborator
     member val Protocol = "HTTPS" with get,set
     /// A description of the data or dependency flowing between the component and the collaborator
