@@ -7,16 +7,14 @@ open Haya.Core.Analysis
 
 module Program =
     type CrcArgs =
-        | [<MainCommand; ExactlyOnce; Last>] PathToSln of path_to_sln: string
+        | [<MainCommand; ExactlyOnce; Last>] InputPath of input_path: string
         | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
-        | [<AltCommandLine("-f"); Unique>]Format of CrcFormat
         | [<AltCommandLine("-c")>] C4
         interface IArgParserTemplate with
             member s.Usage =
                 match s with
-                | PathToSln _ -> "Path to solution file"
+                | InputPath _ -> "Path to solution or haya describe file"
                 | OutputPath _ -> "Path to output folder or file (default: ./CRC.md)"
-                | Format _ -> "Output format: md | json (default: md)"
                 | C4 -> "Include diagram (markdown only). -c for C4 Level 1, -cc for C4 Level 2"
     
     type CliArguments =
@@ -26,19 +24,15 @@ module Program =
                 match s with
                 | Crc _ -> "Generate Components, Responsibilities, and Collaborator data"
 
-    
     let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
         if parserResults.Contains(CliArguments.Crc) then
             let currentDir = Environment.CurrentDirectory
-            let defaultFile = function | CrcFormat.Md -> "./CRC.md" | CrcFormat.Json -> "./CRC.json" | _ -> ArgumentOutOfRangeException("format") |> raise
             let pr = parserResults.GetResult(CliArguments.Crc)
-            let sln = pr.GetResult(CrcArgs.PathToSln)
-            let format = pr.TryGetResult(CrcArgs.Format) |> Option.defaultValue CrcFormat.Md
-            let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue (defaultFile format)
+            let sln = pr.GetResult(CrcArgs.InputPath)
+            let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue "./CRC.md"
             let includeL1Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 0
             let includeL2Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 1
             Some { PathToSln = sln; OutputPath = outputPath
-                   Format = format
                    IncludeL1Diagram = includeL1Diagram
                    IncludeL2Diagram = includeL2Diagram
                    CurrentDirectory = currentDir }
@@ -50,18 +44,11 @@ module Program =
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
                 sln |> Describe.getDescriptors cmd.CurrentDirectory Describe.attributeNames
-            match cmd.Format with
-            | CrcFormat.Md ->
-                Crc.sprintMarkdown cmd descriptors
-                |> Crc.write cmd.OutputPath
-            | CrcFormat.Json ->
-                Crc.sprintJson cmd descriptors
-                |> Crc.write cmd.OutputPath
-            | _ -> ArgumentOutOfRangeException("format") |> raise
+            Crc.sprintMarkdown cmd descriptors
+            |> Crc.write cmd.OutputPath
             return Ok(0, $"CRC successfully generated from {pathToSln}")
         else
             return Error(1, "Solution not found")
-        
     }
     
     [<EntryPoint>]
