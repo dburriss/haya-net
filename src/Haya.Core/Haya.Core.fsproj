@@ -33,9 +33,10 @@
 
     <ItemGroup>
         <Compile Include="Roslyn.fs" />
-        <Compile Include="Describe.fs" />
+        <Compile Include="Descriptor.fs" />
         <Compile Include="Types.fs" />
         <Compile Include="Serializer.fs" />
+        <Compile Include="Describe.fs" />
         <Compile Include="Crc.fs" />
     </ItemGroup>
 

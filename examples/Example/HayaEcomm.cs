@@ -17,7 +17,7 @@ public class CreditCardPaymentUsecase
     Direction = Direction.Upstream,
     System = "WebShop",
     Description = "Handles cart checkout for a customer",
-    Tech = "TypeScript",
+    Technology = "TypeScript",
     Protocol = "HTTPS",
     DataDescription = "Request payment",
     Repository = "org/checkout-api")]
@@ -40,7 +40,7 @@ public class VisaPaymentService
     Direction = Direction.Downstream,
     System = "Shipping",
     Description = "Handles shipping of orders",
-    Tech = "dotnet",
+    Technology = "dotnet",
     Protocol = "MQTT",
     DataDescription = "Ship order",
     Repository = "org/shipping-service")]

@@ -7,13 +7,18 @@ module Program =
     [<EntryPoint>]
     let main argv =
         
-        let parser = ArgumentParser.Create<CliArguments>(programName = "haya")
+        let parser = ArgumentParser.Create<CliArguments>(
+            programName = "haya",
+            helpTextMessage = "Haya is a tool used in combination with the Haya package attributes to generate data about your program and the systems it interacts with.")
         try
             let pr = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
             let result = 
                 match pr with
                 | IsCrcCommand cmd ->
                     execCrcAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
+                | IsDescribeCommand cmd ->
+                    execDescribeAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
+                | _ when pr.IsUsageRequested -> Ok (0, parser.PrintUsage())
                 | _ -> Error (1, "Invalid command")
             match result with
             | Ok (code, message) ->

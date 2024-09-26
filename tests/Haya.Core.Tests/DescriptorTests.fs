@@ -7,7 +7,7 @@ open Xunit
 
 let allDescriptors = task {
                         let! sln = "../../../../../examples/Example.sln" |> Roslyn.openSolution
-                        return! sln |> Describe.getDescriptors "" Describe.attributeNames
+                        return! sln |> Descriptor.getDescriptors "" Descriptor.attributeNames
                         } |> Async.AwaitTask |> Async.RunSynchronously
 
 let filterToComponentName (componentName: string) (descriptors: Descriptor list) =
@@ -24,7 +24,7 @@ let ``Can find solution for tests`` () =
 
 [<Fact>]
 let ``Descriptors returned for ResponsibilityAttribute`` () = task {
-    let descriptor = allDescriptors |> filterToComponentName (nameof(CreditCardPaymentUsecase)) |> Describe.responsibilities |> List.head
+    let descriptor = allDescriptors |> filterToComponentName (nameof(CreditCardPaymentUsecase)) |> Descriptor.responsibilities |> List.head
     Assert.Equal("Handles order processing", descriptor.Description)
     Assert.Equal(nameof(CreditCardPaymentUsecase), descriptor.ComponentName)
     Assert.Contains("HayaEcomm.cs", descriptor.ComponentSource)
@@ -32,7 +32,7 @@ let ``Descriptors returned for ResponsibilityAttribute`` () = task {
 
 [<Fact>]
 let ``Descriptors returned for CollaboratorAttribute`` () = task {
-    let descriptor = allDescriptors |> filterToComponentName (nameof(PaymentsController)) |> Describe.collaborators |> List.head
+    let descriptor = allDescriptors |> filterToComponentName (nameof(PaymentsController)) |> Descriptor.collaborators |> List.head
     Assert.Equal(Direction.Upstream, descriptor.Direction)
     Assert.Equal("TypeScript", descriptor.Tech)
     Assert.Equal("HTTPS", descriptor.Protocol)
@@ -46,7 +46,7 @@ let ``Descriptors returned for CollaboratorAttribute`` () = task {
 
 [<Fact>]
 let ``Descriptors returned for MetaAttribute`` () = task { 
-    let meta = allDescriptors |> Describe.metas |> List.head
+    let meta = allDescriptors |> Descriptor.metas |> List.head
     Assert.Equal("PaymentsApi", meta.AppName)
     Assert.Equal("Handles processing payment for a shopping cart", meta.Description)
     Assert.Equal("Ordering Team", meta.Team)

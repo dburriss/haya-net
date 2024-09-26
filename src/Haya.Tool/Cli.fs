@@ -36,7 +36,44 @@ type CliArguments =
 module Cli =
     open Haya.Core.Analysis
     open System
-
+    
+    let defaultFile format =
+        match format with
+        | DataFormat.Json -> "./haya.json"
+        | DataFormat.Yaml -> "./haya.yaml"
+    
+    let (|IsDescribeCommand|_|) (parserResults: ParseResults<CliArguments>) =
+        if parserResults.Contains(CliArguments.Describe) then
+            let currentDir = Environment.CurrentDirectory
+            let pr = parserResults.GetResult(CliArguments.Describe)
+            let sln = pr.GetResult(DescribeArgs.InputPath)
+            let format = pr.GetResult(DescribeArgs.Format)
+            //todo: check if output path is a file or a directory
+            let outputPath: string = pr.TryGetResult(DescribeArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format)
+            Some { PathToSln = sln
+                   OutputPath = outputPath
+                   Format = format
+                   CurrentDirectory = currentDir }
+        else None
+        
+    let execDescribeAsync (cmd: DescribeCommand) = task {
+        let pathToSln = cmd.PathToSln
+        //todo: check if pathToSln is a sln or a describe file (json/yaml)
+        if IO.File.Exists(pathToSln) then
+            let! sln = pathToSln |> Roslyn.openSolution
+            let! descriptors =
+                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+            
+            return
+                Describe.serialize cmd descriptors
+                |> IO.write cmd.OutputPath
+                |> function
+                    | Ok _ -> Ok(0, $"Describe successfully generated from {pathToSln}")
+                    | Error e -> Error(1, e)
+        else
+            return Error(1, "Solution not found")
+    }
+    
     let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
         if parserResults.Contains(CliArguments.Crc) then
             let currentDir = Environment.CurrentDirectory
@@ -50,16 +87,20 @@ module Cli =
                    IncludeL2Diagram = includeL2Diagram
                    CurrentDirectory = currentDir }
         else None
-    
-    let execCrcAsync cmd = task {
+
+    let execCrcAsync (cmd: CrcCommand) = task {
         let pathToSln = cmd.PathToSln
+        // todo: check if pathToSln is a sln or a describe file (json/yaml)
         if IO.File.Exists(pathToSln) then
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
-                sln |> Describe.getDescriptors cmd.CurrentDirectory Describe.attributeNames
-            Crc.sprintMarkdown cmd descriptors
-            |> Crc.write cmd.OutputPath
-            return Ok(0, $"CRC successfully generated from {pathToSln}")
+                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+            return
+                Crc.sprintMarkdown cmd descriptors
+                |> IO.write cmd.OutputPath
+                |> function
+                | Ok _ -> Ok(0, $"CRC successfully generated from {pathToSln}")
+                | Error e -> Error(1, e)
         else
             return Error(1, "Solution not found")
     }

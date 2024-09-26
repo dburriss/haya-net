@@ -8,26 +8,14 @@ open FuncyDown.Document
 open FuncyDown.Element
 open Haya
 open Haya.Core.Analysis
-type SB = StringBuilder
-module SB =
-    let empty = StringBuilder()
-    let create (s: string) = StringBuilder(s)
-    let append (s: string) (sb: StringBuilder) = sb.Append(s)
-    let line (s: string) (sb: StringBuilder) = sb.AppendLine(s)
-    let lines (ss: string list) (sb: StringBuilder) = ss |> List.fold (fun sb ss -> line ss sb) sb
-    let emptyLine (sb: StringBuilder) = sb.AppendLine()
-    let toString (sb: StringBuilder) = sb.ToString()
 
 module Crc =
     
-    let write file data =
-        // TODO: check file extension
-        IO.File.WriteAllText(file, data)
     let mdRowData (desc: Analysis.Descriptor) =
         match desc with
-        | Analysis.Responsibility r -> [r.Description; $"[{r.ComponentName}]({r.ComponentSource})"]
-        | Analysis.Collaborator c -> [c.AppName; $"[{c.ComponentName}]({c.ComponentSource})"; c.Description] 
-        | Analysis.Meta m -> []
+        | Responsibility r -> [r.Description; $"[{r.ComponentName}]({r.ComponentSource})"]
+        | Collaborator c -> [c.AppName; $"[{c.ComponentName}]({c.ComponentSource})"; c.Description] 
+        | Meta m -> []
 
     let buildResponsibilitiesForMd (descriptors: Analysis.Descriptor list) doc =
         
@@ -51,11 +39,11 @@ module Crc =
     
     let mermaidC4Level1 (descriptors: Analysis.Descriptor list) doc =
         let meta = descriptors
-                   |> Describe.metas
+                   |> Descriptor.metas
                    |> List.tryHead
                    |> Option.defaultValue { AppName = ""; Description = ""; Team = ""; System = ""; Repository = "" }
                    
-        let collaborators = descriptors |> Describe.collaborators
+        let collaborators = descriptors |> Descriptor.collaborators
         let externalSystems = collaborators
                               |> List.filter (fun x -> x.Relationship = Relationship.External && x.System <> meta.System && x.System <> "")
                               |> List.distinctBy (_.System)
@@ -106,24 +94,3 @@ module Crc =
             |> addNewline
             |> fun d -> if cmd.IncludeL1Diagram then mermaidC4Level1 descriptors d else d
         render [(fun _ -> doc)]
-    
-    let private serialize o =
-        let opt = JsonSerializerOptions(WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
-        opt.Converters.Add(Serialization.JsonStringEnumConverter())
-        JsonSerializer.Serialize(o, opt)
-        
-    let sprintJson cmd (descriptors: Descriptor list) =
-        let metaOpt = descriptors |> Describe.metas |> List.tryHead
-        let responsibilities = descriptors |> Describe.responsibilities
-        let collaborators = descriptors |> Describe.collaborators
-        let json =
-            {|
-              version = "0.0"
-              meta = metaOpt |> Option.map box |> Option.defaultValue null
-              collaborators = collaborators
-              responsibilities = responsibilities |}
-        json |> serialize 
-       
-        
-        
-        

@@ -2,20 +2,22 @@ namespace Haya.Core
 
 
 module Serializer =
-
     open System.Text.Json
     open System.Text.Json.Serialization
     open System.Text.Json.Nodes
     open System.Text.Encodings.Web
     open System.Collections.Generic
-
+    
     let jsonSerializerOptions =
-        JsonSerializerOptions(
-            WriteIndented = true,
-            DefaultIgnoreCondition  = JsonIgnoreCondition.WhenWritingNull,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            PropertyNameCaseInsensitive = true
-        )
+        let opt = JsonSerializerOptions(
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition  = JsonIgnoreCondition.WhenWritingNull,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                PropertyNameCaseInsensitive = true
+            )
+        opt.Converters.Add(JsonStringEnumConverter())
+        opt
 
     let toJson x =
         JsonSerializer.Serialize(x, jsonSerializerOptions)
@@ -50,9 +52,9 @@ module Serializer =
             |> box
         | _ -> failwithf "Unexpected token %s at %s" (jEl.ToJsonString()) (jEl.GetPath())
         
-    let private serializer = YamlDotNet.Serialization.SerializerBuilder().Build()
+    let private yamlSerializer = YamlDotNet.Serialization.SerializerBuilder().Build()
     let toYaml x = 
         let json = toJson x
         let jNode = JsonNode.Parse(json)
         let o = toObj jNode
-        serializer.Serialize(o)
+        yamlSerializer.Serialize(o)
