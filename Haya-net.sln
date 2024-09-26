@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1F0560E9-C
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 		CHANGELOG.md = CHANGELOG.md
+		Attributes.md = Attributes.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{CE8A0A82-1E0E-4C76-94E7-31926F6DCA4A}"
