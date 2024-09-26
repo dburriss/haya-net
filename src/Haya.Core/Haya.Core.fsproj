@@ -35,6 +35,7 @@
         <Compile Include="Roslyn.fs" />
         <Compile Include="Describe.fs" />
         <Compile Include="Types.fs" />
+        <Compile Include="Serializer.fs" />
         <Compile Include="Crc.fs" />
     </ItemGroup>
 
@@ -45,6 +46,7 @@
       <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.11.4" />
       <PackageReference Include="Microsoft.CodeAnalysis" Version="4.11.0" />
       <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.11.0" />
+      <PackageReference Include="YamlDotNet" Version="16.1.2" />
     </ItemGroup>
 
     <ItemGroup>

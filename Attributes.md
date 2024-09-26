@@ -47,6 +47,7 @@ The `CollaboratorAttribute` attribute has the following properties:
 - `Direction` - The direction of the interaction. Can be `Upstream` or `Downstream`.
 - `Relationship` - The relationship the team has with the collaborator. Can be `Owned`, `Shared`, `Internal` or `External`.
 - `Description` - A description of the collaborator.
+- `Technology` - The technology used by the collaborator.
 - `Protocol` - The protocol/technology used to communicate with the collaborator.
 - `DataDescription` - A description of the data that is exchanged with the collaborator.
 - `AppName` - The name of the collaborator application.
