@@ -26,6 +26,16 @@ type BackstageCommand = {
     CurrentDirectory: string
 }
 
+type DiagramType = | C4System
+type DiagramFormat = | Mermaid
+type DiagramCommand = {
+    PathToSln: string
+    OutputPath: string
+    DiagramType: DiagramType
+    DiagramFormat: DiagramFormat
+    CurrentDirectory: string
+}
+
 type SB = StringBuilder
 module SB =
     let empty = StringBuilder()
