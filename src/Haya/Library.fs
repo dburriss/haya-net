@@ -41,6 +41,8 @@ type CollaboratorAttribute() =
     member val Relationship = Relationship.Internal with get,set
     /// The slug of the VCS repository for the collaborator
     member val Repository = "" with get,set
+    /// The owner of the system or application
+    member val Owner = "" with get,set
 
 /// Information about this application or system
 [<AttributeUsage(AttributeTargets.Assembly)>]
@@ -49,7 +51,7 @@ type MetaAttribute() =
     /// The name of this application
     member val AppName = "" with get,set
     /// The team responsible for this application
-    member val Team = "" with get,set
+    member val Owner = "" with get,set
     /// A description of this application
     member val Description = "" with get,set
     /// The team responsible for this application

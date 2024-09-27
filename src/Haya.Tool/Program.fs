@@ -18,6 +18,8 @@ module Program =
                     execCrcAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
                 | IsDescribeCommand cmd ->
                     execDescribeAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
+                | IsBackstageCommand cmd ->
+                    execBackstageAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
                 | _ when pr.IsUsageRequested -> Ok (0, parser.PrintUsage())
                 | _ -> Error (1, "Invalid command")
             match result with

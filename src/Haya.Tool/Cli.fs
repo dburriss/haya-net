@@ -21,35 +21,49 @@ type DescribeArgs =
         member s.Usage =
             match s with
             | InputPath _ -> "Path to solution or haya describe file"
-            | OutputPath _ -> "Path to output folder or file (default: ./describe.md)"
-            | Format _ -> "Output format (json or yaml)"
+            | OutputPath _ -> "Path to output folder or file (default: ./haya.json)"
+            | Format _ -> "Output format. json | yaml (default: json)"
+            
+type BackstageArgs =
+    | [<MainCommand; ExactlyOnce; Last>] InputPath of input_path: string
+    | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
+    | [<AltCommandLine("-f")>] Format of format: DataFormat
+    interface IArgParserTemplate with
+        member s.Usage =
+            match s with
+            | InputPath _ -> "Path to solution or haya describe file"
+            | OutputPath _ -> "Path to output folder or file (default: ./haya.yaml)"
+            | Format _ -> "Output format. json | yaml (default: yaml)"
+
 type CliArguments =
     | [<CliPrefix(CliPrefix.None)>] Crc of ParseResults<CrcArgs>
     | [<CliPrefix(CliPrefix.None)>] Describe of ParseResults<DescribeArgs>
+    | [<CliPrefix(CliPrefix.None)>] Backstage of ParseResults<BackstageArgs>
     interface IArgParserTemplate with
         member s.Usage =
             match s with
             | Crc _ -> "Generate Components, Responsibilities, and Collaborator data"
             | Describe _ -> "Generate Haya solution description"
+            | Backstage _ -> "Generate Backstage catalog data"
 
     
 module Cli =
     open Haya.Core.Analysis
     open System
     
-    let defaultFile format =
+    let defaultFile format filename =
         match format with
-        | DataFormat.Json -> "./haya.json"
-        | DataFormat.Yaml -> "./haya.yaml"
+        | DataFormat.Json -> $"./{filename}.json"
+        | DataFormat.Yaml -> $"./{filename}.yaml"
     
-    let (|IsDescribeCommand|_|) (parserResults: ParseResults<CliArguments>) =
+    let (|IsDescribeCommand|_|) (parserResults: ParseResults<CliArguments>) : DescribeCommand option =
         if parserResults.Contains(CliArguments.Describe) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Describe)
             let sln = pr.GetResult(DescribeArgs.InputPath)
-            let format = pr.GetResult(DescribeArgs.Format)
+            let format = pr.GetResult(DescribeArgs.Format, defaultValue = DataFormat.Json)
             //todo: check if output path is a file or a directory
-            let outputPath: string = pr.TryGetResult(DescribeArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format)
+            let outputPath: string = pr.TryGetResult(DescribeArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "haya")
             Some { PathToSln = sln
                    OutputPath = outputPath
                    Format = format
@@ -100,6 +114,35 @@ module Cli =
                 |> IO.write cmd.OutputPath
                 |> function
                 | Ok _ -> Ok(0, $"CRC successfully generated from {pathToSln}")
+                | Error e -> Error(1, e)
+        else
+            return Error(1, "Solution not found")
+    }
+    
+    let (|IsBackstageCommand|_|) (parserResults: ParseResults<CliArguments>) : BackstageCommand option =
+        if parserResults.Contains(CliArguments.Backstage) then
+            let currentDir = Environment.CurrentDirectory
+            let pr = parserResults.GetResult(CliArguments.Backstage)
+            let sln = pr.GetResult(BackstageArgs.InputPath)
+            let format = pr.GetResult(BackstageArgs.Format, defaultValue = DataFormat.Yaml)
+            let outputPath: string = pr.TryGetResult(BackstageArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "backstage")
+            Some { PathToSln = sln
+                   OutputPath = outputPath
+                   Format = format
+                   CurrentDirectory = currentDir }
+        else None
+        
+    let execBackstageAsync (cmd: BackstageCommand) = task {
+        let pathToSln = cmd.PathToSln
+        if IO.fileExists pathToSln then
+            let! sln = pathToSln |> Roslyn.openSolution
+            let! descriptors =
+                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+            return
+                Backstage.generateCatalog cmd descriptors
+                |> IO.write cmd.OutputPath
+                |> function
+                | Ok _ -> Ok(0, $"Backstage successfully generated from {pathToSln}")
                 | Error e -> Error(1, e)
         else
             return Error(1, "Solution not found")

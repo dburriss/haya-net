@@ -3,7 +3,7 @@
     AppName = "PaymentsApi", 
     Description = "Handles processing payment for a shopping cart", 
     System = "Ordering",
-    Team = "Ordering Team",
+    Owner = "Ordering Team",
     Repository = "org/payment-api")]
 
 namespace Example;
@@ -20,7 +20,8 @@ public class CreditCardPaymentUsecase
     Technology = "TypeScript",
     Protocol = "HTTPS",
     DataDescription = "Request payment",
-    Repository = "org/checkout-api")]
+    Repository = "org/checkout-api",
+    Owner = "Checkout Team")]
 public class PaymentsController
 { }
 
@@ -31,7 +32,8 @@ public class PaymentsController
     System = "VISA",
     Description = "Handles payment processing of Visa cards",
     DataDescription = "Process payment",
-    Repository = "org/webshop")]
+    Repository = "org/webshop",
+    Owner = "Visa")]
 public class VisaPaymentService
 { }
 
@@ -43,6 +45,7 @@ public class VisaPaymentService
     Technology = "dotnet",
     Protocol = "MQTT",
     DataDescription = "Ship order",
-    Repository = "org/shipping-service")]
+    Repository = "org/shipping-service",
+    Owner = "Shipping Team")]
 public class ShippingService
 { }

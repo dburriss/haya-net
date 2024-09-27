@@ -19,6 +19,13 @@ type CrcCommand = {
     CurrentDirectory: string
 }
 
+type BackstageCommand = {
+    PathToSln: string
+    OutputPath: string
+    Format: DataFormat
+    CurrentDirectory: string
+}
+
 type SB = StringBuilder
 module SB =
     let empty = StringBuilder()
@@ -35,3 +42,5 @@ module IO =
         // TODO: check file extension
         File.WriteAllText(file, data)
         Ok(file)
+        
+    let fileExists file = File.Exists(file)

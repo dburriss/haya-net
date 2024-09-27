@@ -29,14 +29,15 @@ type CollaboratorDescriptor = {
     ComponentName: string
     ComponentSource: string
     Repository: string
+    Owner: string
 }
 
 type MetaDescriptor = {
     AppName: string
     Description: string
-    Team: string
     System: string
     Repository: string
+    Owner: string
 }
 
 type Descriptor =
@@ -75,7 +76,7 @@ module Descriptor =
             attrs |> List.map (fun attr ->
                 let map = attr.NamedArguments |> namedArgumentsToMap
                 let direction = map |> Map.tryFind "Direction" |> Option.map parseEnum<Direction> |> Option.defaultValue Direction.Downstream
-                let tech = map |> Map.tryFind "Tech" |> Option.defaultValue "" 
+                let tech = map |> Map.tryFind "Technology" |> Option.defaultValue "" 
                 let protocol = map |> Map.tryFind "Protocol" |> Option.defaultValue "" 
                 let dataDescription = map |> Map.tryFind "DataDescription" |> Option.defaultValue ""
                 let description = map |> Map.tryFind "Description" |> Option.defaultValue ""
@@ -83,6 +84,7 @@ module Descriptor =
                 let system = map |> Map.tryFind "System" |> Option.defaultValue ""
                 let relationship = map |> Map.tryFind "Relationship" |> Option.map parseEnum<Relationship>|> Option.defaultValue Relationship.Internal
                 let repository = map |> Map.tryFind "Repository" |> Option.defaultValue ""
+                let owner = map |> Map.tryFind "Owner" |> Option.defaultValue ""
                 Collaborator {
                     Direction = direction
                     Tech = tech
@@ -95,6 +97,7 @@ module Descriptor =
                     ComponentName = symbol.Name
                     ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath |> makeRelativePath rootPath
                     Repository = repository
+                    Owner = owner 
                 }
             ) |> Some
         else
@@ -109,15 +112,15 @@ module Descriptor =
                     let map = attr.NamedArguments |> namedArgumentsToMap
                     let appName = map |> Map.tryFind "AppName" |> Option.defaultValue ""
                     let description = map |> Map.tryFind "Description" |> Option.defaultValue ""
-                    let team = map |> Map.tryFind "Team" |> Option.defaultValue ""
+                    let owner = map |> Map.tryFind "Owner" |> Option.defaultValue ""
                     let system = map |> Map.tryFind "System" |> Option.defaultValue ""
                     let repository = map |> Map.tryFind "Repository" |> Option.defaultValue ""
                     Meta {
                         AppName = appName
                         Description = description
-                        Team = team
                         System = system
                         Repository = repository
+                        Owner = owner
                     }
                 ) |> Some
             else None // no attributes

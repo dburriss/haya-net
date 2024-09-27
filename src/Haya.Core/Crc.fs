@@ -41,7 +41,7 @@ module Crc =
         let meta = descriptors
                    |> Descriptor.metas
                    |> List.tryHead
-                   |> Option.defaultValue { AppName = ""; Description = ""; Team = ""; System = ""; Repository = "" }
+                   |> Option.defaultValue { AppName = ""; Description = ""; Owner =  ""; System = ""; Repository = "" }
                    
         let collaborators = descriptors |> Descriptor.collaborators
         let externalSystems = collaborators

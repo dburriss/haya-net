@@ -11,14 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `Tech` field to the `CollaboratorAttribute` attribute.
+- `Technology` field to the `CollaboratorAttribute` attribute.
+- `describe` command to the `Haya.Tool` for outputting json or yaml description.
+- `diagram` command for outputting diagrams with mermaid support.
+- `backstage` command for outputting a backstage catalog spec.
+- `version` field for the internal spec.
+- YAML support as an output format.
+- `Owner` on CollaboratorAttribute.
 
 ### Changed
 
 - Json output of `componentSource` is now relative to the executing directory.
 - Added `protocol` field to the Descriptor, used in json output.
+- `Team` to `Owner` on MetaAttribute.
 
 ### Removed
+
+- json format for the crc command.
 
 ## [0.0.3] - 2024-09-21
 

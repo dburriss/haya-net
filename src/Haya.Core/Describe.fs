@@ -4,7 +4,7 @@ open Haya.Core.Analysis
 
 module Describe =
     
-    let serialize cmd (descriptors: Descriptor list) =
+    let serialize (cmd: DescribeCommand) (descriptors: Descriptor list) =
         let metaOpt = descriptors |> Descriptor.metas |> List.tryHead
         let responsibilities = descriptors |> Descriptor.responsibilities
         let collaborators = descriptors |> Descriptor.collaborators

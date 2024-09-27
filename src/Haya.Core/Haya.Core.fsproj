@@ -38,6 +38,7 @@
         <Compile Include="Serializer.fs" />
         <Compile Include="Describe.fs" />
         <Compile Include="Crc.fs" />
+        <Compile Include="Backstage.fs" />
     </ItemGroup>
 
     <ItemGroup>

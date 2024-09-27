@@ -49,7 +49,7 @@ let ``Descriptors returned for MetaAttribute`` () = task {
     let meta = allDescriptors |> Descriptor.metas |> List.head
     Assert.Equal("PaymentsApi", meta.AppName)
     Assert.Equal("Handles processing payment for a shopping cart", meta.Description)
-    Assert.Equal("Ordering Team", meta.Team)
+    Assert.Equal("Ordering Team", meta.Owner)
     Assert.Equal("Ordering", meta.System)
     Assert.Equal("org/payment-api", meta.Repository)
 }
