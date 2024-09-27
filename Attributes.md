@@ -13,6 +13,7 @@ The `MetaAttribute` attribute has the following properties:
 - `Description` - A description of the application.
 - `System` - The system that the application belongs to.
 - `Repository` - The VCS repository where the codebase is stored.
+- `Owner` - The owner of the application.
 
 ```csharp
 using Haya;
@@ -53,6 +54,7 @@ The `CollaboratorAttribute` attribute has the following properties:
 - `AppName` - The name of the collaborator application.
 - `System` - The system that the collaborator belongs to.
 - `Repository` - The VCS repository where the collaborator codebase is stored.
+- `Owner` - The owner of the collaborating system or application.
 
 ```csharp
 [Collaborator(AppName = "Shipping Service",

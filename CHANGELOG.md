@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [O.0.4] - 2024-09-27
+
+### Added
 - `Technology` field to the `CollaboratorAttribute` attribute.
 - `describe` command to the `Haya.Tool` for outputting json or yaml description.
 - `diagram` command for outputting diagrams with mermaid support.
