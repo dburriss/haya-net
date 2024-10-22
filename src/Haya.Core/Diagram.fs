@@ -2,7 +2,7 @@ namespace Haya.Core
 
 open Haya
 open Haya.Core.Analysis
-open FSharpPlus
+// open FSharpPlus
 
 module Diagram =
     

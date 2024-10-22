@@ -35,6 +35,7 @@
         <Compile Include="Roslyn.fs" />
         <Compile Include="Descriptor.fs" />
         <Compile Include="Types.fs" />
+        <Compile Include="String.fs" />
         <Compile Include="IO.fs" />
         <Compile Include="Serializer.fs" />
         <Compile Include="Describe.fs" />
@@ -44,7 +45,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FSharpPlus" Version="1.6.1" />
       <PackageReference Include="FuncyDown" Version="1.4.1" />
       <PackageReference Include="Microsoft.Build" Version="17.11.4" />
       <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.11.4" />
