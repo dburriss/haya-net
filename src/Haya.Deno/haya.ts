@@ -1,5 +1,6 @@
 import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
 import { Arguments } from "https://deno.land/x/yargs@v17.7.2-deno/deno-types.ts";
+import { DataFormat_Json, DescribeCommand } from "./Haya.Core/Types.ts";
 
 /*
 USAGE: haya [--help] [<subcommand> [<options>]]
@@ -44,7 +45,17 @@ yargs(Deno.args)
       });
     },
     (argv: Arguments) => {
+      let currentDirectory = Deno.cwd();
+      let format = DataFormat_Json();
+      let cmd = new DescribeCommand(
+        "./path/to/solution",
+        "./path/to/output",
+        format,
+        currentDirectory,
+      );
+
       console.info(argv);
+      console.info(cmd);
     },
   )
   .command(

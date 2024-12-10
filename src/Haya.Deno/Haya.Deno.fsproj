@@ -15,6 +15,7 @@
         <Compile Include="../Haya.Core/IO.fs"/>
         <Content Include="haya.ts" />
         <Content Include="README.md" />
+        <Content Include=".gitignore" />
     </ItemGroup>
 
     <ItemGroup>

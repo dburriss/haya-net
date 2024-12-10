@@ -36,15 +36,20 @@ This also allows for the automation of generating documentation and diagrams int
 
 ## Getting Started
 
-1. Install the Haya CLI tool
+Install the Haya CLI tool
+
 ```bash
 dotnet tool install --global Haya.Tool
 ```
-2. Add the Haya attributes package to your project.
+
+sAdd the Haya attributes package to your project.
+
 ```bash
 dotnet add package Haya
 ```
-3. Run the Haya CLI tool
+
+Run the Haya CLI tool
+
 ```bash
 haya --help
 ```
