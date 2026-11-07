@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `src/Haya.Bun`: experimental Fable → TypeScript build of the CLI running on Bun (command skeleton).
-- `global.json`, `nuget.config`, local Fable tool manifest.
+- `AGENTS.md` (with `CLAUDE.md` symlink), `global.json`, `nuget.config`, local Fable tool manifest.
 
 ### Changed
 - Target .NET 10 (`Haya` attributes stay on netstandard2.0).
