@@ -1,0 +1,19 @@
+{
+  "name": "haya-bun",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fable": "dotnet fable --lang ts --outDir fable_output",
+    "typecheck": "tsc --noEmit",
+    "start": "bun run haya.ts",
+    "build": "bun run fable && bun run typecheck && bun build --compile haya.ts --outfile dist/haya"
+  },
+  "dependencies": {
+    "yargs": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/yargs": "^17.0.35",
+    "typescript": "^7.0.2"
+  }
+}

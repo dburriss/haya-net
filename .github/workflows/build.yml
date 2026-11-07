@@ -35,3 +35,33 @@ jobs:
         run: dotnet test --configuration Release
         working-directory: ./
 
+  bun:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Tool Restore
+        run: dotnet tool restore
+
+      - name: Install
+        run: bun install --frozen-lockfile
+        working-directory: ./src/Haya.Bun
+
+      # Fable -> TypeScript, type-check, compile single binary
+      - name: Build
+        run: bun run build
+        working-directory: ./src/Haya.Bun
+
+      - name: Smoke test
+        run: ./dist/haya --help
+        working-directory: ./src/Haya.Bun

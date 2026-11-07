@@ -10,13 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `global.json` and `nuget.config`.
+- `src/Haya.Bun`: experimental Fable → TypeScript build of the CLI running on Bun (command skeleton).
+- `global.json`, `nuget.config`, local Fable tool manifest.
 
 ### Changed
 - Target .NET 10 (`Haya` attributes stay on netstandard2.0).
 - Upgraded dependencies: Roslyn 5.9, YamlDotNet 18.1, FuncyDown 1.4.2, Argu 6.2.5.
 - Tests migrated to xunit.v3 on Microsoft.Testing.Platform.
-- CI uses the SDK from `global.json`.
+- CI uses the SDK from `global.json` and builds the Bun project.
 
 ### Removed
 - FSharpPlus dependency.
