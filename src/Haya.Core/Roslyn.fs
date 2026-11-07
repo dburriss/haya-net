@@ -13,11 +13,15 @@ module Roslyn =
      | SingleMatch of ISymbol * ReferencedSymbol seq
      | NoReferences of ISymbol
 
-    let openSolution solutionPath =
+    /// Open a solution with MSBuild global properties (e.g. "Configuration", "Release").
+    /// Non-C# project references (e.g. F#) resolve via their built output for that configuration.
+    let openSolutionWith (properties: (string * string) list) (solutionPath: string) =
         task {
-            let ws = MSBuildWorkspace.Create()
+            let ws = MSBuildWorkspace.Create(properties |> dict)
             return! ws.OpenSolutionAsync(solutionPath)
         }
+
+    let openSolution solutionPath = openSolutionWith [] solutionPath
 
     /// Haya only analyses C# code. Roslyn also loads other project types (e.g. F#) but cannot compile them.
     let csharpProjects (solution: Solution) =

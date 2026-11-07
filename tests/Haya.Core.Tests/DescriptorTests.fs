@@ -5,8 +5,17 @@ open Haya
 open Haya.Core.Analysis
 open Xunit
 
+// Open the example in the configuration these tests were built with, so the
+// F# Haya project reference resolves to an assembly that exists (e.g. in clean Release CI builds).
+let configuration =
+#if DEBUG
+    "Debug"
+#else
+    "Release"
+#endif
+
 let allDescriptors = task {
-                        let! sln = "../../../../../examples/Example.sln" |> Roslyn.openSolution
+                        let! sln = "../../../../../examples/Example.sln" |> Roslyn.openSolutionWith ["Configuration", configuration]
                         return! sln |> Descriptor.getDescriptors "" Descriptor.attributeNames
                         } |> Async.AwaitTask |> Async.RunSynchronously
 
