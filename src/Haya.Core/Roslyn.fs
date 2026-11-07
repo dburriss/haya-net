@@ -19,6 +19,10 @@ module Roslyn =
             return! ws.OpenSolutionAsync(solutionPath)
         }
 
+    /// Haya only analyses C# code. Roslyn also loads other project types (e.g. F#) but cannot compile them.
+    let csharpProjects (solution: Solution) =
+        solution.Projects |> Seq.filter (fun p -> p.SupportsCompilation && p.Language = LanguageNames.CSharp)
+
     let rec ancestors (s:ISymbol) = 
         seq {   
                 yield s
@@ -59,7 +63,7 @@ module Roslyn =
     let findAllAttributesOnClasses (solution: Solution) =
         task {
             let results = ResizeArray<AttributeData>()
-            for project in solution.Projects do
+            for project in csharpProjects solution do
                 for document in project.Documents do
                     let! syntaxTree = document.GetSyntaxTreeAsync()
                     let! semanticModel = document.GetSemanticModelAsync()
@@ -84,7 +88,7 @@ module Roslyn =
     let findClassesWithAttribute (attributeFullName: string) (solution: Solution) =
         task {
             let results = ResizeArray<ISymbol>()
-            for project in solution.Projects do
+            for project in csharpProjects solution do
                 for document in project.Documents do
                     let! syntaxTree = document.GetSyntaxTreeAsync()
                     let! semanticModel = document.GetSemanticModelAsync()
@@ -103,7 +107,7 @@ module Roslyn =
     let findAssemblies (solution: Solution) =
         task {
             let results = ResizeArray<IAssemblySymbol>()
-            for project in solution.Projects do
+            for project in csharpProjects solution do
                 let! compilation = project.GetCompilationAsync()
                 let assemblySymbol = compilation.Assembly
                 results.Add(assemblySymbol)
@@ -112,7 +116,7 @@ module Roslyn =
     let findAllAssembliesWithAttribute (attributeFullName: string) (solution: Solution) =
         task {
             let results = ResizeArray<ISymbol>()
-            for project in solution.Projects do
+            for project in csharpProjects solution do
                 let! compilation = project.GetCompilationAsync()
                 let assemblySymbol = compilation.Assembly
                 if assemblySymbol.GetAttributes() |> Seq.exists (fun attr -> attr.AttributeClass.ToDisplayString() = attributeFullName) then

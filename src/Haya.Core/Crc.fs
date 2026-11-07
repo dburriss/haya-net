@@ -1,12 +1,7 @@
 namespace Haya.Core
 
-open System
-open System.Text
-open System.Text.Json
-open FSharpPlus
 open FuncyDown.Document
 open FuncyDown.Element
-open Haya
 open Haya.Core.Analysis
 
 module Crc =

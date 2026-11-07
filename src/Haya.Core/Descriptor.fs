@@ -5,7 +5,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
-open FSharpPlus
 open Haya
 
 type ResponsibilityDescriptor = {
@@ -138,14 +137,13 @@ module Descriptor =
             let! classes = attributeNames
                            |> List.map (fun n -> Roslyn.findClassesWithAttribute n solution)
                            |> Task.WhenAll
-                           |> Task.map (Seq.concat >> Seq.toList)
-                           |> Task.map (List.collect (mapDescriptors rootPath))
-            
             let! meta = attributeNames
                         |> List.map (fun n -> Roslyn.findAllAssembliesWithAttribute n solution)
-                           |> Task.WhenAll
-                           |> Task.map (Seq.concat >> Seq.toList)
-                           |> Task.map (List.collect (mapDescriptors rootPath))
+                        |> Task.WhenAll
+            let toDescriptors (symbols: ISymbol list seq) =
+                symbols |> Seq.concat |> Seq.toList |> List.collect (mapDescriptors rootPath)
+            let classes = toDescriptors classes
+            let meta = toDescriptors meta
             return classes @ meta
         }
     

@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       # Setup dotnet
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
       
       # Tool Restore
       - name: Tool Restore
@@ -34,3 +34,4 @@ jobs:
       - name: Run unit tests
         run: dotnet test --configuration Release
         working-directory: ./
+

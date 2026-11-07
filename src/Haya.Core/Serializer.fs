@@ -8,7 +8,7 @@ module Serializer =
     open System.Text.Encodings.Web
     open System.Collections.Generic
     
-    let jsonSerializerOptions =
+    let private jsonSerializerOptions =
         let opt = JsonSerializerOptions(
                 WriteIndented = true,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -25,12 +25,12 @@ module Serializer =
     let ofJson<'T> (x: string) =
         JsonSerializer.Deserialize<'T>(x, jsonSerializerOptions)
 
-    let getNumber (jEl: JsonElement) =
+    let private getNumber (jEl: JsonElement) =
         let (b,i) = jEl.TryGetInt64()
         if b then box i
         else jEl.TryGetDecimal() |> box
 
-    let getValue (jEl: JsonElement) =
+    let private getValue (jEl: JsonElement) =
         match jEl.ValueKind with
         | JsonValueKind.Number -> getNumber jEl
         | JsonValueKind.True | JsonValueKind.False -> jEl.GetBoolean() |> box

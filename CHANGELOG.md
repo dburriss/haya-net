@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `global.json` and `nuget.config`.
+
+### Changed
+- Target .NET 10 (`Haya` attributes stay on netstandard2.0).
+- Upgraded dependencies: Roslyn 5.9, YamlDotNet 18.1, FuncyDown 1.4.2, Argu 6.2.5.
+- Tests migrated to xunit.v3 on Microsoft.Testing.Platform.
+- CI uses the SDK from `global.json`.
+
+### Removed
+- FSharpPlus dependency.
+- Direct `Microsoft.Build` package references (Roslyn's MSBuild build host handles project loading).
+
+### Fixed
+- Solutions containing F# projects no longer crash analysis; only C# projects are analysed.
 
 ## [O.0.4] - 2024-09-27
 
