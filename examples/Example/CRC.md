@@ -6,29 +6,29 @@ This document describes the components, responsibilities, and collaborators for 
 
 |Responsibility|Component|
 |---|---|
-|Handles order processing|[CreditCardPaymentUsecase](/Users/devon.burriss/Documents/GitHub/haya-net/examples/Example/HayaEcomm.cs)|
+|Handles order processing|[CreditCardPaymentUsecase](HayaEcomm.cs)|
 
 ## Collaborators
 
 |Collaborator|Component|Description|
 |---|---|---|
-|Checkout|[PaymentsController](/Users/devon.burriss/Documents/GitHub/haya-net/examples/Example/HayaEcomm.cs)|Handles cart checkout for a customer|
-|Visa Payment Provider|[VisaPaymentService](/Users/devon.burriss/Documents/GitHub/haya-net/examples/Example/HayaEcomm.cs)|Handles payment processing of Visa cards|
-|Shipping Service|[ShippingService](/Users/devon.burriss/Documents/GitHub/haya-net/examples/Example/HayaEcomm.cs)|Handles shipping of orders|
+|Checkout|[PaymentsController](HayaEcomm.cs)|Handles cart checkout for a customer|
+|Visa Payment Provider|[VisaPaymentService](HayaEcomm.cs)|Handles payment processing of Visa cards|
+|Shipping Service|[ShippingService](HayaEcomm.cs)|Handles shipping of orders|
 
 ```mermaid
 C4Context
-title C4 System Diagram for HayaEcomm
-System_Ext(visa, VISA, "Handles payment processing of Visa cards")
+title C4 System Diagram for Ordering
 
 Enterprise_Boundary(Enterprise, Enterprise, "The enterprise boundary") {
   System(webshop, WebShop, "Handles cart checkout for a customer")
   System(shipping, Shipping, "Handles shipping of orders")
-  System(hayaecomm, HayaEcomm, "Handles processing payment for a shopping cart")
+  System(ordering, Ordering, "Handles processing payment for a shopping cart")
 }
+System_Ext(visa, VISA, "Handles payment processing of Visa cards")
 
-Rel(webshop, hayaecomm, "Request payment")
-Rel(hayaecomm, visa, "Process payment")
-Rel(hayaecomm, shipping, "Ship order")
+Rel(webshop, ordering, "Request payment")
+Rel(ordering, visa, "Process payment")
+Rel(ordering, shipping, "Ship order")
 
 ```
