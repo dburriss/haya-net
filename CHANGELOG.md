@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crc`, `describe`, `diagram` and `backstage` accept a `haya describe` file (`.json`, `.yaml`, `.yml`) as input
   in both `Haya.Tool` and `Haya.Bun`, so a describe file can be generated once and rendered into other formats
   (or converted json/yaml) without re-analysing the code. Decoding lives in `Haya.Core` (`Decode.fs`).
+
+### Fixed
+- `Haya.Bun` now finds annotations in workspace packages imported by name (symlinked into `node_modules`) and in
+  projects listed under tsconfig `references`; both were silently skipped before.
+
+### Added
 - `Haya.Bun` is a working CLI: `crc`, `describe`, `diagram` and `backstage` for TypeScript projects, with a static analyser
   built on the TypeScript compiler API (ADR005). Output is identical to `Haya.Tool` for the examples (`bun run parity`).
 - `src/Haya.TypeScript` (`@haya/annotations`): `@Responsibility`, `@Collaborator` and `meta()` for TypeScript, replacing

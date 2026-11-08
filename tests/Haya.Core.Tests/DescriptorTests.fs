@@ -64,6 +64,37 @@ let ``Descriptors returned for MetaAttribute`` () = task {
     Assert.Equal("org/payment-api", meta.Repository)
 }
 
+
+// Attributes split over several projects of one solution (examples/dotnet-multi):
+//   Api      (exe)     [assembly: Meta] + [Responsibility], references Adapters
+//   Adapters (library) [Collaborator]
+//   Orphan   (library) [Responsibility], in the solution but referenced by nobody
+let multiProjectDescriptors = task {
+                                let! sln = "../../../../../examples/dotnet-multi/MultiProject.sln" |> Roslyn.openSolutionWith ["Configuration", configuration]
+                                return! sln |> Descriptors.getDescriptors "" Descriptors.attributeNames
+                                } |> Async.AwaitTask |> Async.RunSynchronously
+
+[<Fact>]
+let ``Multi-project: Meta from the program assembly is found`` () =
+    let meta = multiProjectDescriptors |> Descriptor.metas |> List.exactlyOne
+    Assert.Equal("PaymentsApi", meta.AppName)
+
+[<Fact>]
+let ``Multi-project: Collaborator in a referenced adapter project is found`` () =
+    let c = multiProjectDescriptors |> filterToComponentName "VisaAdapter" |> Descriptor.collaborators |> List.exactlyOne
+    Assert.Equal("Visa", c.AppName)
+    Assert.Contains("Adapters.cs", c.ComponentSource)
+
+[<Fact>]
+let ``Multi-project: Responsibility in the program project is found`` () =
+    let r = multiProjectDescriptors |> filterToComponentName "PayUsecase" |> Descriptor.responsibilities |> List.exactlyOne
+    Assert.Contains("Program.cs", r.ComponentSource)
+
+[<Fact>]
+let ``Multi-project: projects in the solution are analysed even when nothing references them`` () =
+    let r = multiProjectDescriptors |> filterToComponentName "Lonely" |> Descriptor.responsibilities |> List.exactlyOne
+    Assert.Contains("Orphan.cs", r.ComponentSource)
+
 [<Fact>]
 let ``Describe output decodes back to the same descriptors in json and yaml`` () =
     let serialize format descriptors =

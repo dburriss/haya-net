@@ -175,3 +175,70 @@ describe("input", () => {
     expect(() => analyse(empty, empty)).toThrow(/No tsconfig\.json/);
   });
 });
+
+// Annotations split over several packages: `api` holds meta() and a @Responsibility, `adapters` a @Collaborator.
+describe("multiple packages", () => {
+  const compilerOptions = { target: "ES2022", module: "ESNext", moduleResolution: "bundler", allowImportingTsExtensions: true, strict: true };
+  const adapterSource =
+    imports + `@Collaborator({ appName: "Visa", relationship: Relationship.External })\nexport class VisaAdapter {}\n`;
+  const apiSource = (from: string) =>
+    imports +
+    `import { VisaAdapter } from "${from}";
+meta({ appName: "PaymentsApi" });
+@Responsibility({ description: "Orchestrates payments" })
+export class PayUsecase { adapter = new VisaAdapter(); }\n`;
+
+  /** A monorepo with `adapters` and `api` packages. `link` decides how `api` reaches `adapters`. */
+  const monorepo = (link: "relative" | "workspace" | "references" | "root"): string => {
+    const root = mkdtempSync(join(tmpdir(), "haya-monorepo-"));
+    roots.push(root);
+    mkdirSync(join(root, "node_modules/@haya"), { recursive: true });
+    symlinkSync(annotations, join(root, "node_modules/@haya/annotations"));
+    const write = (name: string, text: string) => {
+      mkdirSync(dirname(join(root, name)), { recursive: true });
+      writeFileSync(join(root, name), text);
+    };
+    write("adapters/package.json", '{"name":"@acme/adapters","type":"module","main":"./src/index.ts","types":"./src/index.ts"}');
+    write("adapters/src/index.ts", adapterSource);
+    write("api/package.json", '{"name":"@acme/api","type":"module"}');
+    const from = link === "relative" ? "../../adapters/src/index.ts" : "@acme/adapters";
+    write("api/src/main.ts", apiSource(from));
+    if (link === "workspace" || link === "references") {
+      mkdirSync(join(root, "node_modules/@acme"), { recursive: true });
+      symlinkSync(join(root, "adapters"), join(root, "node_modules/@acme/adapters"));
+    }
+    if (link === "references") {
+      write("adapters/tsconfig.json", JSON.stringify({ compilerOptions: { ...compilerOptions, composite: true, emitDeclarationOnly: true, declaration: true, outDir: "dist" }, include: ["src"] }));
+      write("api/tsconfig.json", JSON.stringify({ compilerOptions: { ...compilerOptions, noEmit: true }, include: ["src"], references: [{ path: "../adapters" }] }));
+    } else {
+      write("api/tsconfig.json", JSON.stringify({ compilerOptions: { ...compilerOptions, noEmit: true }, include: ["src"] }));
+    }
+    if (link === "root") {
+      write("tsconfig.json", JSON.stringify({ compilerOptions: { ...compilerOptions, noEmit: true }, include: ["api/src", "adapters/src"] }));
+    }
+    return root;
+  };
+  const names = (d: DescriptorInfo[]) => d.flatMap((x) => (x.kind === "meta" ? [] : [x.componentName])).sort();
+
+  test("collaborator in another package is found via a relative import", () => {
+    const root = monorepo("relative");
+    const found = analyse(join(root, "api"), root);
+    expect(names(found)).toEqual(["PayUsecase", "VisaAdapter"]);
+    expect(found.filter((x) => x.kind === "meta")).toHaveLength(1);
+  });
+
+  test("collaborator in another package is found when one tsconfig covers both", () => {
+    const root = monorepo("root");
+    expect(names(analyse(root, root))).toEqual(["PayUsecase", "VisaAdapter"]);
+  });
+
+  test("collaborator in a workspace package imported by name is found", () => {
+    const root = monorepo("workspace");
+    expect(names(analyse(join(root, "api"), root))).toEqual(["PayUsecase", "VisaAdapter"]);
+  });
+
+  test("collaborator in a project-referenced package is found", () => {
+    const root = monorepo("references");
+    expect(names(analyse(join(root, "api"), root))).toEqual(["PayUsecase", "VisaAdapter"]);
+  });
+});

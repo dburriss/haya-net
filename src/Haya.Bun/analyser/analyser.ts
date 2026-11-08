@@ -149,7 +149,25 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
   const fatal = parsed.errors.filter((d) => d.category === ts.DiagnosticCategory.Error && d.code !== 18003);
   if (fatal.length > 0) throw new AnalysisError(configProblems(fatal));
 
-  const program = ts.createProgram({ rootNames: parsed.fileNames, options: parsed.options });
+  // Project references normally resolve to the referenced project's .d.ts output, which hides its annotations.
+  // Analyse the sources of every referenced project (transitively) as part of this program instead.
+  const rootNames = new Set(parsed.fileNames);
+  const seenConfigs = new Set([configPath]);
+  const addReferences = (refs: readonly ts.ProjectReference[] | undefined): void => {
+    for (const ref of refs ?? []) {
+      const refConfig = ts.resolveProjectReferencePath(ref);
+      if (seenConfigs.has(refConfig)) continue;
+      seenConfigs.add(refConfig);
+      const refRead = ts.readConfigFile(refConfig, ts.sys.readFile);
+      if (refRead.error) throw new AnalysisError(configProblems([refRead.error]));
+      const refParsed = ts.parseJsonConfigFileContent(refRead.config, ts.sys, path.dirname(refConfig), undefined, refConfig);
+      refParsed.fileNames.forEach((f) => rootNames.add(f));
+      addReferences(refParsed.projectReferences);
+    }
+  };
+  addReferences(parsed.projectReferences);
+
+  const program = ts.createProgram({ rootNames: [...rootNames], options: parsed.options });
   const checker = program.getTypeChecker();
   const problems: Problem[] = [];
 
@@ -304,12 +322,20 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
     .filter(
       (sf) =>
         !sf.isDeclarationFile &&
-        !program.isSourceFileFromExternalLibrary(sf) &&
+        // Skip installed packages by path, not by `isSourceFileFromExternalLibrary`: a workspace package linked into
+        // node_modules resolves to its real path outside node_modules and must be analysed.
         !program.isSourceFileDefaultLibrary(sf) &&
         !sf.fileName.split("/").includes("node_modules"),
     )
     .sort((a, b) => (a.fileName < b.fileName ? -1 : a.fileName > b.fileName ? 1 : 0));
-  for (const sf of sources) visit(sf, sf);
+  // A file can be in the program twice, as a root and again through a symlinked package path: visit it once.
+  const visited = new Set<string>();
+  for (const sf of sources) {
+    const real = fs.realpathSync(sf.fileName);
+    if (visited.has(real)) continue;
+    visited.add(real);
+    visit(sf, sf);
+  }
 
   if (metas.length > 1) {
     for (const m of metas.slice(1)) problemAt(m.node, "meta() can only be called once per project");
