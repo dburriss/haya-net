@@ -26,7 +26,7 @@ only the CLI skeleton exists.
 | `src/Haya.Bun` | Haya for TypeScript codebases (WIP). Bun CLI in TS; shares `Haya.Core` model/rendering via Fable (linked `.fs` files). See its README. |
 | `tests/Haya.Core.Tests` | xunit.v3 tests; load `examples/dotnet/Example.sln` via Roslyn. |
 | `examples/dotnet/Example` | C# sample annotated with Haya attributes; used by tests. |
-| `DECISIONLOG.md` / `CHANGELOG.md` | Record design decisions / user-visible changes here. |
+| `docs/adr/` / `CHANGELOG.md` | Record design decisions (one `ADRnnn-description.md` each) / user-visible changes here. |
 
 ## Toolchain
 
