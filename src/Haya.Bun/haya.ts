@@ -1,55 +1,102 @@
-// Entry point for the Bun build of the Haya CLI.
-// F# code from Haya.Core is compiled to TypeScript by Fable into ./fable_output (see README.md).
+// Entry point for the Bun build of the Haya CLI: the TypeScript counterpart of `Haya.Tool` (src/Haya.Tool/Cli.fs).
+// Rendering is F# from Haya.Core compiled to TypeScript by Fable into ./fable_output (see README.md);
+// analysis is the TypeScript analyser in ./analyser.
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { analyse, AnalysisError } from "./analyser/analyser.ts";
+import { toFableDescriptors } from "./analyser/bridge.ts";
 import {
+  BackstageCommand,
+  CrcCommand,
   DataFormat_Json,
   DataFormat_Yaml,
   DescribeCommand,
+  DiagramCommand,
+  DiagramFormat,
+  DiagramType,
 } from "./fable_output/Haya.Core/Types.ts";
 import { IO_write } from "./fable_output/Haya.Core/IO.ts";
-import { toString } from "./fable_output/fable_modules/fable-library-ts.5.27.0/Types.ts";
+import { serialize } from "./fable_output/Haya.Core/Describe.ts";
+import { sprintMarkdown } from "./fable_output/Haya.Core/Crc.ts";
+import { generateDiagram } from "./fable_output/Haya.Core/Diagram.ts";
+import { generateCatalog } from "./fable_output/Haya.Core/Backstage.ts";
 
-const notImplemented = (name: string) => () => {
-  console.error(`'${name}' is not implemented in the Bun build yet.`);
-  process.exitCode = 1;
+type Format = "json" | "yaml";
+
+const dataFormat = (f: Format) => (f === "yaml" ? DataFormat_Yaml() : DataFormat_Json());
+const defaultFile = (format: Format, name: string) => `./${name}.${format}`;
+
+/** Analyse, render and write; prints the success message like `Haya.Tool` or an error with exit code 1. */
+const exec = (label: string, inputPath: string, outputPath: string, render: (descriptors: ReturnType<typeof toFableDescriptors>) => string) => {
+  try {
+    const descriptors = toFableDescriptors(analyse(inputPath, process.cwd()));
+    const result = IO_write(outputPath, render(descriptors));
+    if (result.tag === 0) console.info(`${label} successfully generated from ${inputPath}`);
+    else {
+      console.error(`Error: ${result.fields[0]}`);
+      process.exitCode = 1;
+    }
+  } catch (e) {
+    console.error(e instanceof AnalysisError ? `Error: ${e.message}` : `Error: ${e instanceof Error ? e.message : String(e)}`);
+    process.exitCode = 1;
+  }
 };
+
+const inputPath = (y: ReturnType<typeof yargs>) =>
+  y.positional("inputPath", { type: "string", demandOption: true, describe: "Path to tsconfig.json or a directory containing one" });
 
 await yargs(hideBin(Bun.argv))
   .scriptName("haya")
   .command(
     "crc <inputPath>",
     "Generate Components, Responsibilities, and Collaborator documentation",
-    (y) => y.positional("inputPath", { type: "string", demandOption: true }),
-    notImplemented("crc"),
+    (y) =>
+      inputPath(y)
+        .option("output-path", { alias: "o", type: "string", default: "./CRC.md", describe: "Path to output folder or file" })
+        .option("c4", { alias: "c", type: "count", describe: "Include diagram (markdown only). -c for C4 Level 1, -cc for C4 Level 2" }),
+    (argv) => {
+      const cmd = new CrcCommand(argv.inputPath, argv["output-path"], argv.c4 > 0, argv.c4 > 1, process.cwd());
+      exec("CRC", cmd.PathToSln, cmd.OutputPath, (ds) => sprintMarkdown(cmd, ds));
+    },
   )
   .command(
     "describe <inputPath>",
     "Generate Haya solution description",
     (y) =>
-      y
-        .positional("inputPath", { type: "string", demandOption: true })
-        .option("outputpath", { alias: "o", type: "string", default: "./haya.json" })
-        .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "json" as const }),
+      inputPath(y)
+        .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./haya.json)" })
+        .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "json" as const, describe: "Output format" }),
     (argv) => {
-      const format = argv.format === "yaml" ? DataFormat_Yaml() : DataFormat_Json();
-      const cmd = new DescribeCommand(argv.inputPath, argv.outputpath, format, process.cwd());
-      // Placeholder until Describe is ported: round-trips through Fable-compiled F# (types + IO).
-      const result = IO_write(cmd.OutputPath, toString(cmd) + "\n");
-      console.info(`Wrote ${cmd.OutputPath}`, result.tag === 0 ? "(ok)" : "(error)");
+      const out = argv["output-path"] ?? defaultFile(argv.format, "haya");
+      const cmd = new DescribeCommand(argv.inputPath, out, dataFormat(argv.format), process.cwd());
+      exec("Describe", cmd.PathToSln, cmd.OutputPath, (ds) => serialize(cmd, ds));
     },
   )
   .command(
     "backstage <inputPath>",
     "Generate Backstage catalog data",
-    (y) => y.positional("inputPath", { type: "string", demandOption: true }),
-    notImplemented("backstage"),
+    (y) =>
+      inputPath(y)
+        .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./backstage.yaml)" })
+        .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "yaml" as const, describe: "Output format" }),
+    (argv) => {
+      const out = argv["output-path"] ?? defaultFile(argv.format, "backstage");
+      const cmd = new BackstageCommand(argv.inputPath, out, dataFormat(argv.format), process.cwd());
+      exec("Backstage", cmd.PathToSln, cmd.OutputPath, (ds) => generateCatalog(cmd, ds));
+    },
   )
   .command(
     "diagram <inputPath>",
     "Generate diagram files",
-    (y) => y.positional("inputPath", { type: "string", demandOption: true }),
-    notImplemented("diagram"),
+    (y) =>
+      inputPath(y)
+        .option("output-path", { alias: "o", type: "string", default: "./c4-system-context.mermaid", describe: "Path to output folder or file" })
+        .option("diagram-type", { alias: "t", choices: ["c4system"] as const, default: "c4system" as const, describe: "Diagram type" })
+        .option("diagram-format", { alias: "f", choices: ["mermaid"] as const, default: "mermaid" as const, describe: "Diagram format" }),
+    (argv) => {
+      const cmd = new DiagramCommand(argv.inputPath, argv["output-path"], DiagramType.C4System, DiagramFormat.Mermaid, process.cwd());
+      exec("Diagram", cmd.PathToSln, cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
+    },
   )
   .strictCommands()
   .demandCommand(1)

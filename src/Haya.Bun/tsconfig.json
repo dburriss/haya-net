@@ -3,12 +3,21 @@
     "target": "ESNext",
     "module": "Preserve",
     "moduleResolution": "bundler",
-    "lib": ["ESNext"],
-    "types": ["bun"],
+    "lib": [
+      "ESNext"
+    ],
+    "types": [
+      "bun"
+    ],
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["haya.ts", "fable_output/**/*.ts"]
+  "include": [
+    "haya.ts",
+    "analyser/**/*.ts",
+    "scripts/**/*.ts",
+    "fable_output/**/*.ts"
+  ]
 }
