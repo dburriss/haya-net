@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `examples/typescript/example`: TypeScript equivalent of the C# example, with a placeholder `haya.ts` annotation API.
 - `src/Haya.Bun`: experimental Fable → TypeScript build of the CLI running on Bun (command skeleton).
 - `AGENTS.md` (with `CLAUDE.md` symlink), `global.json`, `nuget.config`, local Fable tool manifest.
 

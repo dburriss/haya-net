@@ -27,6 +27,7 @@ all of `Haya.Core` compiles under Fable with output identical to .NET; the TS an
 | `src/Haya.Bun` | Haya for TypeScript codebases (WIP). Bun CLI in TS; compiles `Haya.Core` (model + rendering) with Fable via a project reference. See its README. |
 | `tests/Haya.Core.Tests` | xunit.v3 tests; load `examples/dotnet/Example.sln` via Roslyn. |
 | `examples/dotnet/Example` | C# sample annotated with Haya attributes; used by tests. |
+| `examples/typescript/example` | TypeScript twin of the C# sample (decorators + `meta()`); `bun install && bun run typecheck`. No analyser yet, so its `CRC.md` is the expected output. |
 | `docs/adr/` / `CHANGELOG.md` | Record design decisions (one `ADRnnn-description.md` each) / user-visible changes here. |
 
 ## Toolchain
