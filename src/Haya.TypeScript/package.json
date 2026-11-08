@@ -1,0 +1,12 @@
+{
+  "name": "@haya/annotations",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Haya annotations (@Responsibility, @Collaborator, meta) for TypeScript codebases",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

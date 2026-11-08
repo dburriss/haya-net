@@ -1,7 +1,10 @@
-// Haya annotations for TypeScript.
+// Haya annotations for TypeScript (npm package `@haya/annotations`, see ADR005).
 //
-// Placeholder that mirrors the C# `Haya` attributes (src/Haya/Library.fs). The functions do nothing at runtime:
-// Haya reads the annotations statically from the source. This is expected to become an npm package.
+// The TypeScript counterpart of the C# `Haya` attributes (src/Haya/Library.fs). The functions do nothing at runtime:
+// the Haya analyser reads the annotations statically from the source and never runs user code.
+//
+// Option values must be static: string literals, template literals without substitutions, and `Direction.*` /
+// `Relationship.*` members. Anything else is reported as an error by the analyser.
 
 /** The direction of the data flow or dependency. */
 export enum Direction {
@@ -31,7 +34,7 @@ export interface CollaboratorOptions {
   direction?: Direction;
   /** The technology used by the collaborator. */
   technology?: string;
-  /** The technology or protocol used to communicate with the collaborator (default: HTTPS). */
+  /** The technology or protocol used to communicate with the collaborator (unset is reported as empty). */
   protocol?: string;
   /** A description of the data or dependency flowing between the component and the collaborator. */
   dataDescription?: string;

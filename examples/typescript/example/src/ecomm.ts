@@ -1,4 +1,4 @@
-import { Collaborator, Direction, meta, Relationship, Responsibility } from "./haya.ts";
+import { Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";
 
 meta({
   appName: "PaymentsApi",
