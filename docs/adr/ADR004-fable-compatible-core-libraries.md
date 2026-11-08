@@ -34,3 +34,9 @@ under Fable. Current dependencies are not Fable-compatible:
     JSON/YAML and `backstage` output for `examples/dotnet/Example.sln` before and after, and keep Backstage output
     identical where consumers depend on it.
   - Flexi.Json and Flexi.Yaml are pre-1.0 (0.1.0).
+
+### Status update (2026-11-08)
+`Serializer.fs` now uses Flexi.Json and Flexi.Yaml with encoders in `Encode.fs`; System.Text.Json and YamlDotNet
+are gone from `Haya.Core`. On `examples/dotnet/Example.sln` JSON output is byte-identical. YAML parses to the same data
+except `version`, which is now the string `'0.0'` (it was previously emitted as a plain scalar that parses as a float).
+Layout differs: sequences are indented and mapping items start on a new line. `Crc.fs` (FuncyDown) remains.

@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AGENTS.md` (with `CLAUDE.md` symlink), `global.json`, `nuget.config`, local Fable tool manifest.
 
 ### Changed
+- JSON/YAML output is written with Flexi.Json and Flexi.Yaml via explicit encoders (ADR004), replacing
+  System.Text.Json and YamlDotNet. JSON is unchanged. YAML is equivalent but laid out differently: sequences are
+  indented under their key, sequence items that are mappings start on a new line, and `version` is now the
+  string `'0.0'` (previously it parsed as a float).
 - Roslyn analysis moved out of `Haya.Core` into the new `Haya.Roslyn` project (ADR003). `Haya.Core` no longer
   references Roslyn or `Haya`; `Direction`/`Relationship` now also live in `Haya.Core.Analysis`. CLI output is unchanged.
 - Target .NET 10 (`Haya` attributes stay on netstandard2.0).
