@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AGENTS.md` (with `CLAUDE.md` symlink), `global.json`, `nuget.config`, local Fable tool manifest.
 
 ### Changed
+- `Haya.Bun` references `Haya.Core` as a whole and compiles all of it with Fable (previously three linked files).
 - `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 - JSON/YAML output is written with Flexi.Json and Flexi.Yaml via explicit encoders (ADR004), replacing
   System.Text.Json and YamlDotNet. JSON is unchanged. YAML is equivalent but laid out differently: sequences are
@@ -46,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `diagram` command for outputting diagrams. Currently only mermaid support.
 
 ### Changed
+- `Haya.Bun` references `Haya.Core` as a whole and compiles all of it with Fable (previously three linked files).
 - `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 
 - Json output of `componentSource` is now relative to the executing directory.
@@ -64,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added this changelog
 
 ### Changed
+- `Haya.Bun` references `Haya.Core` as a whole and compiles all of it with Fable (previously three linked files).
 - `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 
 - Attributes are now published independently in the `Haya` package
@@ -94,6 +97,7 @@ Initial release of the project.
 ### Fixed
 
 ### Changed
+- `Haya.Bun` references `Haya.Core` as a whole and compiles all of it with Fable (previously three linked files).
 - `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 
 ### Removed

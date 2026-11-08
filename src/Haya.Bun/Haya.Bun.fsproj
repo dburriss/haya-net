@@ -7,9 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="../Haya.Core/Types.fs" />
-        <Compile Include="../Haya.Core/String.fs" />
-        <Compile Include="../Haya.Core/IO.fs" />
+        <ProjectReference Include="../Haya.Core/Haya.Core.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

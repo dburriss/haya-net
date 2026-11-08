@@ -35,3 +35,9 @@ TypeScript tooling for TS) produce descriptors; `Haya.Core` renders them.
   - Everything in `Haya.Core` must stay Fable-compatible, so .NET-only libraries cannot be used there.
   - Requires migrating `Descriptor.fs` and the dependent renderers; verify by diffing `describe`, `crc --c4`,
     `diagram` and `backstage` output for `examples/dotnet/Example.sln` before and after.
+
+### Status update (2026-11-08)
+Implemented. `Haya.Core` has no Roslyn or `Haya` dependency (its own `Direction`/`Relationship` enums mirror the
+attribute ones), and `Haya.Bun` now references `Haya.Core` as a project: Fable compiles every file, and feeding the .NET
+baseline descriptors through the compiled TS under Bun reproduces the .NET `describe` (JSON, YAML), `crc`, `diagram` and
+`backstage` output byte for byte.

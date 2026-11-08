@@ -14,7 +14,7 @@ codebases: the same concepts (Responsibility, Collaborator, Meta), the same comm
 (`crc`, `describe`, `diagram`, `backstage`), and the same output formats, so both stacks produce
 equivalent docs. Analysis is language-specific (Roslyn for C#, TS tooling for TypeScript);
 the model and rendering are shared F# in `Haya.Core`, compiled to TS with Fable. Status: early,
-only the CLI skeleton exists.
+all of `Haya.Core` compiles under Fable with output identical to .NET; the TS analyser and CLI wiring are missing.
 
 ## Layout
 
@@ -24,7 +24,7 @@ only the CLI skeleton exists.
 | `src/Haya.Core` | Language-neutral model + rendering (no Roslyn, see ADR003): `Model.fs` (descriptors), `Types.fs`, `IO.fs`, `Serializer.fs` + `Encode.fs` (Flexi.Json/Flexi.Yaml, no reflection), `Markdown.fs` (internal markdown builder, no deps), `Describe/Diagram/Crc/Backstage.fs`. |
 | `src/Haya.Roslyn` | C# analysis: `Roslyn.fs` and `Descriptors.fs` (attributes → `Haya.Core` descriptors). .NET only. |
 | `src/Haya.Tool` | Argu CLI (`haya` dotnet tool, wires `Haya.Roslyn` to `Haya.Core`): `crc`, `describe`, `diagram`, `backstage`. |
-| `src/Haya.Bun` | Haya for TypeScript codebases (WIP). Bun CLI in TS; shares `Haya.Core` model/rendering via Fable (linked `.fs` files). See its README. |
+| `src/Haya.Bun` | Haya for TypeScript codebases (WIP). Bun CLI in TS; compiles `Haya.Core` (model + rendering) with Fable via a project reference. See its README. |
 | `tests/Haya.Core.Tests` | xunit.v3 tests; load `examples/dotnet/Example.sln` via Roslyn. |
 | `examples/dotnet/Example` | C# sample annotated with Haya attributes; used by tests. |
 | `docs/adr/` / `CHANGELOG.md` | Record design decisions (one `ADRnnn-description.md` each) / user-visible changes here. |
@@ -53,7 +53,7 @@ cd src/Haya.Bun && bun install && bun run build && ./dist/haya --help
 - F# compile order matters: add new files to the `<Compile>` list in the `.fsproj` in dependency order.
 - Keep the C# and TypeScript sides at feature parity: a new concept, command or output format should
   land in shared `Haya.Core` code and be wired up on both sides (or tracked as a gap).
-- Shared code linked into `Haya.Bun` (currently `Types.fs`, `String.fs`, `IO.fs`) must compile under
+- All of `Haya.Core` is compiled by Fable into `Haya.Bun` (project reference), so it must compile under
   Fable: no .NET-only APIs (Roslyn, reflection-based serializers), use `#if FABLE_COMPILER`
   for platform code (JS side uses `node:fs`, which Bun implements). Prefer moving rendering logic into
   Fable-compatible files so both sides reuse it.
