@@ -15,7 +15,7 @@ let configuration =
 #endif
 
 let allDescriptors = task {
-                        let! sln = "../../../../../examples/Example.sln" |> Roslyn.openSolutionWith ["Configuration", configuration]
+                        let! sln = "../../../../../examples/dotnet/Example.sln" |> Roslyn.openSolutionWith ["Configuration", configuration]
                         return! sln |> Descriptor.getDescriptors "" Descriptor.attributeNames
                         } |> Async.AwaitTask |> Async.RunSynchronously
 
@@ -27,7 +27,7 @@ let filterToComponentName (componentName: string) (descriptors: Descriptor list)
 
 [<Fact>]
 let ``Can find solution for tests`` () =
-    let path = "../../../../../examples/Example.sln"
+    let path = "../../../../../examples/dotnet/Example.sln"
     let exists = System.IO.File.Exists(path)
     Assert.True(exists)
 

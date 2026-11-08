@@ -18,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{CE
 		examples\README.md = examples\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "examples\Example\Example.csproj", "{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "examples\dotnet\Example\Example.csproj", "{2FE6E011-9EEC-4C10-B609-38BC8A94ED75}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya", "src\Haya\Haya.fsproj", "{7F9AD90D-EC11-41F9-A0D1-4CC62DFBF2F2}"
 EndProject

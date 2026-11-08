@@ -6,7 +6,7 @@ Haya automates the generating of documentation and diagrams for a .NET codebase.
 It uses attributes to define concepts like Responsibilities and Collaborators.
 The tool uses these concepts to generate CRC descriptions and C4 Level 1 diagrams.
 
-See the *examples* folder of the [attribute annotations](examples/Example/HayaEcomm.cs) and the [generated CRC](examples/Example/CRC.md).
+See the *examples* folder of the [attribute annotations](examples/dotnet/Example/HayaEcomm.cs) and the [generated CRC](examples/dotnet/Example/CRC.md).
  
 > **Note:** This currently only works for C# codebases.
 

@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "Example\Example.csproj", "{5116291D-FD79-4AFD-BF2C-B9373449B909}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya.Core", "..\src\Haya.Core\Haya.Core.fsproj", "{0D3B4992-73E0-4701-A601-A4A92D84AAB5}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Haya.Core", "..\..\src\Haya.Core\Haya.Core.fsproj", "{0D3B4992-73E0-4701-A601-A4A92D84AAB5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
