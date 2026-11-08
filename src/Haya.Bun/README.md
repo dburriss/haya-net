@@ -10,7 +10,7 @@ imports the generated code. `Haya.Core` must stay free of .NET-only dependencies
 
 Status: all of `Haya.Core` (model, `Describe`, `Crc`, `Diagram`, `Backstage`) compiles with Fable and, given the same
 descriptors, produces output identical to the .NET build. What is missing is a TypeScript analyser that produces
-descriptors, and the CLI wiring. The command skeleton exists:  `describe` constructs a Fable-compiled `DescribeCommand` and writes it
+descriptors, and the CLI wiring. Today `describe` only constructs a Fable-compiled `DescribeCommand` and writes it
 out via the Fable-compiled `IO.write`; the other commands are not implemented yet.
 
 ## Prerequisites
