@@ -8,6 +8,12 @@ This directory contains examples of how to use the Haya attributes to generate d
 | TypeScript | [ecomm.ts](typescript/example/src/ecomm.ts) | [CRC.md](typescript/example/CRC.md) |
 
 Both describe the same application. The TypeScript annotations are class decorators (`@Responsibility`, `@Collaborator`)
-and a top level `meta({...})` call, defined in [haya.ts](typescript/example/src/haya.ts). They are a placeholder until
-there is an npm package, and the TypeScript analyser that reads them does not exist yet, so the TypeScript `CRC.md` is the
-expected output (it is the C# output with the source path changed), not generated.
+and a top level `meta({...})` call, imported from [`@haya/annotations`](../src/Haya.TypeScript). Both `CRC.md` files are
+generated (`haya crc -c`); for the TypeScript example run `bun install` once, then, from `typescript/example`:
+
+```bash
+bun run ../../../src/Haya.Bun/haya.ts crc -c .
+```
+
+`bun run parity` in `src/Haya.Bun` runs both tools on these examples and diffs every output. The only substitution is
+the source path (`HayaEcomm.cs` becomes `src/ecomm.ts`).
