@@ -21,8 +21,9 @@ only the CLI skeleton exists.
 | Path | What |
 | --- | --- |
 | `src/Haya` | Attribute definitions. **netstandard2.0** on purpose (consumed by user projects). NuGet `Haya`. |
-| `src/Haya.Core` | Analysis + rendering: `Roslyn.fs`, `Descriptor.fs`, `Types.fs`, `IO.fs`, `Serializer.fs`, `Describe/Diagram/Crc/Backstage.fs`. |
-| `src/Haya.Tool` | Argu CLI (`haya` dotnet tool): `crc`, `describe`, `diagram`, `backstage`. |
+| `src/Haya.Core` | Language-neutral model + rendering (no Roslyn, see ADR003): `Model.fs` (descriptors), `Types.fs`, `IO.fs`, `Serializer.fs`, `Describe/Diagram/Crc/Backstage.fs`. Still has non-Fable deps to remove (ADR004). |
+| `src/Haya.Roslyn` | C# analysis: `Roslyn.fs` and `Descriptors.fs` (attributes → `Haya.Core` descriptors). .NET only. |
+| `src/Haya.Tool` | Argu CLI (`haya` dotnet tool, wires `Haya.Roslyn` to `Haya.Core`): `crc`, `describe`, `diagram`, `backstage`. |
 | `src/Haya.Bun` | Haya for TypeScript codebases (WIP). Bun CLI in TS; shares `Haya.Core` model/rendering via Fable (linked `.fs` files). See its README. |
 | `tests/Haya.Core.Tests` | xunit.v3 tests; load `examples/dotnet/Example.sln` via Roslyn. |
 | `examples/dotnet/Example` | C# sample annotated with Haya attributes; used by tests. |

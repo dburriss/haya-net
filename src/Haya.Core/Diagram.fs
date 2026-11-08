@@ -1,6 +1,5 @@
 namespace Haya.Core
 
-open Haya
 open Haya.Core.Analysis
 
 

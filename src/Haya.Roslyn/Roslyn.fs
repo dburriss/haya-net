@@ -1,4 +1,4 @@
-namespace Haya.Core.Analysis
+namespace Haya.Roslyn
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp.Syntax

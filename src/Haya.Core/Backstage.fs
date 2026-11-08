@@ -3,7 +3,6 @@ namespace Haya.Core
 open System.Text.RegularExpressions
 
 module Backstage =
-    open Haya
     let private toKebabCase (input: string) =
         let pattern = @"([a-z])([A-Z])"
         let replacement = "$1-$2"

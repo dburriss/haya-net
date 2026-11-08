@@ -3,6 +3,7 @@ module DescriptorTests
 open Example
 open Haya
 open Haya.Core.Analysis
+open Haya.Roslyn
 open Xunit
 
 // Open the example in the configuration these tests were built with, so the
@@ -16,7 +17,7 @@ let configuration =
 
 let allDescriptors = task {
                         let! sln = "../../../../../examples/dotnet/Example.sln" |> Roslyn.openSolutionWith ["Configuration", configuration]
-                        return! sln |> Descriptor.getDescriptors "" Descriptor.attributeNames
+                        return! sln |> Descriptors.getDescriptors "" Descriptors.attributeNames
                         } |> Async.AwaitTask |> Async.RunSynchronously
 
 let filterToComponentName (componentName: string) (descriptors: Descriptor list) =

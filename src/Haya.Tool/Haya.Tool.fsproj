@@ -40,6 +40,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Haya.Core\Haya.Core.fsproj" />
+      <ProjectReference Include="..\Haya.Roslyn\Haya.Roslyn.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AGENTS.md` (with `CLAUDE.md` symlink), `global.json`, `nuget.config`, local Fable tool manifest.
 
 ### Changed
+- Roslyn analysis moved out of `Haya.Core` into the new `Haya.Roslyn` project (ADR003). `Haya.Core` no longer
+  references Roslyn or `Haya`; `Direction`/`Relationship` now also live in `Haya.Core.Analysis`. CLI output is unchanged.
 - Target .NET 10 (`Haya` attributes stay on netstandard2.0).
 - Upgraded dependencies: Roslyn 5.9, YamlDotNet 18.1, FuncyDown 1.4.2, Argu 6.2.5.
 - Tests migrated to xunit.v3 on Microsoft.Testing.Platform.

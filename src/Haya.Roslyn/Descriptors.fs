@@ -1,4 +1,4 @@
-namespace Haya.Core.Analysis
+namespace Haya.Roslyn
 
 open System
 open System.Collections.Generic
@@ -6,46 +6,10 @@ open System.Collections.Immutable
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Haya
+open Haya.Core.Analysis
 
-type ResponsibilityDescriptor = {
-    Description: string
-    ComponentName: string
-    ComponentSource: string
-}
-
-// type Direction = Upstream | Downstream
-// type Relationship = Owned | Shared | Internal | External
-
-type CollaboratorDescriptor = {
-    Direction: Direction
-    Tech: string
-    Protocol: string
-    DataDescription: string
-    Description: string
-    AppName: string
-    System: string
-    Relationship: Relationship
-    ComponentName: string
-    ComponentSource: string
-    Repository: string
-    Owner: string
-}
-
-type MetaDescriptor = {
-    AppName: string
-    Description: string
-    System: string
-    Repository: string
-    Owner: string
-}
-
-type Descriptor =
-    | Responsibility of ResponsibilityDescriptor
-    | Collaborator of CollaboratorDescriptor
-    | Meta of MetaDescriptor
-    
-
-module Descriptor =
+/// Builds Haya descriptors from the Haya attributes found in a C# solution with Roslyn.
+module Descriptors =
     let attributeNames = [typeof<ResponsibilityAttribute>.FullName; typeof<CollaboratorAttribute>.FullName; typeof<MetaAttribute>.FullName]
     let makeRelativePath (baseDir: string) (targetPath: string) =
         let baseUri = Uri(baseDir.TrimEnd('/') + "/")
@@ -146,12 +110,3 @@ module Descriptor =
             let meta = toDescriptors meta
             return classes @ meta
         }
-    
-    let collaborators (descriptors: Descriptor list) =
-        descriptors |> List.choose (function | Collaborator x -> Some x | _ -> None)
-    
-    let responsibilities (descriptors: Descriptor list) =
-        descriptors |> List.choose (function | Responsibility x -> Some x | _ -> None) 
-    
-    let metas (descriptors: Descriptor list) =
-        descriptors |> List.choose (function | Meta x -> Some x | _ -> None) 

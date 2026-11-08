@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+
+        <Version>0.0.1</Version>
+        <VersionSuffix>alpha1</VersionSuffix>
+
+        <Title>Haya.Roslyn</Title>
+        <Description>
+        Roslyn based analysis of C# solutions for Haya. Finds the Haya attributes and produces Haya.Core descriptors.
+        </Description>
+        <PackageTags>documentation,c4,mermaid,crc,roslyn</PackageTags>
+
+        <PackageId>Haya.Roslyn</PackageId>
+        <Authors>Devon Burriss</Authors>
+        <Copyright>Devon Burriss</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/dburriss/heya-net</RepositoryUrl>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+
+        <PublishAot>false</PublishAot>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="Roslyn.fs" />
+        <Compile Include="Descriptors.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.CodeAnalysis" Version="5.9.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.9.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Haya\Haya.fsproj" />
+      <ProjectReference Include="..\Haya.Core\Haya.Core.fsproj" />
+    </ItemGroup>
+
+</Project>

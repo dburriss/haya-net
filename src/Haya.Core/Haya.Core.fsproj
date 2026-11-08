@@ -32,9 +32,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Roslyn.fs" />
-        <Compile Include="Descriptor.fs" />
         <Compile Include="Types.fs" />
+        <Compile Include="Model.fs" />
         <Compile Include="String.fs" />
         <Compile Include="IO.fs" />
         <Compile Include="Serializer.fs" />
@@ -46,13 +45,7 @@
 
     <ItemGroup>
       <PackageReference Include="FuncyDown" Version="1.4.2" />
-      <PackageReference Include="Microsoft.CodeAnalysis" Version="5.9.0" />
-      <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.9.0" />
       <PackageReference Include="YamlDotNet" Version="18.1.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Haya\Haya.fsproj" />
     </ItemGroup>
 
 </Project>

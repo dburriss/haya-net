@@ -63,6 +63,7 @@ type CliArguments =
 
 module Cli =
     open Haya.Core.Analysis
+    open Haya.Roslyn
     open System
     
     let defaultFile format filename =
@@ -90,7 +91,7 @@ module Cli =
         if IO.File.Exists(pathToSln) then
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
-                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
             
             return
                 Describe.serialize cmd descriptors
@@ -122,7 +123,7 @@ module Cli =
         if IO.File.Exists(pathToSln) then
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
-                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
             return
                 Crc.sprintMarkdown cmd descriptors
                 |> IO.write cmd.OutputPath
@@ -151,7 +152,7 @@ module Cli =
         if IO.fileExists pathToSln then
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
-                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
             return
                 Backstage.generateCatalog cmd descriptors
                 |> IO.write cmd.OutputPath
@@ -182,7 +183,7 @@ module Cli =
         if IO.fileExists pathToSln then
             let! sln = pathToSln |> Roslyn.openSolution
             let! descriptors =
-                sln |> Descriptor.getDescriptors cmd.CurrentDirectory Descriptor.attributeNames
+                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
             return
                 Diagram.generateDiagram cmd descriptors
                 |> IO.write cmd.OutputPath
