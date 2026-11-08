@@ -59,14 +59,20 @@ module Encode =
             "owner", str x.Owner
         ]
 
-    /// The document written by `describe`. `meta` is omitted when there is none.
-    let description (version: string) (descriptors: Descriptor list) =
+    /// One app of the document written by `describe`. `meta` is omitted when there is none.
+    let app (x: App) =
         record [
-            "collaborators", descriptors |> Descriptor.collaborators |> List.map collaborator |> List.toArray |> JsonValue.Array
-            match descriptors |> Descriptor.metas |> List.tryHead with
+            "collaborators", x.Collaborators |> List.map collaborator |> List.toArray |> JsonValue.Array
+            match x.Meta with
             | Some m -> "meta", meta m
             | None -> ()
-            "responsibilities", descriptors |> Descriptor.responsibilities |> List.map responsibility |> List.toArray |> JsonValue.Array
+            "responsibilities", x.Responsibilities |> List.map responsibility |> List.toArray |> JsonValue.Array
+        ]
+
+    /// The document written by `describe`: `{ apps: [...], version }`.
+    let description (version: string) (apps: App list) =
+        record [
+            "apps", apps |> List.map app |> List.toArray |> JsonValue.Array
             "version", str version
         ]
 

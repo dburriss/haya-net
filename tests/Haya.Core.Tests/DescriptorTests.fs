@@ -95,19 +95,83 @@ let ``Multi-project: projects in the solution are analysed even when nothing ref
     let r = multiProjectDescriptors |> filterToComponentName "Lonely" |> Descriptor.responsibilities |> List.exactlyOne
     Assert.Contains("Orphan.cs", r.ComponentSource)
 
+let private cmd format : Haya.Core.DescribeCommand =
+    { InputPaths = []; OutputPath = ""; Format = format; CurrentDirectory = "" }
+
+let private app name system (collaborators: (string * string * Relationship) list) : App =
+    { Meta = Some { AppName = name; Description = $"{name} description"; System = system; Repository = ""; Owner = "Team" }
+      Responsibilities = []
+      Collaborators =
+        collaborators
+        |> List.map (fun (cName, cSystem, rel) ->
+            { Direction = Direction.Downstream; Tech = ""; Protocol = ""; DataDescription = "uses"; Description = ""
+              AppName = cName; System = cSystem; Relationship = rel; ComponentName = ""; ComponentSource = ""
+              Repository = ""; Owner = "" }) }
+
 [<Fact>]
-let ``Describe output decodes back to the same descriptors in json and yaml`` () =
-    let serialize format descriptors =
-        Haya.Core.Describe.serialize { PathToSln = ""; OutputPath = ""; Format = format; CurrentDirectory = "" } descriptors
+let ``Describe output decodes back to the same apps in json and yaml`` () =
+    let apps = [ App.ofDescriptors allDescriptors; app "Other" "Billing" [ "Visa", "Visa", Relationship.External ] ]
     let check format fileName =
-        let text = serialize format allDescriptors
-        match Haya.Core.Decode.descriptors fileName text with
-        | Ok decoded -> Assert.Equal(text, serialize format decoded)
+        let text = Haya.Core.Describe.serialize (cmd format) apps
+        match Haya.Core.Decode.apps fileName text with
+        | Ok decoded ->
+            Assert.True((apps = decoded))
+            Assert.Equal(text, Haya.Core.Describe.serialize (cmd format) decoded)
         | Error e -> failwith e
     check Haya.Core.DataFormat.Json "haya.json"
     check Haya.Core.DataFormat.Yaml "haya.yaml"
 
 [<Fact>]
+let ``Decode reads the version 0.0 single app document`` () =
+    let legacy = """{"collaborators":[],"meta":{"appName":"A","description":"d","system":"S","repository":"","owner":"o"},"responsibilities":[{"description":"r","componentName":"C","componentSource":"c.cs"}],"version":"0.0"}"""
+    match Haya.Core.Decode.apps "x.json" legacy with
+    | Ok [ a ] ->
+        Assert.Equal("A", (App.meta a).AppName)
+        Assert.Equal(1, a.Responsibilities.Length)
+    | other -> failwithf "unexpected %A" other
+
+[<Fact>]
 let ``Decode rejects documents that are not describe output`` () =
-    Assert.True(Result.isError (Haya.Core.Decode.descriptors "x.json" "{\"foo\": 1}"))
-    Assert.True(Result.isError (Haya.Core.Decode.descriptors "x.json" "not json"))
+    Assert.True(Result.isError (Haya.Core.Decode.apps "x.json" "{\"foo\": 1}"))
+    Assert.True(Result.isError (Haya.Core.Decode.apps "x.json" "{\"apps\": [{\"foo\": 1}]}"))
+    Assert.True(Result.isError (Haya.Core.Decode.apps "x.json" "not json"))
+
+[<Fact>]
+let ``Merge combines apps with the same system and name and warns on conflicts`` () =
+    let a = app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ]
+    let b = { app "api" "ordering" [ "Visa", "Visa", Relationship.External; "Db", "Ordering", Relationship.Internal ] with
+                Meta = Some { (App.meta (app "api" "ordering" [])) with Description = "different" } }
+    let other = app "Web" "Ordering" []
+    let merged, warnings = Haya.Core.Merge.apps [ a; b; other ]
+    Assert.Equal(2, merged.Length)
+    Assert.Equal(2, merged.Head.Collaborators.Length)
+    Assert.Equal("Api", (App.meta merged.Head).AppName)
+    Assert.Single(warnings) |> ignore
+
+[<Fact>]
+let ``Merge never merges apps without a meta`` () =
+    let anon = { Meta = None; Responsibilities = []; Collaborators = [] }
+    let merged, _ = Haya.Core.Merge.apps [ anon; anon ]
+    Assert.Equal(2, merged.Length)
+
+[<Fact>]
+let ``Backstage links apps of one system instead of emitting stubs`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal; "Visa", "Visa", Relationship.External ]
+    let payments = app "Payments" "Billing" []
+    let yaml = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ api; payments ]
+    let docs = yaml.Split("---\n")
+    Assert.Equal(3, docs.Length) // api, payments, Visa stub (no Payments stub)
+    Assert.Contains("billing-payments", docs[1])
+    Assert.Contains("ordering-api", docs[1]) // payments is a dependency of api
+
+[<Fact>]
+let ``Diagram declares each system once and relates them`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal ]
+    let payments = app "Payments" "Billing" []
+    let web = app "Web" "Ordering" []
+    let text =
+        Haya.Core.Diagram.sprintMermaidC4L1 [ api; payments; web ]
+    Assert.Contains("System(ordering, Ordering,", text)
+    Assert.Contains("System(billing, Billing,", text)
+    Assert.Contains("Rel(ordering, billing, \"uses\")", text)
+    Assert.Equal(1, text.Split("System(ordering,").Length - 1)

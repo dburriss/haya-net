@@ -5,14 +5,14 @@ open System.Text
 type DataFormat = | Json | Yaml 
 
 type DescribeCommand = {
-    PathToSln: string
+    InputPaths: string list
     OutputPath: string
     Format: DataFormat
     CurrentDirectory: string
 }
 
 type CrcCommand = {
-    PathToSln: string
+    InputPaths: string list
     OutputPath: string
     IncludeL1Diagram: bool
     IncludeL2Diagram: bool
@@ -20,7 +20,7 @@ type CrcCommand = {
 }
 
 type BackstageCommand = {
-    PathToSln: string
+    InputPaths: string list
     OutputPath: string
     Format: DataFormat
     CurrentDirectory: string
@@ -29,7 +29,7 @@ type BackstageCommand = {
 type DiagramType = | C4System
 type DiagramFormat = | Mermaid
 type DiagramCommand = {
-    PathToSln: string
+    InputPaths: string list
     OutputPath: string
     DiagramType: DiagramType
     DiagramFormat: DiagramFormat

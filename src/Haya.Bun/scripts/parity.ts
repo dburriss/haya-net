@@ -38,15 +38,19 @@ const run = (cmd: string[], cwd: string) => {
 console.log("Building Haya.Tool (.NET baseline)...");
 run(["dotnet", "build", tool, "--nologo", "-v", "q"], repo);
 
+// Several describe files at once (same files fed to both tools): merge, cross-links and legacy (0.0) input.
+const fixtures = [join(repo, "src/Haya.Bun/scripts/fixtures/ordering.json"), join(repo, "src/Haya.Bun/scripts/fixtures/billing.yaml")];
+const multiCases: { file: string; args: string[] }[] = [
+  { file: "multi-describe.json", args: ["describe", "-o", "multi-describe.json"] },
+  { file: "multi-crc.md", args: ["crc", "-c", "-o", "multi-crc.md"] },
+  { file: "multi-diagram.mermaid", args: ["diagram", "-o", "multi-diagram.mermaid"] },
+  { file: "multi-backstage.yaml", args: ["backstage", "-o", "multi-backstage.yaml"] },
+];
+
 let failed = 0;
-for (const { file, args } of cases) {
-  const net = join(out, "net-" + file);
-  const bun = join(out, "bun-" + file);
-  const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
-  run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), dotnetSln], dotnetCwd);
-  run(["bun", "run", hayaTs, ...withOut(args, bun), "."], tsCwd);
+const total = cases.length + multiCases.length;
+const check = (file: string, net: string, actual: string) => {
   const expected = readFileSync(net, "utf8");
-  const actual = readFileSync(bun, "utf8").replaceAll("src/ecomm.ts", "HayaEcomm.cs");
   if (expected === actual) {
     console.log(`PASS  ${file}`);
   } else {
@@ -57,10 +61,26 @@ for (const { file, args } of cases) {
     const d = Bun.spawnSync(["diff", "-u", net, mapped], { stdout: "pipe" });
     console.log(d.stdout.toString());
   }
+};
+for (const { file, args } of multiCases) {
+  const net = join(out, "net-" + file);
+  const bun = join(out, "bun-" + file);
+  const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
+  run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), ...fixtures], dotnetCwd);
+  run(["bun", "run", hayaTs, ...withOut(args, bun), ...fixtures], tsCwd);
+  check(file, net, readFileSync(bun, "utf8"));
+}
+for (const { file, args } of cases) {
+  const net = join(out, "net-" + file);
+  const bun = join(out, "bun-" + file);
+  const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
+  run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), dotnetSln], dotnetCwd);
+  run(["bun", "run", hayaTs, ...withOut(args, bun), "."], tsCwd);
+  check(file, net, readFileSync(bun, "utf8").replaceAll("src/ecomm.ts", "HayaEcomm.cs"));
 }
 rmSync(out, { recursive: true, force: true });
 if (failed > 0) {
-  console.error(`${failed} of ${cases.length} outputs differ`);
+  console.error(`${failed} of ${total} outputs differ`);
   process.exit(1);
 }
-console.log(`All ${cases.length} outputs identical`);
+console.log(`All ${total} outputs identical`);

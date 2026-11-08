@@ -52,3 +52,22 @@ module Descriptor =
     
     let metas (descriptors: Descriptor list) =
         descriptors |> List.choose (function | Meta x -> Some x | _ -> None)
+
+
+/// One application: what a single describe file (or one analysed solution) holds.
+type App = {
+    Meta: MetaDescriptor option
+    Responsibilities: ResponsibilityDescriptor list
+    Collaborators: CollaboratorDescriptor list
+}
+
+module App =
+    let private emptyMeta = { AppName = ""; Description = ""; Owner = ""; System = ""; Repository = "" }
+
+    let ofDescriptors (descriptors: Descriptor list) =
+        { Meta = descriptors |> Descriptor.metas |> List.tryHead
+          Responsibilities = descriptors |> Descriptor.responsibilities
+          Collaborators = descriptors |> Descriptor.collaborators }
+
+    /// The app's meta, or an empty one when it has none.
+    let meta (app: App) = app.Meta |> Option.defaultValue emptyMeta

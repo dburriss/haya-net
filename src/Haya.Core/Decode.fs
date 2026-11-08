@@ -76,18 +76,29 @@ module Decode =
                Repository = str "repository" v
                Owner = str "owner" v }
 
-    let private ofDocument (doc: JsonValue) : Result<Descriptor list, string> =
+    let private isApp (doc: JsonValue) =
         match doc with
-        | JsonValue.Record _ when (prop "responsibilities" doc).IsSome || (prop "collaborators" doc).IsSome || (prop "meta" doc).IsSome ->
-            Ok [ match prop "meta" doc with
-                 | Some m -> meta m
-                 | None -> ()
-                 yield! items "responsibilities" doc |> List.map responsibility
-                 yield! items "collaborators" doc |> List.map collaborator ]
-        | _ -> Error "Not a haya describe document: expected 'responsibilities', 'collaborators' or 'meta'"
+        | JsonValue.Record _ -> (prop "responsibilities" doc).IsSome || (prop "collaborators" doc).IsSome || (prop "meta" doc).IsSome
+        | _ -> false
+
+    let private ofApp (doc: JsonValue) : App =
+        App.ofDescriptors
+            [ match prop "meta" doc with
+              | Some m -> meta m
+              | None -> ()
+              yield! items "responsibilities" doc |> List.map responsibility
+              yield! items "collaborators" doc |> List.map collaborator ]
+
+    /// Version 0.1 documents hold an `apps` array; version 0.0 documents are a single app.
+    let private ofDocument (doc: JsonValue) : Result<App list, string> =
+        match prop "apps" doc with
+        | Some (JsonValue.Array xs) when xs |> Array.forall isApp -> Ok (xs |> Array.toList |> List.map ofApp)
+        | Some _ -> Error "Not a haya describe document: every entry of 'apps' needs 'responsibilities', 'collaborators' or 'meta'"
+        | None when isApp doc -> Ok [ ofApp doc ]
+        | None -> Error "Not a haya describe document: expected 'apps', 'responsibilities', 'collaborators' or 'meta'"
 
     /// Parse describe output. `.yaml`/`.yml` is read as YAML, anything else as JSON.
-    let descriptors (fileName: string) (text: string) : Result<Descriptor list, string> =
+    let apps (fileName: string) (text: string) : Result<App list, string> =
         let lower = fileName.ToLowerInvariant()
         let isYaml = lower.EndsWith ".yaml" || lower.EndsWith ".yml"
         try

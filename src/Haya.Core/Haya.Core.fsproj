@@ -39,6 +39,7 @@
         <Compile Include="Serializer.fs" />
         <Compile Include="Encode.fs" />
         <Compile Include="Decode.fs" />
+        <Compile Include="Merge.fs" />
         <Compile Include="Describe.fs" />
         <Compile Include="Diagram.fs" />
         <Compile Include="Markdown.fs" />

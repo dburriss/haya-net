@@ -5,7 +5,9 @@ import { existsSync } from "node:fs";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { analyse, AnalysisError } from "./analyser/analyser.ts";
-import { toFableDescriptors } from "./analyser/bridge.ts";
+import { toFableApp } from "./analyser/bridge.ts";
+import type { App } from "./fable_output/Haya.Core/Model.ts";
+import { ofArray } from "./fable_output/fable_modules/fable-library-ts.5.27.0/List.ts";
 import {
   BackstageCommand,
   CrcCommand,
@@ -17,7 +19,8 @@ import {
   DiagramType,
 } from "./fable_output/Haya.Core/Types.ts";
 import { IO_write, IO_readAllText } from "./fable_output/Haya.Core/IO.ts";
-import { descriptors as decodeDescriptors, isDescribeFile } from "./fable_output/Haya.Core/Decode.ts";
+import { apps as decodeApps, isDescribeFile } from "./fable_output/Haya.Core/Decode.ts";
+import { apps as mergeApps } from "./fable_output/Haya.Core/Merge.ts";
 import { serialize } from "./fable_output/Haya.Core/Describe.ts";
 import { sprintMarkdown } from "./fable_output/Haya.Core/Crc.ts";
 import { generateDiagram } from "./fable_output/Haya.Core/Diagram.ts";
@@ -28,23 +31,30 @@ type Format = "json" | "yaml";
 const dataFormat = (f: Format) => (f === "yaml" ? DataFormat_Yaml() : DataFormat_Json());
 const defaultFile = (format: Format, name: string) => `./${name}.${format}`;
 
-/** Descriptors from a haya describe file (json/yaml) or by analysing a tsconfig.json or directory. */
-const load = (inputPath: string) => {
+/** The apps of one input: a haya describe file (json/yaml) or an analysed tsconfig.json / directory (one app). */
+const loadOne = (inputPath: string): App[] => {
   if (isDescribeFile(inputPath)) {
     if (!existsSync(inputPath)) throw new Error(`File not found: ${inputPath}`);
-    const decoded = decodeDescriptors(inputPath, IO_readAllText(inputPath));
+    const decoded = decodeApps(inputPath, IO_readAllText(inputPath));
     if (decoded.tag === 1) throw new Error(decoded.fields[0]);
-    return decoded.fields[0];
+    return Array.from(decoded.fields[0]);
   }
-  return toFableDescriptors(analyse(inputPath, process.cwd()));
+  return [toFableApp(analyse(inputPath, process.cwd()))];
+};
+
+/** Loads every input and merges them into one system; conflicts between inputs are warned about on stderr. */
+const load = (inputPaths: string[]) => {
+  const [merged, warnings] = mergeApps(ofArray(inputPaths.flatMap(loadOne)));
+  for (const w of warnings) console.error(`Warning: ${w}`);
+  return merged;
 };
 
 /** Load, render and write; prints the success message like `Haya.Tool` or an error with exit code 1. */
-const exec = (label: string, inputPath: string, outputPath: string, render: (descriptors: ReturnType<typeof toFableDescriptors>) => string) => {
+const exec = (label: string, inputPaths: string[], outputPath: string, render: (apps: ReturnType<typeof load>) => string) => {
   try {
-    const descriptors = load(inputPath);
-    const result = IO_write(outputPath, render(descriptors));
-    if (result.tag === 0) console.info(`${label} successfully generated from ${inputPath}`);
+    const apps = load(inputPaths);
+    const result = IO_write(outputPath, render(apps));
+    if (result.tag === 0) console.info(`${label} successfully generated from ${inputPaths.join(", ")}`);
     else {
       console.error(`Error: ${result.fields[0]}`);
       process.exitCode = 1;
@@ -56,24 +66,29 @@ const exec = (label: string, inputPath: string, outputPath: string, render: (des
 };
 
 const inputPath = (y: ReturnType<typeof yargs>) =>
-  y.positional("inputPath", { type: "string", demandOption: true, describe: "Path to tsconfig.json, a directory containing one, or a haya describe file (json/yaml)" });
+  y.positional("inputPaths", {
+    type: "string",
+    array: true,
+    demandOption: true,
+    describe: "Path(s) to a tsconfig.json, a directory containing one, or a haya describe file (json/yaml). Several build one system",
+  });
 
 await yargs(hideBin(Bun.argv))
   .scriptName("haya")
   .command(
-    "crc <inputPath>",
+    "crc <inputPaths..>",
     "Generate Components, Responsibilities, and Collaborator documentation",
     (y) =>
       inputPath(y)
         .option("output-path", { alias: "o", type: "string", default: "./CRC.md", describe: "Path to output folder or file" })
         .option("c4", { alias: "c", type: "count", describe: "Include diagram (markdown only). -c for C4 Level 1, -cc for C4 Level 2" }),
     (argv) => {
-      const cmd = new CrcCommand(argv.inputPath, argv["output-path"], argv.c4 > 0, argv.c4 > 1, process.cwd());
-      exec("CRC", cmd.PathToSln, cmd.OutputPath, (ds) => sprintMarkdown(cmd, ds));
+      const cmd = new CrcCommand(ofArray(argv.inputPaths), argv["output-path"], argv.c4 > 0, argv.c4 > 1, process.cwd());
+      exec("CRC", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => sprintMarkdown(cmd, ds));
     },
   )
   .command(
-    "describe <inputPath>",
+    "describe <inputPaths..>",
     "Generate Haya solution description",
     (y) =>
       inputPath(y)
@@ -81,12 +96,12 @@ await yargs(hideBin(Bun.argv))
         .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "json" as const, describe: "Output format" }),
     (argv) => {
       const out = argv["output-path"] ?? defaultFile(argv.format, "haya");
-      const cmd = new DescribeCommand(argv.inputPath, out, dataFormat(argv.format), process.cwd());
-      exec("Describe", cmd.PathToSln, cmd.OutputPath, (ds) => serialize(cmd, ds));
+      const cmd = new DescribeCommand(ofArray(argv.inputPaths), out, dataFormat(argv.format), process.cwd());
+      exec("Describe", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => serialize(cmd, ds));
     },
   )
   .command(
-    "backstage <inputPath>",
+    "backstage <inputPaths..>",
     "Generate Backstage catalog data",
     (y) =>
       inputPath(y)
@@ -94,12 +109,12 @@ await yargs(hideBin(Bun.argv))
         .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "yaml" as const, describe: "Output format" }),
     (argv) => {
       const out = argv["output-path"] ?? defaultFile(argv.format, "backstage");
-      const cmd = new BackstageCommand(argv.inputPath, out, dataFormat(argv.format), process.cwd());
-      exec("Backstage", cmd.PathToSln, cmd.OutputPath, (ds) => generateCatalog(cmd, ds));
+      const cmd = new BackstageCommand(ofArray(argv.inputPaths), out, dataFormat(argv.format), process.cwd());
+      exec("Backstage", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateCatalog(cmd, ds));
     },
   )
   .command(
-    "diagram <inputPath>",
+    "diagram <inputPaths..>",
     "Generate diagram files",
     (y) =>
       inputPath(y)
@@ -107,8 +122,8 @@ await yargs(hideBin(Bun.argv))
         .option("diagram-type", { alias: "t", choices: ["c4system"] as const, default: "c4system" as const, describe: "Diagram type" })
         .option("diagram-format", { alias: "f", choices: ["mermaid"] as const, default: "mermaid" as const, describe: "Diagram format" }),
     (argv) => {
-      const cmd = new DiagramCommand(argv.inputPath, argv["output-path"], DiagramType.C4System, DiagramFormat.Mermaid, process.cwd());
-      exec("Diagram", cmd.PathToSln, cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
+      const cmd = new DiagramCommand(ofArray(argv.inputPaths), argv["output-path"], DiagramType.C4System, DiagramFormat.Mermaid, process.cwd());
+      exec("Diagram", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
     },
   )
   .strictCommands()

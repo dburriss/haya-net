@@ -79,6 +79,19 @@ haya crc --c4 ./Example.sln
 
 ## Usage
 
+Every command takes one or more inputs: a solution, or a `haya describe` file (`.json`/`.yaml`). Pass several to
+build a whole system from many codebases, for example by gathering the describe files of each solution:
+
+```bash
+haya describe -o payments.json Payments/Payments.sln
+haya describe -o ordering.json Ordering/Ordering.sln
+haya diagram -o system.mermaid payments.json ordering.json
+haya backstage payments.json ordering.json
+```
+
+Apps with the same system and app name are merged into one; the first meta wins and conflicts are reported as warnings.
+See [ADR006](docs/adr/ADR006-multi-app-system-model.md).
+
 ```bash
 USAGE: haya [--help] [<subcommand> [<options>]]
 

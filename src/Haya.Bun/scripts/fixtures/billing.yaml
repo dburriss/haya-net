@@ -1,0 +1,24 @@
+version: "0.0"
+meta:
+  appName: Payments
+  description: Handles payments
+  system: Billing
+  repository: org/payments
+  owner: Billing Team
+responsibilities:
+  - description: Authorise a payment
+    componentName: PaymentService
+    componentSource: src/payments.ts
+collaborators:
+  - direction: Downstream
+    tech: HTTP
+    protocol: HTTPS
+    dataDescription: Charge card
+    description: Card network
+    appName: Visa
+    system: Visa
+    relationship: External
+    componentName: VisaAdapter
+    componentSource: src/visa.ts
+    repository: ""
+    owner: ""

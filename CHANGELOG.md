@@ -10,9 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Every command accepts several inputs (solutions, tsconfig projects and/or describe files, mixed) and builds one
+  system from them, in both `Haya.Tool` and `Haya.Bun`: `haya backstage a.json b.json ../other/Other.sln`.
+  Apps with the same system and name are merged (conflicting meta fields produce a warning, first wins). `diagram`
+  shows every system with the relationships between them, `backstage` links apps in the catalog instead of emitting
+  stubs, and `crc` gets a section per app. Single-app output is unchanged. See ADR006.
 - `crc`, `describe`, `diagram` and `backstage` accept a `haya describe` file (`.json`, `.yaml`, `.yml`) as input
   in both `Haya.Tool` and `Haya.Bun`, so a describe file can be generated once and rendered into other formats
   (or converted json/yaml) without re-analysing the code. Decoding lives in `Haya.Core` (`Decode.fs`).
+
+### Changed
+- The `describe` document is now version `0.1`: `{ "apps": [ { meta, responsibilities, collaborators } ], "version": "0.1" }`
+  (was a single app at the top level, version `0.0`). Version `0.0` files are still read as input.
+- Library API: `Describe`, `Crc`, `Diagram` and `Backstage` take an `App list` instead of a `Descriptor list`;
+  command records have `InputPaths: string list` instead of `PathToSln`.
 
 ### Fixed
 - `Haya.Bun` now finds annotations in workspace packages imported by name (symlinked into `node_modules`) and in

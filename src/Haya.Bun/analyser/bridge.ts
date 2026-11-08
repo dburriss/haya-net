@@ -1,6 +1,8 @@
 // Bridge from the analyser's plain objects to the Fable-compiled `Haya.Core` model.
 // Enums are ints in Fable output (see Haya.Core/Model.fs) and lists are fable-library lists.
 import {
+  AppModule_ofDescriptors,
+  type App,
   CollaboratorDescriptor,
   Descriptor_Collaborator,
   Descriptor_Meta,
@@ -49,3 +51,6 @@ export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
 };
 
 export const toFableDescriptors = (ds: DescriptorInfo[]): FSharpList<Descriptor_$union> => ofArray(ds.map(toFableDescriptor));
+
+/** One analysed project becomes one app (the counterpart of `App.ofDescriptors` on the .NET side). */
+export const toFableApp = (ds: DescriptorInfo[]): App => AppModule_ofDescriptors(toFableDescriptors(ds));

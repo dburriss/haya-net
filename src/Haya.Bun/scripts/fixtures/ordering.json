@@ -1,0 +1,47 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "HTTP",
+          "protocol": "HTTPS",
+          "dataDescription": "Request payment",
+          "description": "Takes payments for orders",
+          "appName": "Payments",
+          "system": "Billing",
+          "relationship": "Internal",
+          "componentName": "PaymentsClient",
+          "componentSource": "src/payments-client.ts",
+          "repository": "org/payments",
+          "owner": "Billing Team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "HTTP",
+          "protocol": "HTTPS",
+          "dataDescription": "Charge card",
+          "description": "Card network",
+          "appName": "Visa",
+          "system": "Visa",
+          "relationship": "External",
+          "componentName": "VisaClient",
+          "componentSource": "src/visa-client.ts",
+          "repository": "",
+          "owner": ""
+        }
+      ],
+      "meta": {
+        "appName": "Api",
+        "description": "Handles orders",
+        "system": "Ordering",
+        "repository": "org/ordering",
+        "owner": "Ordering Team"
+      },
+      "responsibilities": [
+        { "description": "Place an order", "componentName": "OrderController", "componentSource": "src/orders.ts" }
+      ]
+    }
+  ],
+  "version": "0.1"
+}

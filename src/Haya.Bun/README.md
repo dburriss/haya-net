@@ -17,14 +17,16 @@ read statically with the TypeScript compiler API; user code is never executed. S
 ## Usage
 
 ```bash
-haya crc <inputPath> [-o ./CRC.md] [-c]                   # -c adds the C4 level 1 diagram
-haya describe <inputPath> [-o ./haya.json] [-f json|yaml]
-haya diagram <inputPath> [-o ./c4-system-context.mermaid]
-haya backstage <inputPath> [-o ./backstage.yaml] [-f json|yaml]
+haya crc <inputPath...> [-o ./CRC.md] [-c]                   # -c adds the C4 level 1 diagram
+haya describe <inputPath...> [-o ./haya.json] [-f json|yaml]
+haya diagram <inputPath...> [-o ./c4-system-context.mermaid]
+haya backstage <inputPath...> [-o ./backstage.yaml] [-f json|yaml]
 ```
 
 `inputPath` is a `tsconfig.json`, a directory containing one, or a `haya describe` file (`.json`/`.yaml`/`.yml`;
-render other formats from it without re-analysing). Paths in the output (`ComponentSource`) are relative
+render other formats from it without re-analysing). Give several to build one system from many projects (they can
+mix with describe files from `Haya.Tool`); apps with the same system and name are merged, see
+[ADR006](../../docs/adr/ADR006-multi-app-system-model.md). Paths in the output (`ComponentSource`) are relative
 to the current directory, so run `haya` from the project folder to get paths like `src/ecomm.ts`.
 Errors (including non-static annotation values) are reported as `file:line:column - message` with exit code 1.
 
