@@ -1,0 +1,51 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Upstream",
+          "tech": "dotnet",
+          "protocol": "HTTPS",
+          "dataDescription": "Request payment",
+          "description": "Accepts and tracks customer orders",
+          "appName": "Orders",
+          "system": "Ordering",
+          "relationship": "Internal",
+          "componentName": "PaymentsController",
+          "componentSource": "Payments/Payments.cs",
+          "repository": "org/orders",
+          "owner": "Ordering Team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "",
+          "protocol": "HTTPS",
+          "dataDescription": "Process payment",
+          "description": "Handles payment processing of Visa cards",
+          "appName": "Visa Payment Provider",
+          "system": "VISA",
+          "relationship": "External",
+          "componentName": "VisaAdapter",
+          "componentSource": "Payments/Payments.cs",
+          "repository": "org/visa",
+          "owner": "Visa"
+        }
+      ],
+      "meta": {
+        "appName": "Payments",
+        "description": "Takes payments for orders",
+        "system": "Billing",
+        "repository": "org/payments",
+        "owner": "Billing Team"
+      },
+      "responsibilities": [
+        {
+          "description": "Authorises card payments",
+          "componentName": "PaymentService",
+          "componentSource": "Payments/Payments.cs"
+        }
+      ]
+    }
+  ],
+  "version": "0.1"
+}

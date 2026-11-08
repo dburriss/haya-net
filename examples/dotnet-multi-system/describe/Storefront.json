@@ -1,0 +1,37 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "dotnet",
+          "protocol": "HTTPS",
+          "dataDescription": "Place order",
+          "description": "Accepts and tracks customer orders",
+          "appName": "Orders",
+          "system": "Ordering",
+          "relationship": "Internal",
+          "componentName": "OrdersClient",
+          "componentSource": "Storefront/Storefront.cs",
+          "repository": "org/orders",
+          "owner": "Ordering Team"
+        }
+      ],
+      "meta": {
+        "appName": "Storefront",
+        "description": "Customer facing web shop",
+        "system": "WebShop",
+        "repository": "org/storefront",
+        "owner": "Storefront Team"
+      },
+      "responsibilities": [
+        {
+          "description": "Shows the catalog and takes checkout requests",
+          "componentName": "CheckoutPage",
+          "componentSource": "Storefront/Storefront.cs"
+        }
+      ]
+    }
+  ],
+  "version": "0.1"
+}

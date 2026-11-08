@@ -1,0 +1,15 @@
+C4Context
+title C4 System Diagram for WebShop, Ordering, Billing
+
+Enterprise_Boundary(Enterprise, Enterprise, "The enterprise boundary") {
+  System(logistics, Logistics, "Handles shipping of orders")
+  System(webshop, WebShop, "Customer facing web shop")
+  System(ordering, Ordering, "Accepts and tracks customer orders")
+  System(billing, Billing, "Takes payments for orders")
+}
+System_Ext(visa, VISA, "Handles payment processing of Visa cards")
+
+Rel(webshop, ordering, "Place order")
+Rel(ordering, billing, "Request payment")
+Rel(ordering, logistics, "Ship order")
+Rel(billing, visa, "Process payment")

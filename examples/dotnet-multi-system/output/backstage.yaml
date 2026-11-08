@@ -1,0 +1,80 @@
+apiVersion: backstage.io/v1alpha1
+dependencyOf:
+  - web-shop-orders
+  - ordering-orders
+dependsOn:
+  - ordering-orders
+kind: Component
+metadata:
+  description: Customer facing web shop
+  name: web-shop-storefront
+  title: Storefront
+spec:
+  domain: WebShop
+  lifecycle: production
+  owner: Storefront Team
+---
+apiVersion: backstage.io/v1alpha1
+dependencyOf:
+  - ordering-storefront
+  - ordering-payments
+  - ordering-shipping-service
+  - web-shop-storefront
+  - billing-payments
+dependsOn:
+  - web-shop-storefront
+  - billing-payments
+  - logistics-shipping-service
+kind: Component
+metadata:
+  description: Accepts and tracks customer orders
+  name: ordering-orders
+  title: Orders
+spec:
+  domain: Ordering
+  lifecycle: production
+  owner: Ordering Team
+---
+apiVersion: backstage.io/v1alpha1
+dependencyOf:
+  - billing-orders
+  - billing-visa-payment-provider
+  - ordering-orders
+dependsOn:
+  - ordering-orders
+  - visa-visa-payment-provider
+kind: Component
+metadata:
+  description: Takes payments for orders
+  name: billing-payments
+  title: Payments
+spec:
+  domain: Billing
+  lifecycle: production
+  owner: Billing Team
+---
+apiVersion: backstage.io/v1alpha1
+dependencyOf: []
+dependsOn: []
+kind: Component
+metadata:
+  description: Handles shipping of orders
+  name: logistics-shipping-service
+  title: Shipping Service
+spec:
+  domain: Logistics
+  lifecycle: production
+  owner: Logistics Team
+---
+apiVersion: backstage.io/v1alpha1
+dependencyOf: []
+dependsOn: []
+kind: Component
+metadata:
+  description: Handles payment processing of Visa cards
+  name: visa-visa-payment-provider
+  title: Visa Payment Provider
+spec:
+  domain: VISA
+  lifecycle: production
+  owner: Visa

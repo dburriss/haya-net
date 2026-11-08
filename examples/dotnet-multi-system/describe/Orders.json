@@ -1,0 +1,65 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Upstream",
+          "tech": "dotnet",
+          "protocol": "HTTPS",
+          "dataDescription": "Place order",
+          "description": "Customer facing web shop",
+          "appName": "Storefront",
+          "system": "WebShop",
+          "relationship": "Internal",
+          "componentName": "OrdersController",
+          "componentSource": "Orders/Orders.cs",
+          "repository": "org/storefront",
+          "owner": "Storefront Team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "dotnet",
+          "protocol": "HTTPS",
+          "dataDescription": "Request payment",
+          "description": "Takes payments for orders",
+          "appName": "Payments",
+          "system": "Billing",
+          "relationship": "Internal",
+          "componentName": "PaymentsClient",
+          "componentSource": "Orders/Orders.cs",
+          "repository": "org/payments",
+          "owner": "Billing Team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "dotnet",
+          "protocol": "MQTT",
+          "dataDescription": "Ship order",
+          "description": "Handles shipping of orders",
+          "appName": "Shipping Service",
+          "system": "Logistics",
+          "relationship": "Internal",
+          "componentName": "ShippingPublisher",
+          "componentSource": "Orders/Orders.cs",
+          "repository": "org/shipping-service",
+          "owner": "Logistics Team"
+        }
+      ],
+      "meta": {
+        "appName": "Orders",
+        "description": "Accepts and tracks customer orders",
+        "system": "Ordering",
+        "repository": "org/orders",
+        "owner": "Ordering Team"
+      },
+      "responsibilities": [
+        {
+          "description": "Creates and tracks orders",
+          "componentName": "OrderService",
+          "componentSource": "Orders/Orders.cs"
+        }
+      ]
+    }
+  ],
+  "version": "0.1"
+}
