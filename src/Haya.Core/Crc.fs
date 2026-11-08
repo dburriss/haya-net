@@ -1,48 +1,46 @@
 namespace Haya.Core
 
-open FuncyDown.Document
-open FuncyDown.Element
 open Haya.Core.Analysis
 
 module Crc =
     
-    let mdRowData (desc: Analysis.Descriptor) =
+    let internal mdRowData (desc: Analysis.Descriptor) =
         match desc with
         | Responsibility r -> [r.Description; $"[{r.ComponentName}]({r.ComponentSource})"]
         | Collaborator c -> [c.AppName; $"[{c.ComponentName}]({c.ComponentSource})"; c.Description] 
         | Meta m -> []
 
-    let buildResponsibilitiesForMd (descriptors: Analysis.Descriptor list) doc =
+    let internal buildResponsibilitiesForMd (descriptors: Analysis.Descriptor list) doc =
         
         let rows =
             descriptors
             |> List.filter (fun x -> match x with | Analysis.Responsibility _ -> true | _ -> false)
             |> List.map mdRowData
         doc
-        |> addH2 "Responsibilities"
-        |> addTable ["Responsibility"; "Component"] rows
+        |> Markdown.addH2 "Responsibilities"
+        |> Markdown.addTable ["Responsibility"; "Component"] rows
     
-    let buildCollaboratorsForMd (descriptors: Analysis.Descriptor list) doc =
+    let internal buildCollaboratorsForMd (descriptors: Analysis.Descriptor list) doc =
         let rows =
             descriptors
             |> List.filter (fun x -> match x with | Analysis.Collaborator _ -> true | _ -> false)
             |> List.map mdRowData
         doc
-        |> addH2 "Collaborators"
-        |> addTable ["Collaborator"; "Component"; "Description" ] rows
+        |> Markdown.addH2 "Collaborators"
+        |> Markdown.addTable ["Collaborator"; "Component"; "Description" ] rows
     
-    let mermaidC4Level1 (descriptors: Analysis.Descriptor list) doc =
+    let internal mermaidC4Level1 (descriptors: Analysis.Descriptor list) doc =
         let diagram = Diagram.sprintMermaidC4L1 descriptors
-        doc |> addBlockCode { Code = diagram; Language = Some("mermaid") }
+        doc |> Markdown.addCode (Some "mermaid") diagram
         
     let sprintMarkdown cmd (descriptors: Descriptor list) =
         let doc =
-            emptyDocument
-            |> addH1 "CRC"
-            |> addParagraph "This document describes the components, responsibilities, and collaborators for a codebase."
+            Markdown.empty
+            |> Markdown.addH1 "CRC"
+            |> Markdown.addParagraph "This document describes the components, responsibilities, and collaborators for a codebase."
             |> buildResponsibilitiesForMd descriptors
-            |> addNewline
+            |> Markdown.addBlankLine
             |> buildCollaboratorsForMd descriptors
-            |> addNewline
+            |> Markdown.addBlankLine
             |> fun d -> if cmd.IncludeL1Diagram then mermaidC4Level1 descriptors d else d
-        render [(fun _ -> doc)]
+        Markdown.render doc

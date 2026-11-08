@@ -40,6 +40,7 @@
         <Compile Include="Encode.fs" />
         <Compile Include="Describe.fs" />
         <Compile Include="Diagram.fs" />
+        <Compile Include="Markdown.fs" />
         <Compile Include="Crc.fs" />
         <Compile Include="Backstage.fs" />
     </ItemGroup>
@@ -47,7 +48,6 @@
     <ItemGroup>
       <PackageReference Include="Flexi.Json" Version="0.1.0" />
       <PackageReference Include="Flexi.Yaml" Version="0.1.0" />
-      <PackageReference Include="FuncyDown" Version="1.4.2" />
     </ItemGroup>
 
 </Project>

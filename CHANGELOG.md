@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AGENTS.md` (with `CLAUDE.md` symlink), `global.json`, `nuget.config`, local Fable tool manifest.
 
 ### Changed
+- `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 - JSON/YAML output is written with Flexi.Json and Flexi.Yaml via explicit encoders (ADR004), replacing
   System.Text.Json and YamlDotNet. JSON is unchanged. YAML is equivalent but laid out differently: sequences are
   indented under their key, sequence items that are mappings start on a new line, and `version` is now the
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `diagram` command for outputting diagrams. Currently only mermaid support.
 
 ### Changed
+- `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 
 - Json output of `componentSource` is now relative to the executing directory.
 - Added `protocol` field to the Descriptor, used in json output.
@@ -62,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added this changelog
 
 ### Changed
+- `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 
 - Attributes are now published independently in the `Haya` package
 
@@ -91,5 +94,6 @@ Initial release of the project.
 ### Fixed
 
 ### Changed
+- `crc` markdown is rendered by an internal builder instead of FuncyDown (output unchanged, always LF line endings).
 
 ### Removed

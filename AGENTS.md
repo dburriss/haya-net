@@ -21,7 +21,7 @@ only the CLI skeleton exists.
 | Path | What |
 | --- | --- |
 | `src/Haya` | Attribute definitions. **netstandard2.0** on purpose (consumed by user projects). NuGet `Haya`. |
-| `src/Haya.Core` | Language-neutral model + rendering (no Roslyn, see ADR003): `Model.fs` (descriptors), `Types.fs`, `IO.fs`, `Serializer.fs` + `Encode.fs` (Flexi.Json/Flexi.Yaml, no reflection), `Describe/Diagram/Crc/Backstage.fs`. `Crc.fs` still uses FuncyDown, not Fable-compatible (ADR004). |
+| `src/Haya.Core` | Language-neutral model + rendering (no Roslyn, see ADR003): `Model.fs` (descriptors), `Types.fs`, `IO.fs`, `Serializer.fs` + `Encode.fs` (Flexi.Json/Flexi.Yaml, no reflection), `Markdown.fs` (internal markdown builder, no deps), `Describe/Diagram/Crc/Backstage.fs`. |
 | `src/Haya.Roslyn` | C# analysis: `Roslyn.fs` and `Descriptors.fs` (attributes → `Haya.Core` descriptors). .NET only. |
 | `src/Haya.Tool` | Argu CLI (`haya` dotnet tool, wires `Haya.Roslyn` to `Haya.Core`): `crc`, `describe`, `diagram`, `backstage`. |
 | `src/Haya.Bun` | Haya for TypeScript codebases (WIP). Bun CLI in TS; shares `Haya.Core` model/rendering via Fable (linked `.fs` files). See its README. |
@@ -54,7 +54,7 @@ cd src/Haya.Bun && bun install && bun run build && ./dist/haya --help
 - Keep the C# and TypeScript sides at feature parity: a new concept, command or output format should
   land in shared `Haya.Core` code and be wired up on both sides (or tracked as a gap).
 - Shared code linked into `Haya.Bun` (currently `Types.fs`, `String.fs`, `IO.fs`) must compile under
-  Fable: no .NET-only APIs (Roslyn, reflection-based serializers, FuncyDown), use `#if FABLE_COMPILER`
+  Fable: no .NET-only APIs (Roslyn, reflection-based serializers), use `#if FABLE_COMPILER`
   for platform code (JS side uses `node:fs`, which Bun implements). Prefer moving rendering logic into
   Fable-compatible files so both sides reuse it.
 - Roslyn only analyses C# projects (`Roslyn.csharpProjects`); F# projects in a solution load without

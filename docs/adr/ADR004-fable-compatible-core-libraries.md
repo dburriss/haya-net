@@ -9,7 +9,7 @@ To live in the shared `Haya.Core` (see [ADR003](ADR003-split-roslyn-from-core.md
 under Fable. Current dependencies are not Fable-compatible:
 - `Serializer.fs` uses `System.Text.Json` (reflection-based, over arbitrary F# values) and `YamlDotNet`.
   It serializes to JSON, parses to a `JsonNode`, converts to an object tree and then emits YAML.
-- `Crc.fs` uses `FuncyDown` for markdown.
+- `Crc.fs` uses `FuncyDown` for markdown. (Initially assumed not Fable-compatible; later verified to compile, see the status update.)
 - `Diagram.fs` opens the `Haya` attributes assembly.
 
 ### Decision
@@ -20,8 +20,8 @@ under Fable. Current dependencies are not Fable-compatible:
   the current conventions (camelCase keys, null/`None` omitted, enums as strings). YAML is produced by mapping
   the `JsonValue` to a `YamlValue`, so there is one encoder per type and no JSON round trip.
 - Remove `System.Text.Json` and `YamlDotNet` from `Haya.Core`, along with the unused `ofJson`.
-- Replace `FuncyDown` in `Crc.fs` with Fable-compatible markdown emission, and remove the `Haya` attribute
-  dependency from `Diagram.fs`. Tracked as follow-up work.
+- Replace `FuncyDown` in `Crc.fs` with a small internal markdown builder (`Markdown.fs`: headings, paragraphs,
+  tables, fenced code), and remove the `Haya` attribute dependency from `Diagram.fs`.
 
 ### Consequences
 - *Pros:*
@@ -39,4 +39,9 @@ under Fable. Current dependencies are not Fable-compatible:
 `Serializer.fs` now uses Flexi.Json and Flexi.Yaml with encoders in `Encode.fs`; System.Text.Json and YamlDotNet
 are gone from `Haya.Core`. On `examples/dotnet/Example.sln` JSON output is byte-identical. YAML parses to the same data
 except `version`, which is now the string `'0.0'` (it was previously emitted as a plain scalar that parses as a float).
-Layout differs: sequences are indented and mapping items start on a new line. `Crc.fs` (FuncyDown) remains.
+Layout differs: sequences are indented and mapping items start on a new line. `Crc.fs` now uses an internal `Markdown.fs` builder instead of FuncyDown; CRC output is byte-identical.
+
+Correction: FuncyDown 1.4.2 was assumed to be incompatible with Fable without being checked. A later check compiled it
+with Fable 5.27 (TypeScript) with no changes (it ships its sources under `fable/`) and rendered the same markdown under
+Bun and .NET. It remains a viable option. The internal builder was kept because Haya needs very little of it, it removes a
+dependency, and it always emits `\n` (FuncyDown uses `Environment.NewLine`, so output differs per OS on Windows).
