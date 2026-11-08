@@ -64,3 +64,19 @@ let ``Descriptors returned for MetaAttribute`` () = task {
     Assert.Equal("org/payment-api", meta.Repository)
 }
 
+[<Fact>]
+let ``Describe output decodes back to the same descriptors in json and yaml`` () =
+    let serialize format descriptors =
+        Haya.Core.Describe.serialize { PathToSln = ""; OutputPath = ""; Format = format; CurrentDirectory = "" } descriptors
+    let check format fileName =
+        let text = serialize format allDescriptors
+        match Haya.Core.Decode.descriptors fileName text with
+        | Ok decoded -> Assert.Equal(text, serialize format decoded)
+        | Error e -> failwith e
+    check Haya.Core.DataFormat.Json "haya.json"
+    check Haya.Core.DataFormat.Yaml "haya.yaml"
+
+[<Fact>]
+let ``Decode rejects documents that are not describe output`` () =
+    Assert.True(Result.isError (Haya.Core.Decode.descriptors "x.json" "{\"foo\": 1}"))
+    Assert.True(Result.isError (Haya.Core.Decode.descriptors "x.json" "not json"))

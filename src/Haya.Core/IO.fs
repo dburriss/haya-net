@@ -6,6 +6,8 @@ module private NodeFs =
     // Bun implements the node:fs API, so plain Node bindings work under Bun.
     [<Import("writeFileSync", "node:fs")>]
     let writeFileSync (path: string, data: string) : unit = jsNative
+    [<Import("readFileSync", "node:fs")>]
+    let readFileSync (path: string, encoding: string) : string = jsNative
     [<Import("existsSync", "node:fs")>]
     let existsSync (path: string) : bool = jsNative
 #endif
@@ -29,4 +31,11 @@ module IO =
         NodeFs.existsSync(file)
         #else
         File.Exists(file)
+        #endif
+
+    let readAllText (file: string) =
+        #if FABLE_COMPILER
+        NodeFs.readFileSync(file, "utf-8")
+        #else
+        File.ReadAllText(file)
         #endif

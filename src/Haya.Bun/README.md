@@ -23,7 +23,8 @@ haya diagram <inputPath> [-o ./c4-system-context.mermaid]
 haya backstage <inputPath> [-o ./backstage.yaml] [-f json|yaml]
 ```
 
-`inputPath` is a `tsconfig.json` or a directory containing one. Paths in the output (`ComponentSource`) are relative
+`inputPath` is a `tsconfig.json`, a directory containing one, or a `haya describe` file (`.json`/`.yaml`/`.yml`;
+render other formats from it without re-analysing). Paths in the output (`ComponentSource`) are relative
 to the current directory, so run `haya` from the project folder to get paths like `src/ecomm.ts`.
 Errors (including non-static annotation values) are reported as `file:line:column - message` with exit code 1.
 
@@ -50,7 +51,6 @@ analyser and `@typescript/native` (`typescript@^7`) provides `tsc` for type chec
 - `Haya.Roslyn` bug: a C# class with both `[Responsibility]` and `[Collaborator]` emits its responsibility twice and
   drops the collaborator. The TypeScript analyser emits both, so those outputs differ until it is fixed.
 - The annotation package is private and consumed from source; it is not published to npm.
-- `haya` takes only a `tsconfig.json` or directory; reading a `haya describe` file as input is not supported (as in `Haya.Tool`).
 
 ## Prerequisites
 

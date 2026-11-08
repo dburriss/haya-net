@@ -1,6 +1,7 @@
 // Entry point for the Bun build of the Haya CLI: the TypeScript counterpart of `Haya.Tool` (src/Haya.Tool/Cli.fs).
 // Rendering is F# from Haya.Core compiled to TypeScript by Fable into ./fable_output (see README.md);
 // analysis is the TypeScript analyser in ./analyser.
+import { existsSync } from "node:fs";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { analyse, AnalysisError } from "./analyser/analyser.ts";
@@ -15,7 +16,8 @@ import {
   DiagramFormat,
   DiagramType,
 } from "./fable_output/Haya.Core/Types.ts";
-import { IO_write } from "./fable_output/Haya.Core/IO.ts";
+import { IO_write, IO_readAllText } from "./fable_output/Haya.Core/IO.ts";
+import { descriptors as decodeDescriptors, isDescribeFile } from "./fable_output/Haya.Core/Decode.ts";
 import { serialize } from "./fable_output/Haya.Core/Describe.ts";
 import { sprintMarkdown } from "./fable_output/Haya.Core/Crc.ts";
 import { generateDiagram } from "./fable_output/Haya.Core/Diagram.ts";
@@ -26,10 +28,21 @@ type Format = "json" | "yaml";
 const dataFormat = (f: Format) => (f === "yaml" ? DataFormat_Yaml() : DataFormat_Json());
 const defaultFile = (format: Format, name: string) => `./${name}.${format}`;
 
-/** Analyse, render and write; prints the success message like `Haya.Tool` or an error with exit code 1. */
+/** Descriptors from a haya describe file (json/yaml) or by analysing a tsconfig.json or directory. */
+const load = (inputPath: string) => {
+  if (isDescribeFile(inputPath)) {
+    if (!existsSync(inputPath)) throw new Error(`File not found: ${inputPath}`);
+    const decoded = decodeDescriptors(inputPath, IO_readAllText(inputPath));
+    if (decoded.tag === 1) throw new Error(decoded.fields[0]);
+    return decoded.fields[0];
+  }
+  return toFableDescriptors(analyse(inputPath, process.cwd()));
+};
+
+/** Load, render and write; prints the success message like `Haya.Tool` or an error with exit code 1. */
 const exec = (label: string, inputPath: string, outputPath: string, render: (descriptors: ReturnType<typeof toFableDescriptors>) => string) => {
   try {
-    const descriptors = toFableDescriptors(analyse(inputPath, process.cwd()));
+    const descriptors = load(inputPath);
     const result = IO_write(outputPath, render(descriptors));
     if (result.tag === 0) console.info(`${label} successfully generated from ${inputPath}`);
     else {
@@ -43,7 +56,7 @@ const exec = (label: string, inputPath: string, outputPath: string, render: (des
 };
 
 const inputPath = (y: ReturnType<typeof yargs>) =>
-  y.positional("inputPath", { type: "string", demandOption: true, describe: "Path to tsconfig.json or a directory containing one" });
+  y.positional("inputPath", { type: "string", demandOption: true, describe: "Path to tsconfig.json, a directory containing one, or a haya describe file (json/yaml)" });
 
 await yargs(hideBin(Bun.argv))
   .scriptName("haya")

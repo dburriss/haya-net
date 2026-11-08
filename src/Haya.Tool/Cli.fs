@@ -9,7 +9,7 @@ type CrcArgs =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | InputPath _ -> "Path to solution or haya describe file"
+            | InputPath _ -> "Path to solution or haya describe file (json/yaml)"
             | OutputPath _ -> "Path to output folder or file (default: ./CRC.md)"
             | C4 -> "Include diagram (markdown only). -c for C4 Level 1, -cc for C4 Level 2"
 
@@ -20,7 +20,7 @@ type DescribeArgs =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | InputPath _ -> "Path to solution or haya describe file"
+            | InputPath _ -> "Path to solution or haya describe file (json/yaml)"
             | OutputPath _ -> "Path to output folder or file (default: ./haya.json)"
             | Format _ -> "Output format. json | yaml (default: json)"
             
@@ -31,7 +31,7 @@ type BackstageArgs =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | InputPath _ -> "Path to solution or haya describe file"
+            | InputPath _ -> "Path to solution or haya describe file (json/yaml)"
             | OutputPath _ -> "Path to output folder or file (default: ./haya.yaml)"
             | Format _ -> "Output format. json | yaml (default: yaml)"
 
@@ -43,7 +43,7 @@ type DiagramArgs =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | InputPath _ -> "Path to solution or haya describe file"
+            | InputPath _ -> "Path to solution or haya describe file (json/yaml)"
             | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid)"
             | DiagramType _ -> "Output format. c4system (default: c4system)"
             | DiagramFormat _ -> "Output format. mermaid (default: mermaid)"
@@ -71,6 +71,17 @@ module Cli =
         | DataFormat.Json -> $"./{filename}.json"
         | DataFormat.Yaml -> $"./{filename}.yaml"
     
+    /// Descriptors from a haya describe file (json/yaml) or by analysing a solution.
+    let loadDescriptors (currentDirectory: string) (path: string) = task {
+        if not (IO.fileExists path) then return Error "Solution not found"
+        elif Decode.isDescribeFile path then
+            return Decode.descriptors path (IO.readAllText path)
+        else
+            let! sln = path |> Roslyn.openSolution
+            let! descriptors = sln |> Descriptors.getDescriptors currentDirectory Descriptors.attributeNames
+            return Ok descriptors
+    }
+
     let (|IsDescribeCommand|_|) (parserResults: ParseResults<CliArguments>) : DescribeCommand option =
         if parserResults.Contains(CliArguments.Describe) then
             let currentDir = Environment.CurrentDirectory
@@ -87,20 +98,14 @@ module Cli =
            
     let execDescribeAsync (cmd: DescribeCommand) = task {
         let pathToSln = cmd.PathToSln
-        //todo: check if pathToSln is a sln or a describe file (json/yaml)
-        if IO.File.Exists(pathToSln) then
-            let! sln = pathToSln |> Roslyn.openSolution
-            let! descriptors =
-                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
-            
+        match! loadDescriptors cmd.CurrentDirectory pathToSln with
+        | Error e -> return Error(1, e)
+        | Ok descriptors ->
             return
                 Describe.serialize cmd descriptors
-                |> IO.write cmd.OutputPath
-                |> function
+                |> IO.write cmd.OutputPath |> function
                     | Ok _ -> Ok(0, $"Describe successfully generated from {pathToSln}")
                     | Error e -> Error(1, e)
-        else
-            return Error(1, "Solution not found")
     }
     
     let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
@@ -119,19 +124,14 @@ module Cli =
 
     let execCrcAsync (cmd: CrcCommand) = task {
         let pathToSln = cmd.PathToSln
-        // todo: check if pathToSln is a sln or a describe file (json/yaml)
-        if IO.File.Exists(pathToSln) then
-            let! sln = pathToSln |> Roslyn.openSolution
-            let! descriptors =
-                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
+        match! loadDescriptors cmd.CurrentDirectory pathToSln with
+        | Error e -> return Error(1, e)
+        | Ok descriptors ->
             return
                 Crc.sprintMarkdown cmd descriptors
-                |> IO.write cmd.OutputPath
-                |> function
+                |> IO.write cmd.OutputPath |> function
                 | Ok _ -> Ok(0, $"CRC successfully generated from {pathToSln}")
                 | Error e -> Error(1, e)
-        else
-            return Error(1, "Solution not found")
     }
     
     let (|IsBackstageCommand|_|) (parserResults: ParseResults<CliArguments>) : BackstageCommand option =
@@ -149,18 +149,15 @@ module Cli =
         
     let execBackstageAsync (cmd: BackstageCommand) = task {
         let pathToSln = cmd.PathToSln
-        if IO.fileExists pathToSln then
-            let! sln = pathToSln |> Roslyn.openSolution
-            let! descriptors =
-                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
+        match! loadDescriptors cmd.CurrentDirectory pathToSln with
+        | Error e -> return Error(1, e)
+        | Ok descriptors ->
             return
                 Backstage.generateCatalog cmd descriptors
                 |> IO.write cmd.OutputPath
                 |> function
                 | Ok _ -> Ok(0, $"Backstage successfully generated from {pathToSln}")
                 | Error e -> Error(1, e)
-        else
-            return Error(1, "Solution not found")
     }
     
     let (|IsDiagramCommand|_|) (parserResults: ParseResults<CliArguments>) : DiagramCommand option =
@@ -180,16 +177,13 @@ module Cli =
         
     let execDiagramAsync (cmd: DiagramCommand) = task {
         let pathToSln = cmd.PathToSln
-        if IO.fileExists pathToSln then
-            let! sln = pathToSln |> Roslyn.openSolution
-            let! descriptors =
-                sln |> Descriptors.getDescriptors cmd.CurrentDirectory Descriptors.attributeNames
+        match! loadDescriptors cmd.CurrentDirectory pathToSln with
+        | Error e -> return Error(1, e)
+        | Ok descriptors ->
             return
                 Diagram.generateDiagram cmd descriptors
                 |> IO.write cmd.OutputPath
                 |> function
                 | Ok _ -> Ok(0, $"Diagram successfully generated from {pathToSln}")
-                | Error e -> Error(1, e)
-        else
-            return Error(1, "Solution not found")    
+                | Error e -> Error(1, e)    
     }
