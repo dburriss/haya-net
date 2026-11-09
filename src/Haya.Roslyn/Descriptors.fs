@@ -15,6 +15,12 @@ module Descriptors =
         let baseUri = Uri(baseDir.TrimEnd('/') + "/")
         let targetUri = Uri(targetPath)
         baseUri.MakeRelativeUri(targetUri).ToString()
+    /// Where a component lives: its source file relative to `rootPath`, or `Assembly::Namespace.Type` for a type
+    /// from a compiled reference (no source file).
+    let componentSource (rootPath: string) (symbol: ISymbol) =
+        match symbol.Locations |> Seq.tryFind (fun l -> l.IsInSource && not (isNull l.SourceTree)) with
+        | Some l -> makeRelativePath rootPath l.SourceTree.FilePath
+        | None -> $"{symbol.ContainingAssembly.Name}::{symbol.ToDisplayString()}"
     let namedArgumentsToMap (args: ImmutableArray<KeyValuePair<string, TypedConstant>>) =
         args |> Seq.map (fun x -> x.Key, x.Value.Value.ToString()) |> Map.ofSeq
     let private constantToString (c: TypedConstant) = c.Value.ToString()
@@ -32,7 +38,7 @@ module Descriptors =
                 Responsibility {
                     Description = description
                     ComponentName = symbol.Name
-                    ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath |> makeRelativePath rootPath
+                    ComponentSource = componentSource rootPath symbol
                 }
             ) |> Some
         else
@@ -64,7 +70,7 @@ module Descriptors =
                     System = system
                     Relationship = relationship
                     ComponentName = symbol.Name
-                    ComponentSource = symbol.Locations |> Seq.head |> _.SourceTree.FilePath |> makeRelativePath rootPath
+                    ComponentSource = componentSource rootPath symbol
                     Repository = repository
                     Owner = owner 
                 }
@@ -105,7 +111,11 @@ module Descriptors =
           match symbol with IsCollaborator rootPath xs -> yield! xs | _ -> ()
           match symbol with IsMeta xs -> yield! xs | _ -> () ]
     
-    let getDescriptors (rootPath: string) (attributeNames: string list) (solution: Solution) =
+    /// Descriptors of an analysed solution, and the compiled-reference types they were partly built from
+    /// (assembly name, type name), so a caller can report them.
+    type Analysis = { Descriptors: Descriptor list; Referenced: (string * string) list }
+
+    let getAnalysisWith (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =
         task {
             let! classes = attributeNames
                            |> List.map (fun n -> Roslyn.findClassesWithAttribute n solution)
@@ -113,10 +123,25 @@ module Descriptors =
             let! meta = attributeNames
                         |> List.map (fun n -> Roslyn.findAllAssembliesWithAttribute n solution)
                         |> Task.WhenAll
+            let! referenced = attributeNames
+                              |> List.map (fun n -> Roslyn.findReferencedTypesWithAttribute n references solution)
+                              |> Task.WhenAll
             let toDescriptors (symbols: ISymbol list seq) =
                 // the same symbol is found once per attribute name searched: map each only once
                 symbols |> Seq.concat |> Seq.distinctBy (fun s -> s.ToDisplayString(), s.Kind) |> Seq.toList |> List.collect (mapDescriptors rootPath)
-            let classes = toDescriptors classes
-            let meta = toDescriptors meta
-            return classes @ meta
+            let referencedTypes =
+                referenced |> Seq.concat |> Seq.distinctBy (fun (a, t) -> a.Name, t.ToDisplayString()) |> Seq.toList
+            // Only the types: an assembly-level Meta of a package describes another app, so it is never read.
+            let fromReferences = referencedTypes |> List.collect (fun (_, t) -> mapDescriptors rootPath t)
+            return { Descriptors = toDescriptors classes @ fromReferences @ toDescriptors meta
+                     Referenced = referencedTypes |> List.map (fun (a, t) -> a.Name, t.ToDisplayString()) }
         }
+
+    let getDescriptorsWith (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =
+        task {
+            let! analysis = getAnalysisWith references rootPath attributeNames solution
+            return analysis.Descriptors
+        }
+
+    let getDescriptors (rootPath: string) (attributeNames: string list) (solution: Solution) =
+        getDescriptorsWith Roslyn.ReferenceOptions.none rootPath attributeNames solution

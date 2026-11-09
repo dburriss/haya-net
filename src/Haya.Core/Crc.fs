@@ -4,11 +4,16 @@ open Haya.Core.Analysis
 
 module Crc =
 
+    /// A component as a markdown link to its source file. A type from a compiled reference has no file
+    /// (its source reads `Assembly::Type`), so it is plain text.
+    let internal componentCell (name: string) (source: string) =
+        if source.Contains "::" then $"{name} ({source})" else $"[{name}]({source})"
+
     let internal responsibilityRow (r: ResponsibilityDescriptor) =
-        [r.Description; $"[{r.ComponentName}]({r.ComponentSource})"]
+        [r.Description; componentCell r.ComponentName r.ComponentSource]
 
     let internal collaboratorRow (c: CollaboratorDescriptor) =
-        [c.AppName; $"[{c.ComponentName}]({c.ComponentSource})"; c.Description]
+        [c.AppName; componentCell c.ComponentName c.ComponentSource; c.Description]
 
     let internal buildResponsibilitiesForMd (level: int) (app: App) doc =
         doc

@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `main` tried to publish.
 
 ### Added
+- `--include-references` and `--include-assembly <glob>` (with `--verbose`) read Haya attributes from public types in
+  referenced packages/DLLs (C# only). Off by default. See
+  [the how-to](docs/how-to/include-referenced-packages.md) and ADR009.
 - Custom TypeScript annotations with defaults: `defineResponsibility`, `defineCollaborator` and `defineMeta` in
   `@haya/annotations` declare an annotation with options baked in; options at the usage site override them. See
   [the tutorial](docs/tutorials/custom-attributes-typescript.md) and ADR008.

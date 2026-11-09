@@ -17,6 +17,18 @@ into one system. `haya --help` and `haya <command> --help` list the options.
 
 Exit code is `0` on success and `1` on error. Warnings go to stderr.
 
+## Referenced assemblies (`Haya.Tool` only)
+
+All four commands accept these flags. By default only the C# source in the solution is analysed.
+
+| Flag | Meaning |
+| --- | --- |
+| `--include-references` | Also read public types in referenced packages/DLLs that reference Haya |
+| `--include-assembly <glob>` | Also read referenced assemblies whose name matches the glob (`*`, `?`). Repeatable; on its own it limits the scan to matching assemblies |
+| `-v`, `--verbose` | Print each `Including <assembly>: <type>` that was picked up |
+
+See [Include attributes from referenced packages](../how-to/include-referenced-packages.md). `Haya.Bun` has no equivalent.
+
 ## `crc`
 
 Components, Responsibilities and Collaborators as Markdown.

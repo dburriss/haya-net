@@ -12,6 +12,7 @@
         <Compile Include="SolutionBuilder.fs" />
         <Compile Include="DescriptorTests.fs" />
         <Compile Include="CustomAttributeTests.fs" />
+        <Compile Include="ReferencedAttributeTests.fs" />
     </ItemGroup>
 
     <ItemGroup>

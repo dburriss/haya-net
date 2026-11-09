@@ -127,6 +127,65 @@ module Roslyn =
                             results.Add(symbol)
             return results |> Seq.toList
         }
+
+    /// Which referenced (compiled) assemblies to scan for Haya attributes. Off by default.
+    type ReferenceOptions = { Include: bool; AssemblyGlobs: string list }
+
+    module ReferenceOptions =
+        let none = { Include = false; AssemblyGlobs = [] }
+
+        /// Wildcard match (`*`, `?`) on an assembly name, case-insensitive. No globs matches every assembly.
+        let matches (opts: ReferenceOptions) (assemblyName: string) =
+            let toRegex (glob: string) =
+                "^" + System.Text.RegularExpressions.Regex.Escape(glob).Replace("\\*", ".*").Replace("\\?", ".") + "$"
+            opts.AssemblyGlobs |> List.isEmpty
+            || opts.AssemblyGlobs |> List.exists (fun g ->
+                System.Text.RegularExpressions.Regex.IsMatch(assemblyName, toRegex g, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+
+        /// Referenced assemblies are scanned when asked for, either with the flag or with an assembly glob.
+        let isActive (opts: ReferenceOptions) = opts.Include || not (List.isEmpty opts.AssemblyGlobs)
+
+    /// Public classes (including public nested ones) declared in a namespace and its child namespaces.
+    let rec private publicClasses (ns: INamespaceSymbol) : INamedTypeSymbol seq =
+        let rec nested (t: INamedTypeSymbol) : INamedTypeSymbol seq =
+            seq {
+                if t.TypeKind = TypeKind.Class then yield t
+                for n in t.GetTypeMembers() do
+                    if n.DeclaredAccessibility = Accessibility.Public then yield! nested n
+            }
+        seq {
+            for t in ns.GetTypeMembers() do
+                if t.DeclaredAccessibility = Accessibility.Public then yield! nested t
+            for child in ns.GetNamespaceMembers() do
+                yield! publicClasses child
+        }
+
+    /// Public classes in compiled references (NuGet packages, DLLs) that carry the attribute.
+    /// Only assemblies that reference Haya and match the options are walked. References to projects in the
+    /// solution are skipped: they are analysed from source already. Each type is returned once.
+    let findReferencedTypesWithAttribute (attributeFullName: string) (opts: ReferenceOptions) (solution: Solution) =
+        task {
+            let results = ResizeArray<IAssemblySymbol * INamedTypeSymbol>()
+            let seen = System.Collections.Generic.HashSet<string>()
+            if ReferenceOptions.isActive opts then
+                for project in csharpProjects solution do
+                    let! compilation = project.GetCompilationAsync()
+                    for reference in compilation.References do
+                        match reference with
+                        | :? PortableExecutableReference ->
+                            match compilation.GetAssemblyOrModuleSymbol(reference) with
+                            | :? IAssemblySymbol as assembly
+                                when ReferenceOptions.matches opts assembly.Name
+                                     && assembly.Modules |> Seq.exists (fun m -> m.ReferencedAssemblies |> Seq.exists (fun a -> a.Name = "Haya")) ->
+                                for t in publicClasses assembly.GlobalNamespace do
+                                    if t.GetAttributes() |> Seq.exists (isAttributeOf attributeFullName)
+                                       && seen.Add(assembly.Name + "::" + t.ToDisplayString()) then
+                                        results.Add((assembly, t))
+                            | _ -> ()
+                        | _ -> ()
+            return results |> Seq.toList
+        }
+
     let findAssemblies (solution: Solution) =
         task {
             let results = ResizeArray<IAssemblySymbol>()

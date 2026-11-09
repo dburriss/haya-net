@@ -2,13 +2,24 @@ namespace Haya.Tool
 open Argu
 open Haya.Core
 
+module CliText =
+    let includeReferencesUsage = "Also read Haya attributes from public types in referenced packages/DLLs that reference Haya"
+    let includeAssemblyUsage = "Also read referenced assemblies whose name matches this pattern (* and ? wildcards). Can be repeated"
+    let verboseUsage = "Print the referenced assemblies and types that were included"
+
 type CrcArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
     | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
     | [<AltCommandLine("-c")>] C4
+    | [<CustomCommandLine("--include-references")>] IncludeReferences
+    | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
+    | [<AltCommandLine("-v")>] Verbose
     interface IArgParserTemplate with
         member s.Usage =
             match s with
+            | IncludeReferences -> CliText.includeReferencesUsage
+            | IncludeAssembly _ -> CliText.includeAssemblyUsage
+            | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./CRC.md)"
             | C4 -> "Include diagram (markdown only). -c for C4 Level 1, -cc for C4 Level 2"
@@ -17,9 +28,15 @@ type DescribeArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
     | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
     | [<AltCommandLine("-f")>] Format of format: DataFormat
+    | [<CustomCommandLine("--include-references")>] IncludeReferences
+    | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
+    | [<AltCommandLine("-v")>] Verbose
     interface IArgParserTemplate with
         member s.Usage =
             match s with
+            | IncludeReferences -> CliText.includeReferencesUsage
+            | IncludeAssembly _ -> CliText.includeAssemblyUsage
+            | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./haya.json)"
             | Format _ -> "Output format. json | yaml (default: json)"
@@ -28,9 +45,15 @@ type BackstageArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
     | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
     | [<AltCommandLine("-f")>] Format of format: DataFormat
+    | [<CustomCommandLine("--include-references")>] IncludeReferences
+    | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
+    | [<AltCommandLine("-v")>] Verbose
     interface IArgParserTemplate with
         member s.Usage =
             match s with
+            | IncludeReferences -> CliText.includeReferencesUsage
+            | IncludeAssembly _ -> CliText.includeAssemblyUsage
+            | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./haya.yaml)"
             | Format _ -> "Output format. json | yaml (default: yaml)"
@@ -40,9 +63,15 @@ type DiagramArgs =
     | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
     | [<AltCommandLine("-t")>] DiagramType of DiagramType
     | [<AltCommandLine("-f")>] DiagramFormat of DiagramFormat
+    | [<CustomCommandLine("--include-references")>] IncludeReferences
+    | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
+    | [<AltCommandLine("-v")>] Verbose
     interface IArgParserTemplate with
         member s.Usage =
             match s with
+            | IncludeReferences -> CliText.includeReferencesUsage
+            | IncludeAssembly _ -> CliText.includeAssemblyUsage
+            | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid)"
             | DiagramType _ -> "Diagram type. c4system (system context) or c4container (apps inside their systems) (default: c4system)"
@@ -72,24 +101,33 @@ module Cli =
         | DataFormat.Json -> $"./{filename}.json"
         | DataFormat.Yaml -> $"./{filename}.yaml"
     
+    /// How a solution is analysed beyond its own source: which compiled references to read, and whether to report them.
+    type AnalysisOptions = { References: Roslyn.ReferenceOptions; Verbose: bool }
+
+    let analysisOptions (includeReferences: bool) (assemblyGlobs: string list) (verbose: bool) =
+        { References = { Include = includeReferences; AssemblyGlobs = assemblyGlobs }; Verbose = verbose }
+
     /// The apps of one input: a haya describe file (json/yaml) or an analysed solution (one app).
-    let private loadOne (currentDirectory: string) (path: string) : Task<Result<App list, string>> = task {
+    let private loadOne (options: AnalysisOptions) (currentDirectory: string) (path: string) : Task<Result<App list, string>> = task {
         if not (IO.fileExists path) then return Error $"Input not found: {path}"
         elif Decode.isDescribeFile path then
             return Decode.apps path (IO.readAllText path)
         else
             let! sln = path |> Roslyn.openSolution
-            let! descriptors = sln |> Descriptors.getDescriptors currentDirectory Descriptors.attributeNames
-            return Ok [ App.ofDescriptors descriptors ]
+            let! analysis = sln |> Descriptors.getAnalysisWith options.References currentDirectory Descriptors.attributeNames
+            if options.Verbose then
+                for (assembly, typeName) in analysis.Referenced do
+                    printfn "Including %s: %s" assembly typeName
+            return Ok [ App.ofDescriptors analysis.Descriptors ]
     }
 
     /// Loads every input and merges them into one system (warnings about conflicts go to stderr).
-    let loadApps (currentDirectory: string) (paths: string list) : Task<Result<App list, string>> = task {
+    let loadApps (options: AnalysisOptions) (currentDirectory: string) (paths: string list) : Task<Result<App list, string>> = task {
         let apps = ref []
         let error = ref None
         for path in paths do
             if error.Value.IsNone then
-                match! loadOne currentDirectory path with
+                match! loadOne options currentDirectory path with
                 | Ok loaded -> apps.Value <- apps.Value @ loaded
                 | Error e -> error.Value <- Some e
         match error.Value with
@@ -103,7 +141,7 @@ module Cli =
     let private inputList (inputs: string list) (raise': string -> list<string>) =
         if List.isEmpty inputs then raise' "At least one input path is required" else inputs
 
-    let (|IsDescribeCommand|_|) (parserResults: ParseResults<CliArguments>) : DescribeCommand option =
+    let (|IsDescribeCommand|_|) (parserResults: ParseResults<CliArguments>) : (DescribeCommand * AnalysisOptions) option =
         if parserResults.Contains(CliArguments.Describe) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Describe)
@@ -111,15 +149,16 @@ module Cli =
             let format = pr.GetResult(DescribeArgs.Format, defaultValue = DataFormat.Json)
             //todo: check if output path is a file or a directory
             let outputPath: string = pr.TryGetResult(DescribeArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "haya")
-            Some { InputPaths = sln
-                   OutputPath = outputPath
-                   Format = format
-                   CurrentDirectory = currentDir }
+            let options = analysisOptions (pr.Contains DescribeArgs.IncludeReferences) (pr.GetResults DescribeArgs.IncludeAssembly) (pr.Contains DescribeArgs.Verbose)
+            Some ({ InputPaths = sln
+                    OutputPath = outputPath
+                    Format = format
+                    CurrentDirectory = currentDir }, options)
         else None
            
-    let execDescribeAsync (cmd: DescribeCommand) = task {
+    let execDescribeAsync (cmd: DescribeCommand, options: AnalysisOptions) = task {
         let pathToSln = String.concat ", " cmd.InputPaths
-        match! loadApps cmd.CurrentDirectory cmd.InputPaths with
+        match! loadApps options cmd.CurrentDirectory cmd.InputPaths with
         | Error e -> return Error(1, e)
         | Ok apps ->
             return
@@ -129,7 +168,7 @@ module Cli =
                     | Error e -> Error(1, e)
     }
     
-    let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) =
+    let (|IsCrcCommand|_|) (parserResults: ParseResults<CliArguments>) : (CrcCommand * AnalysisOptions) option =
         if parserResults.Contains(CliArguments.Crc) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Crc)
@@ -137,15 +176,16 @@ module Cli =
             let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue "./CRC.md"
             let includeL1Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 0
             let includeL2Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 1
-            Some { InputPaths = sln; OutputPath = outputPath
-                   IncludeL1Diagram = includeL1Diagram
-                   IncludeL2Diagram = includeL2Diagram
-                   CurrentDirectory = currentDir }
+            let options = analysisOptions (pr.Contains CrcArgs.IncludeReferences) (pr.GetResults CrcArgs.IncludeAssembly) (pr.Contains CrcArgs.Verbose)
+            Some ({ InputPaths = sln; OutputPath = outputPath
+                    IncludeL1Diagram = includeL1Diagram
+                    IncludeL2Diagram = includeL2Diagram
+                    CurrentDirectory = currentDir }, options)
         else None
 
-    let execCrcAsync (cmd: CrcCommand) = task {
+    let execCrcAsync (cmd: CrcCommand, options: AnalysisOptions) = task {
         let pathToSln = String.concat ", " cmd.InputPaths
-        match! loadApps cmd.CurrentDirectory cmd.InputPaths with
+        match! loadApps options cmd.CurrentDirectory cmd.InputPaths with
         | Error e -> return Error(1, e)
         | Ok apps ->
             return
@@ -155,22 +195,23 @@ module Cli =
                 | Error e -> Error(1, e)
     }
     
-    let (|IsBackstageCommand|_|) (parserResults: ParseResults<CliArguments>) : BackstageCommand option =
+    let (|IsBackstageCommand|_|) (parserResults: ParseResults<CliArguments>) : (BackstageCommand * AnalysisOptions) option =
         if parserResults.Contains(CliArguments.Backstage) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Backstage)
             let sln = inputList (pr.GetResults(BackstageArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
             let format = pr.GetResult(BackstageArgs.Format, defaultValue = DataFormat.Yaml)
             let outputPath: string = pr.TryGetResult(BackstageArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "backstage")
-            Some { InputPaths = sln
-                   OutputPath = outputPath
-                   Format = format
-                   CurrentDirectory = currentDir }
+            let options = analysisOptions (pr.Contains BackstageArgs.IncludeReferences) (pr.GetResults BackstageArgs.IncludeAssembly) (pr.Contains BackstageArgs.Verbose)
+            Some ({ InputPaths = sln
+                    OutputPath = outputPath
+                    Format = format
+                    CurrentDirectory = currentDir }, options)
         else None
         
-    let execBackstageAsync (cmd: BackstageCommand) = task {
+    let execBackstageAsync (cmd: BackstageCommand, options: AnalysisOptions) = task {
         let pathToSln = String.concat ", " cmd.InputPaths
-        match! loadApps cmd.CurrentDirectory cmd.InputPaths with
+        match! loadApps options cmd.CurrentDirectory cmd.InputPaths with
         | Error e -> return Error(1, e)
         | Ok apps ->
             return
@@ -181,7 +222,7 @@ module Cli =
                 | Error e -> Error(1, e)
     }
     
-    let (|IsDiagramCommand|_|) (parserResults: ParseResults<CliArguments>) : DiagramCommand option =
+    let (|IsDiagramCommand|_|) (parserResults: ParseResults<CliArguments>) : (DiagramCommand * AnalysisOptions) option =
         if parserResults.Contains(CliArguments.Diagram) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Diagram)
@@ -189,16 +230,17 @@ module Cli =
             let outputPath: string = pr.TryGetResult(DiagramArgs.OutputPath) |> Option.defaultValue "./c4-system-context.mermaid"
             let diagramType = pr.GetResult(DiagramArgs.DiagramType, defaultValue = DiagramType.C4System)
             let diagramFormat = pr.GetResult(DiagramArgs.DiagramFormat, defaultValue = DiagramFormat.Mermaid)
-            Some { InputPaths = sln
-                   OutputPath = outputPath
-                   DiagramType = diagramType
-                   DiagramFormat = diagramFormat
-                   CurrentDirectory = currentDir }
+            let options = analysisOptions (pr.Contains DiagramArgs.IncludeReferences) (pr.GetResults DiagramArgs.IncludeAssembly) (pr.Contains DiagramArgs.Verbose)
+            Some ({ InputPaths = sln
+                    OutputPath = outputPath
+                    DiagramType = diagramType
+                    DiagramFormat = diagramFormat
+                    CurrentDirectory = currentDir }, options)
         else None
         
-    let execDiagramAsync (cmd: DiagramCommand) = task {
+    let execDiagramAsync (cmd: DiagramCommand, options: AnalysisOptions) = task {
         let pathToSln = String.concat ", " cmd.InputPaths
-        match! loadApps cmd.CurrentDirectory cmd.InputPaths with
+        match! loadApps options cmd.CurrentDirectory cmd.InputPaths with
         | Error e -> return Error(1, e)
         | Ok apps ->
             return
