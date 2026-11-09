@@ -185,6 +185,12 @@ let ``A class with both Responsibility and Collaborator yields one of each`` () 
     Assert.Equal("Elsewhere", c.AppName)
 
 [<Fact>]
+let ``Backstage without a meta catalogues only the collaborators`` () =
+    let anon = { Meta = None; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let yaml = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ anon ]
+    Assert.Contains("visa-visa", yaml)
+
+[<Fact>]
 let ``Backstage honours the json format`` () =
     let api = app "Api" "Ordering" []
     let json = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Json; CurrentDirectory = "" } [ api ]

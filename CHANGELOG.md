@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command records have `InputPaths: string list` instead of `PathToSln`.
 
 ### Fixed
+- `backstage` no longer fails for an app without `meta()`; it catalogues the collaborators only (regression test added).
 - `backstage -f json` now writes JSON (an array of Component entities) instead of YAML, on both stacks.
 - `Haya.Bun` now finds annotations in workspace packages imported by name (symlinked into `node_modules`) and in
   projects listed under tsconfig `references`; both were silently skipped before.

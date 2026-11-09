@@ -47,11 +47,7 @@ analyser and `@typescript/native` (`typescript@^7`) provides `tsc` for type chec
 
 - `crc -cc` (C4 level 2) renders the same as `-c`; neither stack implements level 2.
 - Markdown table cells are not escaped, so a `|` in a description breaks the table (both stacks, `Haya.Core`).
-- `backstage` fails when there is no `meta()` (a todo in `Haya.Core/Backstage.fs`).
-- `backstage -f json` still writes YAML: `Backstage.generateCatalog` ignores the format (both stacks, `Haya.Core`).
 - An unset `protocol` is output as `""` on both stacks; the C# attribute's `"HTTPS"` default is never applied.
-- `Haya.Roslyn` bug: a C# class with both `[Responsibility]` and `[Collaborator]` emits its responsibility twice and
-  drops the collaborator. The TypeScript analyser emits both, so those outputs differ until it is fixed.
 - The annotation package is private and consumed from source; it is not published to npm.
 
 ## Prerequisites
