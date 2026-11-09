@@ -19,6 +19,23 @@ bun run ../../../src/Haya.Bun/haya.ts crc -cc .
 `bun run parity` in `src/Haya.Bun` runs both tools on these examples and diffs every output. The only substitution is
 the source path (`HayaEcomm.cs` becomes `src/ecomm.ts`).
 
+## Custom attributes and annotations
+
+The same application again, with organisation-wide attributes (`AcmeMeta`, `CallsPayments`) that bake in values, so each
+class only says what differs. A value written where the attribute is used overrides the default.
+
+| Language | Definitions | Usage | Generated CRC |
+| --- | --- | --- | --- |
+| C# | [Attributes.cs](dotnet-custom-attributes/Acme.Attributes/Attributes.cs) | [Checkout.cs](dotnet-custom-attributes/Checkout/Checkout.cs) | [CRC.md](dotnet-custom-attributes/CRC.md) |
+| TypeScript | [annotations.ts](typescript/custom-annotations/src/annotations.ts) | [checkout.ts](typescript/custom-annotations/src/checkout.ts) | [CRC.md](typescript/custom-annotations/CRC.md) |
+
+In C# the defaults are `[CollaboratorDefaults]` and friends on a class that derives from the Haya attribute; in TypeScript
+they are `defineCollaborator({...})` and friends. See the tutorials for [C#](../docs/tutorials/custom-attributes-csharp.md)
+and [TypeScript](../docs/tutorials/custom-attributes-typescript.md). Generate each `CRC.md` as above, from
+`dotnet-custom-attributes` with `haya crc -cc CustomAttributes.sln` and from `typescript/custom-annotations` with
+`bun run ../../../src/Haya.Bun/haya.ts crc -cc .`. `bun run parity` compares these two as well (`Checkout.cs` becomes
+`src/checkout.ts`).
+
 ## Multiple systems
 
 Two more examples build a whole system from describe files only. Three apps (Storefront, Orders and Payments, each in

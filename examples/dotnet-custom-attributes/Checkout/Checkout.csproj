@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Acme.Attributes\Acme.Attributes.csproj" />
+    <ProjectReference Include="..\..\..\src\Haya\Haya.fsproj" />
+  </ItemGroup>
+
+</Project>

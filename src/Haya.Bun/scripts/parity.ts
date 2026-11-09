@@ -1,8 +1,9 @@
-// Parity check: runs the .NET tool (Haya.Tool) on examples/dotnet and the Bun CLI on examples/typescript/example,
+// Parity check: runs the .NET tool (Haya.Tool) on examples/dotnet and the Bun CLI on examples/typescript/example (and the
+// custom attribute examples next to them),
 // then diffs every output. The source path is the only substitution (`HayaEcomm.cs` -> `src/ecomm.ts`).
 // Each tool runs from its own example directory, because ComponentSource is relative to the current directory.
 //
-//   bun run parity            # needs the .NET SDK (the baseline) and `bun install` in examples/typescript/example
+//   bun run parity            # needs the .NET SDK (the baseline) and `bun install` in examples/typescript/example and examples/typescript/custom-annotations
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -51,7 +52,7 @@ const multiCases: { file: string; args: string[] }[] = [
 ];
 
 let failed = 0;
-const total = cases.length + multiCases.length;
+const total = cases.length * 2 + multiCases.length;
 const check = (file: string, net: string, actual: string) => {
   const expected = readFileSync(net, "utf8");
   if (expected === actual) {
@@ -73,14 +74,28 @@ for (const { file, args } of multiCases) {
   run(["bun", "run", hayaTs, ...withOut(args, bun), ...fixtures], tsCwd);
   check(file, net, readFileSync(bun, "utf8"));
 }
-for (const { file, args } of cases) {
-  const net = join(out, "net-" + file);
-  const bun = join(out, "bun-" + file);
-  const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
-  run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), dotnetSln], dotnetCwd);
-  run(["bun", "run", hayaTs, ...withOut(args, bun), "."], tsCwd);
-  check(file, net, readFileSync(bun, "utf8").replaceAll("src/ecomm.ts", "HayaEcomm.cs"));
-}
+// The same comparison on a pair of example projects. `tsPath` -> `netPath` is the only substitution.
+const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: string, tsPath: string, netPath: string) => {
+  for (const { file, args } of cases) {
+    const label = prefix + file;
+    const net = join(out, "net-" + label);
+    const bun = join(out, "bun-" + label);
+    const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
+    run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), sln], dotnetDir);
+    run(["bun", "run", hayaTs, ...withOut(args, bun), "."], tsDir);
+    check(label, net, readFileSync(bun, "utf8").replaceAll(tsPath, netPath));
+  }
+};
+compareExamples("", dotnetCwd, dotnetSln, tsCwd, "src/ecomm.ts", "HayaEcomm.cs");
+// Custom attributes / annotations with defaults (examples/dotnet-custom-attributes, examples/typescript/custom-annotations)
+compareExamples(
+  "custom-",
+  join(repo, "examples/dotnet-custom-attributes"),
+  join(repo, "examples/dotnet-custom-attributes/CustomAttributes.sln"),
+  join(repo, "examples/typescript/custom-annotations"),
+  "src/checkout.ts",
+  "Checkout/Checkout.cs",
+);
 rmSync(out, { recursive: true, force: true });
 if (failed > 0) {
   console.error(`${failed} of ${total} outputs differ`);

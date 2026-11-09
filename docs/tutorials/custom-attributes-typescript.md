@@ -93,5 +93,6 @@ the source of linked workspace packages. A package that is installed from a regi
 ## Where next
 
 - The [annotation reference](../reference/attributes.md#custom-annotations-with-defaults-typescript) has the details.
+- A complete [example](../../examples/typescript/custom-annotations) with its [generated CRC](../../examples/typescript/custom-annotations/CRC.md).
 - [Why defaults are declared statically](../adr/ADR008-custom-attribute-defaults.md).
 - The C# equivalent: [Custom C# attributes](custom-attributes-csharp.md).

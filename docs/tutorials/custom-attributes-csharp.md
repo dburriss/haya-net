@@ -86,4 +86,5 @@ Haya reads the defaults from the compiled attribute, so the package does not hav
 ## Where next
 
 - The [attribute reference](../reference/attributes.md) lists every property and the rules for custom attributes.
+- A complete [example](../../examples/dotnet-custom-attributes) with its [generated CRC](../../examples/dotnet-custom-attributes/CRC.md).
 - [Why defaults are separate attributes](../adr/ADR008-custom-attribute-defaults.md).
