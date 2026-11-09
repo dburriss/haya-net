@@ -5,6 +5,7 @@ open System.IO
 open Haya
 open Haya.Core.Analysis
 open Haya.Roslyn
+open InMemoryAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.Text
@@ -13,45 +14,11 @@ open Xunit
 // Custom attributes derive from a Haya attribute and bake in defaults with the matching `*Defaults` attribute.
 // These tests compile small C# snippets in memory, so no MSBuild is needed.
 
-let private platformReferences =
-    (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") :?> string).Split(Path.PathSeparator)
-    |> Array.map (fun p -> MetadataReference.CreateFromFile p :> MetadataReference)
-    |> Array.toList
-
-let private hayaReference = MetadataReference.CreateFromFile(typeof<MetaAttribute>.Assembly.Location) :> MetadataReference
-
-let private parse (source: string) = CSharpSyntaxTree.ParseText(source, path = "/virtual/Source.cs")
-
-/// Compile `source` to a DLL and return it as a metadata reference (a "compiled" custom attribute library).
-let private compiled (assemblyName: string) (source: string) : MetadataReference =
-    let compilation =
-        CSharpCompilation.Create(
-            assemblyName,
-            [ parse source ],
-            platformReferences @ [ hayaReference ],
-            CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-    use stream = new MemoryStream()
-    let result = compilation.Emit stream
-    Assert.True(result.Success, String.Join("\n", result.Diagnostics))
-    MetadataReference.CreateFromImage(stream.ToArray()) :> MetadataReference
+let private compiled (assemblyName: string) (source: string) = compileLibrary assemblyName true source
 
 /// Analyse `source` as the only document of a C# project that has the given extra references.
 let private analyse (extraReferences: MetadataReference list) (source: string) : Descriptor list =
-    let workspace = new AdhocWorkspace()
-    let projectId = ProjectId.CreateNewId()
-    let projectInfo =
-        ProjectInfo.Create(projectId, VersionStamp.Create(), "Test", "Test", LanguageNames.CSharp)
-            .WithMetadataReferences(platformReferences @ [ hayaReference ] @ extraReferences)
-    let solution = workspace.CurrentSolution.AddProject projectInfo
-    let documentId = DocumentId.CreateNewId projectId
-    let solution =
-        solution.AddDocument(
-            DocumentInfo.Create(
-                documentId, "Source.cs", null, SourceCodeKind.Regular,
-                TextLoader.From(TextAndVersion.Create(SourceText.From source, VersionStamp.Create())),
-                filePath = "/virtual/Source.cs"))
-    Descriptors.getDescriptors "/virtual" Descriptors.attributeNames solution
-    |> Async.AwaitTask |> Async.RunSynchronously
+    (analyseWith Roslyn.ReferenceOptions.none extraReferences source).Descriptors
 
 let private collaborators ds = ds |> Descriptor.collaborators
 let private responsibilities ds = ds |> Descriptor.responsibilities

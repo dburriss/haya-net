@@ -5,6 +5,7 @@ open System.IO
 open Haya
 open Haya.Core.Analysis
 open Haya.Roslyn
+open InMemoryAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.Text
@@ -13,43 +14,9 @@ open Xunit
 // Haya attributes on public types in compiled references are only read when asked for.
 // Small C# snippets are compiled in memory, so no MSBuild or NuGet restore is needed.
 
-let private platformReferences =
-    (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") :?> string).Split(Path.PathSeparator)
-    // the test host references the annotated Example project: leave it out so only the libraries under test are seen
-    |> Array.filter (fun p -> not (Path.GetFileName(p).StartsWith "Example"))
-    |> Array.map (fun p -> MetadataReference.CreateFromFile p :> MetadataReference)
-    |> Array.toList
+let private library = compileLibrary
 
-let private hayaReference = MetadataReference.CreateFromFile(typeof<MetaAttribute>.Assembly.Location) :> MetadataReference
-
-/// Compile `source` to a DLL; `withHaya` = whether it references the Haya assembly.
-let private library (assemblyName: string) (withHaya: bool) (source: string) : MetadataReference =
-    let compilation =
-        CSharpCompilation.Create(
-            assemblyName,
-            [ CSharpSyntaxTree.ParseText(source, path = "/lib/Lib.cs") ],
-            platformReferences @ (if withHaya then [ hayaReference ] else []),
-            CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-    use stream = new MemoryStream()
-    let result = compilation.Emit stream
-    Assert.True(result.Success, String.Join("\n", result.Diagnostics))
-    MetadataReference.CreateFromImage(stream.ToArray()) :> MetadataReference
-
-let private analyse (options: Roslyn.ReferenceOptions) (references: MetadataReference list) (source: string) =
-    let workspace = new AdhocWorkspace()
-    let projectId = ProjectId.CreateNewId()
-    let projectInfo =
-        ProjectInfo.Create(projectId, VersionStamp.Create(), "App", "App", LanguageNames.CSharp)
-            .WithMetadataReferences(platformReferences @ [ hayaReference ] @ references)
-    let solution = workspace.CurrentSolution.AddProject projectInfo
-    let solution =
-        solution.AddDocument(
-            DocumentInfo.Create(
-                DocumentId.CreateNewId projectId, "Source.cs", null, SourceCodeKind.Regular,
-                TextLoader.From(TextAndVersion.Create(SourceText.From source, VersionStamp.Create())),
-                filePath = "/virtual/Source.cs"))
-    Descriptors.getAnalysisWith options "/virtual" Descriptors.attributeNames solution
-    |> Async.AwaitTask |> Async.RunSynchronously
+let private analyse = analyseWith
 
 let private libSource = """
 using Haya;
