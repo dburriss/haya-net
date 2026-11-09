@@ -84,11 +84,30 @@ module Roslyn =
             return results |> Seq.distinct |> Seq.toList
         }
  
+    /// True when the attribute is the named attribute type or derives from it (a custom attribute).
+    let isAttributeOf (attributeFullName: string) (attr: AttributeData) =
+        let rec loop (t: INamedTypeSymbol) =
+            not (isNull t) && (t.ToDisplayString() = attributeFullName || loop t.BaseType)
+        loop attr.AttributeClass
+
     let filterAttributes (attributeNames: string list) (attributes: AttributeData seq) =
         attributes
-        |> Seq.filter (fun attr -> attributeNames |> List.exists (fun name -> attr.AttributeClass.ToDisplayString() = name))
+        |> Seq.filter (fun attr -> attributeNames |> List.exists (fun name -> isAttributeOf name attr))
         |> Seq.toList
-    
+
+    /// The property values baked into a custom attribute: the named arguments of the `*Defaults` marker attribute
+    /// (`markerFullName`) on the attribute class and its base classes, base first so a derived class overrides.
+    /// Only attribute metadata is read, so this works for attribute classes from source and from compiled references.
+    let attributeDefaults (markerFullName: string) (attr: AttributeData) : (string * TypedConstant) list =
+        let rec chain (t: INamedTypeSymbol) = if isNull t then [] else t :: chain t.BaseType
+        chain attr.AttributeClass
+        |> List.rev
+        |> List.collect (fun t ->
+            t.GetAttributes()
+            |> Seq.filter (fun a -> not (isNull a.AttributeClass) && a.AttributeClass.ToDisplayString() = markerFullName)
+            |> Seq.collect (fun a -> a.NamedArguments |> Seq.map (fun kv -> kv.Key, kv.Value))
+            |> Seq.toList)
+
     let findClassesWithAttribute (attributeFullName: string) (solution: Solution) =
         task {
             let results = ResizeArray<ISymbol>()
@@ -104,7 +123,7 @@ module Roslyn =
                         
                     for classDecl in classDeclarations do
                         let symbol = semanticModel.GetDeclaredSymbol(classDecl)
-                        if symbol.GetAttributes() |> Seq.exists (fun attr -> attr.AttributeClass.ToDisplayString() = attributeFullName) then
+                        if symbol.GetAttributes() |> Seq.exists (fun attr -> isAttributeOf attributeFullName attr) then
                             results.Add(symbol)
             return results |> Seq.toList
         }
@@ -123,7 +142,7 @@ module Roslyn =
             for project in csharpProjects solution do
                 let! compilation = project.GetCompilationAsync()
                 let assemblySymbol = compilation.Assembly
-                if assemblySymbol.GetAttributes() |> Seq.exists (fun attr -> attr.AttributeClass.ToDisplayString() = attributeFullName) then
+                if assemblySymbol.GetAttributes() |> Seq.exists (fun attr -> isAttributeOf attributeFullName attr) then
                     results.Add(assemblySymbol)
             return results |> Seq.toList
         }

@@ -6,6 +6,7 @@ Pick the page that matches what you are doing right now.
 
 - [Getting started with C#](tutorials/getting-started-csharp.md): annotate a .NET project and generate your first CRC document.
 - [Getting started with TypeScript](tutorials/getting-started-typescript.md): the same for a TypeScript project.
+- [Custom C# attributes](tutorials/custom-attributes-csharp.md): create your own attributes with values baked in.
 
 ## How-to guides: get a specific job done
 

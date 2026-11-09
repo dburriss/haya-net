@@ -44,6 +44,7 @@ Start with the tutorial for your stack:
 
 - [Getting started with C#](docs/tutorials/getting-started-csharp.md)
 - [Getting started with TypeScript](docs/tutorials/getting-started-typescript.md)
+- [Custom C# attributes](docs/tutorials/custom-attributes-csharp.md)
 
 See the annotated [C# example](examples/dotnet/Example/HayaEcomm.cs) and its [generated CRC](examples/dotnet/Example/CRC.md).
 

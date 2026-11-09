@@ -11,6 +11,7 @@
         <Compile Include="Code.fs" />
         <Compile Include="SolutionBuilder.fs" />
         <Compile Include="DescriptorTests.fs" />
+        <Compile Include="CustomAttributeTests.fs" />
     </ItemGroup>
 
     <ItemGroup>

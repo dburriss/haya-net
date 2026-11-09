@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Custom C# attributes with defaults: derive from `ResponsibilityAttribute`, `CollaboratorAttribute` or `MetaAttribute` and
+  put `ResponsibilityDefaults`, `CollaboratorDefaults` or `MetaDefaults` on the class to bake in values; values at the
+  usage site override them. Works for attributes in source and in compiled assemblies. See
+  [the tutorial](docs/tutorials/custom-attributes-csharp.md) and ADR008. (Previously, subclasses were silently ignored.)
 - Documentation reorganised by Diataxis under `docs/` (tutorials, how-to guides, reference, explanation), a new README
   with logo and badges, and an ADR index. `Attributes.md` moved to `docs/reference/attributes.md`.
 - C4 Level 2 (container) diagram: `crc -cc` adds it after the level 1 diagram and `diagram -t c4container` writes only

@@ -100,3 +100,30 @@ public class ShippingService { }
 | `External` | The collaborator is part of a different system or organisation. |
 | `InternalUser` | A user or person inside the organisation who uses or is used by the application. |
 | `ExternalUser` | A user or person outside the organisation. |
+
+## Custom attributes with defaults (C#)
+
+Derive from `ResponsibilityAttribute`, `CollaboratorAttribute` or `MetaAttribute` to create your own attribute, and put
+the matching defaults attribute on it to bake in values:
+
+| Base attribute | Defaults attribute | Properties |
+| --- | --- | --- |
+| `Responsibility` | `ResponsibilityDefaults` | Same as `Responsibility`. |
+| `Collaborator` | `CollaboratorDefaults` | Same as `Collaborator`. |
+| `Meta` | `MetaDefaults` | Same as `Meta`. |
+
+```csharp
+[CollaboratorDefaults(AppName = "Payments", System = "Acme", Protocol = "gRPC")]
+public class CallsPaymentsAttribute : CollaboratorAttribute { }
+
+[CallsPayments(DataDescription = "Charge a card")]
+public class CheckoutHandler { }
+```
+
+- Only properties you set on the defaults attribute are defaults; a property you leave out behaves as it does on the
+  base attribute.
+- A value at the usage site overrides the default. For a chain of custom attributes, a derived attribute's defaults
+  override those of its base attribute.
+- Custom attributes can be defined in the analysed source or in a compiled assembly (for example a NuGet package).
+- A custom attribute without a defaults attribute is still recognised; it simply has no defaults.
+- The defaults attribute is not itself reported as a responsibility, collaborator or meta.

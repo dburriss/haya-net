@@ -17,11 +17,17 @@ module Descriptors =
         baseUri.MakeRelativeUri(targetUri).ToString()
     let namedArgumentsToMap (args: ImmutableArray<KeyValuePair<string, TypedConstant>>) =
         args |> Seq.map (fun x -> x.Key, x.Value.Value.ToString()) |> Map.ofSeq
+    let private constantToString (c: TypedConstant) = c.Value.ToString()
+    /// The named arguments of an attribute: the defaults baked into a custom attribute with its `*Defaults` marker
+    /// (`markerFullName`), overridden by the arguments written at the usage site.
+    let namedArguments (markerFullName: string) (attr: AttributeData) =
+        let defaults = Roslyn.attributeDefaults markerFullName attr |> List.map (fun (k, v) -> k, constantToString v) |> Map.ofList
+        attr.NamedArguments |> Seq.fold (fun m x -> Map.add x.Key (constantToString x.Value) m) defaults
     let (|IsResponsibility|_|) (rootPath: string) (symbol: ISymbol) =
         let attrs = symbol.GetAttributes() |> Roslyn.filterAttributes [typeof<ResponsibilityAttribute>.FullName]
         if attrs |> List.isEmpty |> not then
             attrs |> List.map (fun attr ->
-                let map = attr.NamedArguments |> namedArgumentsToMap
+                let map = namedArguments typeof<ResponsibilityDefaultsAttribute>.FullName attr
                 let description = map |> Map.tryFind "Description" |> Option.defaultValue ""
                 Responsibility {
                     Description = description
@@ -37,7 +43,7 @@ module Descriptors =
         let attrs = symbol.GetAttributes() |> Roslyn.filterAttributes [typeof<CollaboratorAttribute>.FullName]
         if attrs |> List.isEmpty |> not then
             attrs |> List.map (fun attr ->
-                let map = attr.NamedArguments |> namedArgumentsToMap
+                let map = namedArguments typeof<CollaboratorDefaultsAttribute>.FullName attr
                 let direction = map |> Map.tryFind "Direction" |> Option.map parseEnum<Direction> |> Option.defaultValue Direction.Downstream
                 let tech = map |> Map.tryFind "Technology" |> Option.defaultValue "" 
                 let protocol = map |> Map.tryFind "Protocol" |> Option.defaultValue "" 
@@ -72,7 +78,7 @@ module Descriptors =
             // printfn "Meta Attrs %A" attrs
             if attrs |> List.isEmpty |> not then
                 attrs |> List.map (fun attr ->
-                    let map = attr.NamedArguments |> namedArgumentsToMap
+                    let map = namedArguments typeof<MetaDefaultsAttribute>.FullName attr
                     let appName = map |> Map.tryFind "AppName" |> Option.defaultValue ""
                     let description = map |> Map.tryFind "Description" |> Option.defaultValue ""
                     let owner = map |> Map.tryFind "Owner" |> Option.defaultValue ""

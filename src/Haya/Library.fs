@@ -79,3 +79,68 @@ type MetaAttribute() =
     member val Technology = "" with get,set
     /// What kind of application this is. Picks the shape in diagrams.
     member val Kind = AppKind.Unspecified with get,set
+
+// ---------------------------------------------------------------------------------------------------------------
+// Defaults for custom attributes.
+//
+// To create your own attribute with some values baked in, derive from one of the attributes above and put the
+// matching `*Defaults` attribute on it:
+//
+//     [CollaboratorDefaults(AppName = "Payments", Protocol = "gRPC")]
+//     public class CallsPaymentsAttribute : CollaboratorAttribute { }
+//
+// The Haya analyser reads the defaults from the attribute class and applies them underneath whatever is written at
+// the usage site. They are separate types (not derived from the attributes above) so that the custom attribute
+// class itself is not reported as a responsibility, collaborator, or meta.
+// ---------------------------------------------------------------------------------------------------------------
+
+/// Default values for a custom attribute derived from <see cref="ResponsibilityAttribute"/>.
+[<AttributeUsage(AttributeTargets.Class, Inherited = false)>]
+type ResponsibilityDefaultsAttribute() =
+    inherit Attribute()
+    /// A description of the responsibility, usecase, or feature
+    member val Description = "" with get,set
+
+/// Default values for a custom attribute derived from <see cref="CollaboratorAttribute"/>.
+[<AttributeUsage(AttributeTargets.Class, Inherited = false)>]
+type CollaboratorDefaultsAttribute() =
+    inherit Attribute()
+    /// The direction of the data flow or dependency
+    member val Direction = Direction.Downstream with get,set
+    /// Then technology used by the collaborator
+    member val Technology = "" with get,set
+    /// The technology or protocol used to communicate with the collaborator
+    member val Protocol = "HTTPS" with get,set
+    /// A description of the data or dependency flowing between the component and the collaborator
+    member val DataDescription = "" with get,set
+    /// A description of the collaborator, system, or application
+    member val Description = "" with get,set
+    /// The name of the application being interacted with
+    member val AppName = "" with get,set
+    /// The name of the system being interacted with
+    member val System = "" with get,set
+    /// The type of relationship between the team and the application or system
+    member val Relationship = Relationship.Internal with get,set
+    /// The slug of the VCS repository for the collaborator
+    member val Repository = "" with get,set
+    /// The owner of the system or application
+    member val Owner = "" with get,set
+
+/// Default values for a custom attribute derived from <see cref="MetaAttribute"/>.
+[<AttributeUsage(AttributeTargets.Class, Inherited = false)>]
+type MetaDefaultsAttribute() =
+    inherit Attribute()
+    /// The name of this application
+    member val AppName = "" with get,set
+    /// The team responsible for this application
+    member val Owner = "" with get,set
+    /// A description of this application
+    member val Description = "" with get,set
+    /// The system this application belongs to
+    member val System = "" with get,set
+    /// The slug of the VCS repository for this application
+    member val Repository = "" with get,set
+    /// The technology this application is built with, e.g. ".NET 10 / ASP.NET Core"
+    member val Technology = "" with get,set
+    /// What kind of application this is. Picks the shape in diagrams.
+    member val Kind = AppKind.Unspecified with get,set
