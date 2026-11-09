@@ -2,7 +2,7 @@ namespace Haya.Core
 
 /// A minimal, internal markdown document builder. It covers only what Haya renders (headings, paragraphs,
 /// tables, fenced code) and uses plain FSharp.Core string functions so it compiles under Fable.
-/// Output is LF-only. Text is written as given, with no escaping.
+/// Output is LF-only. Text is written as given, except table cells, where `|` and newlines are escaped.
 module internal Markdown =
 
     type Block =
@@ -27,7 +27,11 @@ module internal Markdown =
     let addCode (language: string option) (code: string) = add (CodeBlock (language, code))
     let addBlankLine (doc: Document) = add BlankLine doc
 
-    let private row (cells: string list) = "|" + String.concat "|" cells + "|\n"
+    /// Escapes table cell text: a literal pipe would end the cell, and a newline would end the row.
+    let private escapeCell (text: string) =
+        text.Replace("|", "\\|").Replace("\r\n", "<br>").Replace("\n", "<br>")
+
+    let private row (cells: string list) = "|" + String.concat "|" (List.map escapeCell cells) + "|\n"
 
     let private renderBlock (block: Block) =
         match block with
