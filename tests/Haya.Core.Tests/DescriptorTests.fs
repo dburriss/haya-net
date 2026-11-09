@@ -191,6 +191,31 @@ let ``Backstage without a meta catalogues only the collaborators`` () =
     Assert.Contains("visa-visa", yaml)
 
 [<Fact>]
+let ``Backstage defaults a collaborator system to the owner, or External`` () =
+    let api = app "Api" "Ordering" [ "Local", "", Relationship.Internal; "Stripe", "", Relationship.External ]
+    let yaml = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ api ]
+    Assert.Contains("ordering-local", yaml)
+    Assert.Contains("external-stripe", yaml)
+    Assert.DoesNotContain("'-", yaml)
+
+[<Fact>]
+let ``Backstage dependencyOf only lists apps that depend on it`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal ]
+    let payments = app "Payments" "Billing" []
+    let docs = (Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ api; payments ]).Split("---\n")
+    Assert.Contains("dependencyOf: []", docs[0])
+    Assert.Contains("ordering-api", docs[1])
+
+[<Fact>]
+let ``Backstage splits collaborators by direction`` () =
+    let a = app "Payments" "Billing" [ "Checkout", "WebShop", Relationship.Internal; "Visa", "Visa", Relationship.External ]
+    let a = { a with Collaborators = a.Collaborators |> List.mapi (fun i c -> if i = 0 then { c with Direction = Direction.Upstream } else c) }
+    let docs = (Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ a ]).Split("---\n")
+    Assert.Contains("- web-shop-checkout", docs[0].Split("dependsOn:")[0]) // dependencyOf
+    Assert.Contains("- visa-visa", docs[0].Split("dependsOn:")[1])
+    Assert.DoesNotContain("web-shop-checkout", docs[0].Split("dependsOn:")[1])
+
+[<Fact>]
 let ``Backstage honours the json format`` () =
     let api = app "Api" "Ordering" []
     let json = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Json; CurrentDirectory = "" } [ api ]

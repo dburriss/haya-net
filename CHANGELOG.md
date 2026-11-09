@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command records have `InputPaths: string list` instead of `PathToSln`.
 
 ### Fixed
+- `backstage`: a collaborator without a `System` now takes its owning app's system (or `External` when its
+  relationship is external) instead of producing a component named `-name` with an empty domain.
+- `backstage`: `dependsOn` and `dependencyOf` now follow the collaborator `Direction`: downstream collaborators go in
+  `dependsOn`, upstream ones (they call this app) in `dependencyOf`, together with the apps in the catalog that call
+  it. Before, every collaborator was in `dependsOn` and, with a wrong name, in `dependencyOf`. Single-app output changes.
 - `backstage` no longer fails for an app without `meta()`; it catalogues the collaborators only (regression test added).
 - `backstage -f json` now writes JSON (an array of Component entities) instead of YAML, on both stacks.
 - `Haya.Bun` now finds annotations in workspace packages imported by name (symlinked into `node_modules`) and in
