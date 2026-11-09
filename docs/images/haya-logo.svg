@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="360" height="120" role="img" aria-labelledby="t">
+  <title id="t">haya</title>
+  <rect x="4" y="4" width="352" height="112" rx="22" fill="#12181d"/>
+  <!-- mark: an annotation bracket whose collaborators connect to a central application -->
+  <g fill="none" stroke="#2dd4bf" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 34 H26 V86 H34"/>
+    <path d="M60 40 L78 60"/>
+    <path d="M60 80 L78 60"/>
+    <path d="M78 60 H96"/>
+  </g>
+  <g fill="#12181d" stroke="#2dd4bf" stroke-width="5">
+    <circle cx="56" cy="38" r="7"/>
+    <circle cx="56" cy="82" r="7"/>
+  </g>
+  <rect x="94" y="46" width="28" height="28" rx="5" fill="#2dd4bf"/>
+  <!-- wordmark -->
+  <text x="142" y="82" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="56" font-weight="700" fill="#f2f2f2">haya</text>
+</svg>

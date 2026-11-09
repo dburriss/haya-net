@@ -9,26 +9,18 @@ imports the generated code. `Haya.Core` must stay free of .NET-only dependencies
 `Haya.Roslyn`); platform specifics go behind `#if FABLE_COMPILER` (see `Haya.Core/IO.fs`).
 
 Status: working. `crc`, `describe`, `diagram` and `backstage` analyse a TypeScript project and produce output
-identical to `Haya.Tool` for an equivalent codebase (`bun run parity` checks this against the two examples).
+identical to `Haya.Tool` for an equivalent codebase (`bun run parity` checks this against the examples).
 Annotations come from [`@haya/annotations`](../Haya.TypeScript) (`@Responsibility`, `@Collaborator`, `meta()`) and are
 read statically with the TypeScript compiler API; user code is never executed. See
 [ADR005](../../docs/adr/ADR005-typescript-annotations-and-analyser.md).
 
 ## Usage
 
-```bash
-haya crc <inputPath...> [-o ./CRC.md] [-c]                   # -c adds the C4 level 1 diagram, -cc also level 2
-haya describe <inputPath...> [-o ./haya.json] [-f json|yaml]
-haya diagram <inputPath...> [-o ./c4-system-context.mermaid] [-t c4system|c4container]
-haya backstage <inputPath...> [-o ./backstage.yaml] [-f json|yaml]
-```
-
-`inputPath` is a `tsconfig.json`, a directory containing one, or a `haya describe` file (`.json`/`.yaml`/`.yml`;
-render other formats from it without re-analysing). Give several to build one system from many projects (they can
-mix with describe files from `Haya.Tool`); apps with the same system and name are merged, see
-[ADR006](../../docs/adr/ADR006-multi-app-system-model.md). Paths in the output (`ComponentSource`) are relative
-to the current directory, so run `haya` from the project folder to get paths like `src/ecomm.ts`.
-Errors (including non-static annotation values) are reported as `file:line:column - message` with exit code 1.
+Commands (`crc`, `describe`, `diagram`, `backstage`), flags and defaults are the same as for `Haya.Tool`: see the
+[CLI reference](../../docs/reference/cli.md) and the [TypeScript tutorial](../../docs/tutorials/getting-started-typescript.md).
+`inputPath` is a `tsconfig.json`, a directory containing one, or a `haya describe` file. Run `haya` from the project folder so
+`ComponentSource` paths look like `src/ecomm.ts`. Errors (including non-static annotation values) are reported as
+`file:line:column - message` with exit code 1.
 
 ## Layout
 
@@ -45,28 +37,13 @@ analyser and `@typescript/native` (`typescript@^7`) provides `tsc` for type chec
 
 ## Known gaps
 
-- `crc -cc` (C4 level 2) renders the same as `-c`; neither stack implements level 2.
-- Markdown table cells are not escaped, so a `|` in a description breaks the table (both stacks, `Haya.Core`).
 - An unset `protocol` is output as `""` on both stacks; the C# attribute's `"HTTPS"` default is never applied.
 - The annotation package is private and consumed from source; it is not published to npm.
 
-## Prerequisites
+## Build and test
 
-- .NET SDK (see `/global.json`) and `dotnet tool restore` at the repo root (installs Fable)
-- Bun
-
-## Build & run
-
-```bash
-bun install
-bun run fable        # dotnet fable --lang ts --outDir fable_output
-bun run typecheck    # tsc --noEmit
-bun test             # analyser unit tests
-bun run parity       # diff against Haya.Tool output for the examples (needs the .NET SDK)
-bun run start -- --help
-bun run build        # fable + typecheck + `bun build --compile` -> dist/haya
-./dist/haya --help
-```
+See [Contributing](../../docs/contributing.md) for prerequisites and the build, test and parity commands
+(`bun install`, `bun run build`, `bun test`, `bun run parity`).
 
 Fable 5 emits `.ts` extensions in imports (fixed in fable-compiler/Fable#3973), so the generated
 code runs directly in Bun; `tsconfig.json` enables `allowImportingTsExtensions` for type-checking.

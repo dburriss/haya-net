@@ -71,7 +71,7 @@ type MetaAttribute() =
     member val Owner = "" with get,set
     /// A description of this application
     member val Description = "" with get,set
-    /// The team responsible for this application
+    /// The system this application belongs to
     member val System = "" with get,set
     /// The slug of the VCS repository for this application
     member val Repository = "" with get,set

@@ -16,7 +16,10 @@ export class CreditCardPaymentUsecase {}
 
 - `@Responsibility({...})` and `@Collaborator({...})` are class decorators and are repeatable.
 - `meta({...})` is a top-level call, once per project (the equivalent of the C# assembly-level `Meta`).
-- Values must be static: string literals, template literals without substitutions, and `Direction.*` /
+- Values must be static: string literals, template literals without substitutions, and `AppKind.*`, `Direction.*` /
   `Relationship.*` members. Otherwise `haya` reports an error with file and line.
+
+All options are in the [attribute reference](../../docs/reference/attributes.md); a walkthrough is in the
+[TypeScript tutorial](../../docs/tutorials/getting-started-typescript.md). No special `tsconfig` settings are needed.
 
 Status: the package is private and consumed from source (`"@haya/annotations": "file:..."`). It is not published yet.

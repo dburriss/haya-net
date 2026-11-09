@@ -9,7 +9,8 @@ This directory contains examples of how to use the Haya attributes to generate d
 
 Both describe the same application. The TypeScript annotations are class decorators (`@Responsibility`, `@Collaborator`)
 and a top level `meta({...})` call, imported from [`@haya/annotations`](../src/Haya.TypeScript). Both `CRC.md` files are
-generated (`haya crc -cc`); for the TypeScript example run `bun install` once, then, from `typescript/example`:
+generated with `haya crc -cc` ([CLI reference](../docs/reference/cli.md)). For the C# example run, from `dotnet/Example`,
+`haya crc -cc ../Example.sln` (paths in the output are relative to the working directory); for the TypeScript example run `bun install` once, then, from `typescript/example`:
 
 ```bash
 bun run ../../../src/Haya.Bun/haya.ts crc -cc .
@@ -32,3 +33,5 @@ the describe files and produces system-wide output.
 Run `generate.sh` in either folder. The two sets of describe files hold the same system, so the diagram and catalog are
 identical. Orders also depends on a Shipping service that has no describe file, so it appears as a stub in the Backstage
 catalog and as an extra system in the diagram. Describe files and solutions or projects can be mixed in one call.
+
+`dotnet-multi` is a three-project solution used as a test fixture by `tests/Haya.Core.Tests`; it has no generated output.

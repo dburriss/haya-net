@@ -1,7 +1,7 @@
 # ADR006: Multi-app system model and describe format 0.1
 
 Date: 2026-11-08  
-Status: Accepted  
+Status: Accepted (describe format superseded by `0.2` in [ADR007](ADR007-container-diagram-and-app-kind.md))  
 Author: dburriss
 
 ### Context

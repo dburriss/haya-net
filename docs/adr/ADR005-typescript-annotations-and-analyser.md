@@ -53,6 +53,5 @@ values (enums are ints in Fable output, lists via fable-library `ofArray`) and h
   - Static-only values: no constants or computed options.
   - Two TypeScript versions in `Haya.Bun` until the 7.1 API is stable.
   - The package must be published (and its decorator types validated against real consumers) before users can adopt it.
-- *Known differences from .NET:* the .NET analyser drops a class's collaborators when the same class also has a
-  `[Responsibility]` (and duplicates its responsibilities). The TypeScript analyser emits both; the .NET behaviour is
-  considered a bug and tracked rather than replicated.
+- *Known differences from .NET:* none outstanding. The .NET analyser used to drop a class's collaborators when the class
+  also had a `[Responsibility]`; that was fixed (see the changelog) and both stacks now emit both.

@@ -1,116 +1,77 @@
-# haya-net
+<p align="center">
+  <img src="docs/images/haya-logo.svg" alt="haya" width="280">
+</p>
 
-Haya is a tool and a set of attributes that help define what your application is doing and how it interacts with other applications or systems to achieve this.
+<h3 align="center">Living architecture docs, generated from your code.</h3>
 
-Haya automates the generating of documentation and diagrams for a .NET codebase. 
-It uses attributes to define concepts like Responsibilities and Collaborators.
-The tool uses these concepts to generate CRC descriptions and C4 Level 1 diagrams.
+<p align="center">
+  Haya reads small annotations you put next to your code (<code>Responsibility</code>, <code>Collaborator</code>, <code>Meta</code>)
+  and generates CRC documents, C4 diagrams and a Backstage catalog, for <b>C#</b> and <b>TypeScript</b> codebases.
+</p>
 
-See the *examples* folder of the [attribute annotations](examples/dotnet/Example/HayaEcomm.cs) and the [generated CRC](examples/dotnet/Example/CRC.md).
- 
-> **Note:** This currently only works for C# codebases.
+<p align="center">
+  <a href="https://github.com/dburriss/haya-net/actions/workflows/build.yml"><img src="https://github.com/dburriss/haya-net/actions/workflows/build.yml/badge.svg" alt="Build and test"></a>
+  <a href="https://www.nuget.org/packages/Haya.Tool"><img src="https://img.shields.io/nuget/v/Haya.Tool?logo=nuget&label=Haya.Tool" alt="NuGet Haya.Tool"></a>
+  <a href="https://www.nuget.org/packages/Haya"><img src="https://img.shields.io/nuget/v/Haya?logo=nuget&label=Haya" alt="NuGet Haya"></a>
+  <a href="https://github.com/dburriss/haya-net/blob/main/LICENSE"><img src="https://img.shields.io/github/license/dburriss/haya-net" alt="License"></a>
+</p>
 
-This is not meant to be a replacement for good documentation practices, but rather a tool to help you get started, 
-or at the least have a minimum level for a new joiner to start exploring the codebase.
+## Get started
 
-## Terminology
+Install the tool and the attributes package (alpha, hence `--prerelease`; .NET 10 SDK required):
 
-- **CRC**: Component, Responsibilities, Collaborators. Taken from the idea of a CRC card.
-- **System**: A collection of applications that work together to provide a service.
-- **Application**: A single deployable piece of software.
-- **Responsibility**: A usecase, feature, or capability that an application has.
-- **Collaborator**: Another application or system that the application interacts with.
-
-## Features
-
-- Generate CRC markdown documentation, optionally with C4 diagrams.
-- Generate diagrams for C4 Level 1 architecture, currently only in the Mermaid format.
-- Generate a description of the solution in Backstage catalog format.
-
-## Why?
-
-Haya uses attributes to define metadata about your codebase. This puts the source of documentation next to the code it describes.
-The closer the documentation is to the code, the more likely it is to be kept up to date.
-
-This also allows for the automation of generating documentation and diagrams into not only human-readable formats but also machine-readable formats.
-
-## Getting Started
-
-1. Install the Haya CLI tool
 ```bash
-dotnet tool install --global Haya.Tool
-```
-2. Add the Haya attributes package to your project.
-```bash
-dotnet add package Haya
-```
-3. Run the Haya CLI tool
-```bash
-haya --help
+dotnet tool install --global Haya.Tool --prerelease
+dotnet add package Haya --prerelease
 ```
 
-## Usage
+For TypeScript, see the [TypeScript tutorial](docs/tutorials/getting-started-typescript.md).
 
-1. Add the Haya attributes to your codebase. See [Attributes docs](Attributes.md) for more information. 
+Then annotate your code and run one command:
 
 ```csharp
-using Haya;
-[assembly:Meta(AppName = "CheckoutApi", Description = "Handles processing payment for a shopping cart", System = "HayaEcomm")]
-
-namespace Example;
+[assembly: Meta(AppName = "CheckoutApi", System = "HayaEcomm", Description = "Handles payment for a cart")]
 
 [Responsibility(Description = "Handles order processing")]
-public class CreditCardPaymentUsecase
-{ }
+public class CreditCardPaymentUsecase { }
+```
 
-[Collaborator(AppName = "Checkout",
-    Relationship = Relationship.Internal,
-    Direction = Direction.Upstream,
-    System = "WebShop",
-    Description = "Handles cart checkout for a customer",
-    DataDescription = "Request payment")]
-public class PaymentsController
-{ }
-```
-Running the Haya CLI tool will generate a CRC document and a C4 Level 1 diagram (the systems and how they relate).
-```bash
-haya crc --c4 ./Example.sln
-```
-Add the flag twice (`-cc`) to also get a C4 Level 2 diagram: each application inside its system, with the
-`Technology` and `Kind` from its `Meta`. `haya diagram -t c4container` writes only that diagram.
 ```bash
 haya crc -cc ./Example.sln
 ```
 
-## Usage
+Start with the tutorial for your stack:
 
-Every command takes one or more inputs: a solution, or a `haya describe` file (`.json`/`.yaml`). Pass several to
-build a whole system from many codebases, for example by gathering the describe files of each solution:
+- [Getting started with C#](docs/tutorials/getting-started-csharp.md)
+- [Getting started with TypeScript](docs/tutorials/getting-started-typescript.md)
 
-```bash
-haya describe -o payments.json Payments/Payments.sln
-haya describe -o ordering.json Ordering/Ordering.sln
-haya diagram -o system.mermaid payments.json ordering.json
-haya backstage payments.json ordering.json
-```
+See the annotated [C# example](examples/dotnet/Example/HayaEcomm.cs) and its [generated CRC](examples/dotnet/Example/CRC.md).
 
-Apps with the same system and app name are merged into one; the first meta wins and conflicts are reported as warnings.
-See [ADR006](docs/adr/ADR006-multi-app-system-model.md).
+## What it does
 
-```bash
-USAGE: haya [--help] [<subcommand> [<options>]]
+- **CRC documents.** Components, Responsibilities and Collaborators as Markdown, optionally with embedded diagrams. See the [CLI reference](docs/reference/cli.md).
+- **C4 diagrams.** Level 1 (system context) and level 2 (containers) as Mermaid. See [Generate C4 diagrams](docs/how-to/generate-diagrams.md).
+- **Backstage catalog.** One component per application with dependencies. See [Publish to Backstage](docs/how-to/publish-to-backstage.md).
+- **Describe files.** A JSON/YAML description of an application that every other command accepts as input. See the [describe format](docs/reference/describe-format.md).
+- **Many systems at once.** Merge several codebases, C# and TypeScript mixed, into one picture. See [Document several systems together](docs/how-to/document-multiple-systems.md).
+- **Same output on both stacks.** The C# tool (`Haya.Tool`) and the TypeScript tool (`Haya.Bun`) share one rendering core. See [Architecture](docs/explanation/architecture.md).
 
-SUBCOMMANDS:
+Haya is not a replacement for good documentation practices. It keeps a minimum level of documentation next to the code,
+so it stays current and a new joiner has somewhere to start exploring.
 
-    crc <options>         Generate Components, Responsibilities, and Collaborator documentation
-    describe <options>    Generate Haya solution description
-    backstage <options>   Generate Backstage catalog data
-    diagram <options>     Generate diagram files
+## Documentation
 
-    Use 'haya <subcommand> --help' for additional information.
+Organised by [Diataxis](https://diataxis.fr/), starting at the [docs index](docs/index.md):
 
-OPTIONS:
+| I want to... | Go to |
+| --- | --- |
+| Learn Haya by doing | [Tutorials](docs/tutorials/getting-started-csharp.md) |
+| Get a specific job done | [How-to guides](docs/index.md#how-to-guides-get-a-specific-job-done) |
+| Look up a flag or attribute | [CLI](docs/reference/cli.md), [Attributes](docs/reference/attributes.md) |
+| Understand why it works this way | [Concepts](docs/explanation/concepts.md), [ADRs](docs/adr/README.md) |
 
-    --help                display this list of options.
+More: [examples](examples/README.md) · [changelog](CHANGELOG.md) · [contributing](docs/contributing.md)
 
-```
+## License
+
+[MIT](LICENSE)
