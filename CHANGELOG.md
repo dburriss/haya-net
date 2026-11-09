@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command records have `InputPaths: string list` instead of `PathToSln`.
 
 ### Fixed
+- `backstage -f json` now writes JSON (an array of Component entities) instead of YAML, on both stacks.
 - `Haya.Bun` now finds annotations in workspace packages imported by name (symlinked into `node_modules`) and in
   projects listed under tsconfig `references`; both were silently skipped before.
 - `Haya.Tool` no longer emits a responsibility twice and drops the collaborator for a C# class that has both

@@ -62,4 +62,6 @@ module Backstage =
         if components |> List.isEmpty then
             ""
         else
-            components |> List.map Serializer.toYaml |> String.concat "---\n"
+            match cmd.Format with
+            | DataFormat.Yaml -> components |> List.map Serializer.toYaml |> String.concat "---\n"
+            | DataFormat.Json -> components |> List.toArray |> Flexi.Json.JsonValue.Array |> Serializer.toJson

@@ -183,3 +183,10 @@ let ``A class with both Responsibility and Collaborator yields one of each`` () 
     let c = ds |> Descriptor.collaborators |> List.exactlyOne
     Assert.Equal("Does both", r.Description)
     Assert.Equal("Elsewhere", c.AppName)
+
+[<Fact>]
+let ``Backstage honours the json format`` () =
+    let api = app "Api" "Ordering" []
+    let json = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Json; CurrentDirectory = "" } [ api ]
+    Assert.StartsWith("[", json.TrimStart())
+    Assert.Contains("\"apiVersion\"", json)
