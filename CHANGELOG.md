@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command records have `InputPaths: string list` instead of `PathToSln`.
 
 ### Fixed
+- `diagram` (and the `crc` C4 diagram) apply the same default system for a collaborator without a `System` as
+  `backstage`: the owning app's system, or `External` for external relationships.
 - `backstage`: an app now lists, in `dependsOn`, the apps in the catalog that declare it as an upstream collaborator.
 - `backstage`: a collaborator without a `System` now takes its owning app's system (or `External` when its
   relationship is external) instead of producing a component named `-name` with an empty domain.

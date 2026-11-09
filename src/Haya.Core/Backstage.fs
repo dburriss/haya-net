@@ -13,13 +13,6 @@ module Backstage =
         let appId = toKebabCase appName
         if systemId = "" then appId else $"{systemId}-{appId}"
 
-    /// A collaborator without a system belongs to the owning app's system, or to "External" when it is external.
-    let private withSystem (owner: string) (c: Analysis.CollaboratorDescriptor) =
-        if c.System <> "" then c
-        else
-            match c.Relationship with
-            | Analysis.Relationship.External -> { c with System = "External" }
-            | _ -> { c with System = owner }
     
     let private nameOfApp (meta: Analysis.MetaDescriptor) = createName meta.System meta.AppName
 
@@ -60,10 +53,7 @@ module Backstage =
 
     let generateCatalog (cmd: BackstageCommand) (apps: Analysis.App list) =
         // apps without a meta have no identity, so only their collaborators are catalogued
-        let apps =
-            apps |> List.map (fun a ->
-                let owner = a.Meta |> Option.map (_.System) |> Option.defaultValue ""
-                { a with Collaborators = a.Collaborators |> List.map (withSystem owner) })
+        let apps = apps |> List.map Analysis.App.withDefaultSystems
         let withMeta = apps |> List.choose (fun a -> a.Meta |> Option.map (fun m -> m, a))
         let knownApps = withMeta |> List.map (fun (m, _) -> nameOfApp m)
         let dependentsOf (target: Analysis.MetaDescriptor) =

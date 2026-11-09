@@ -226,6 +226,15 @@ let ``Backstage links an app to an in-catalog app that lists it as upstream`` ()
     Assert.Contains("ordering-api", docs[1].Split("dependsOn:")[0])     // billing-payments dependencyOf ordering-api
 
 [<Fact>]
+let ``Diagram places a collaborator without a system in the owner system or External`` () =
+    let api = app "Api" "Ordering" [ "Local", "", Relationship.Internal; "Stripe", "", Relationship.External ]
+    let text = Haya.Core.Diagram.sprintMermaidC4L1 [ api ]
+    Assert.Contains("System_Ext(external, External,", text)
+    Assert.Contains("Rel(ordering, external,", text)
+    Assert.DoesNotContain("Rel(ordering, ,", text)
+    Assert.Equal(1, text.Split("Rel(").Length - 1) // Local is in Ordering: no relationship to itself
+
+[<Fact>]
 let ``Backstage honours the json format`` () =
     let api = app "Api" "Ordering" []
     let json = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Json; CurrentDirectory = "" } [ api ]

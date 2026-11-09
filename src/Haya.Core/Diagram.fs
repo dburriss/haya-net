@@ -8,6 +8,7 @@ module Diagram =
     /// C4 system context for all the apps. Apps are grouped by system; collaborators in another system
     /// become relationships (to a known system, or to an external/internal system declared from the collaborator).
     let sprintMermaidC4L1 (apps: App list) =
+        let apps = apps |> List.map App.withDefaultSystems
         let metas = apps |> List.map App.meta
         let ownSystems = metas |> List.map (_.System) |> List.distinct
         let isOther (x: CollaboratorDescriptor) = x.System <> "" && not (List.contains x.System ownSystems)

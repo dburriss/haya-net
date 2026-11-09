@@ -71,3 +71,13 @@ module App =
 
     /// The app's meta, or an empty one when it has none.
     let meta (app: App) = app.Meta |> Option.defaultValue emptyMeta
+
+    /// A collaborator without a system belongs to the owning app's system, or to "External" when it is external.
+    /// Renderers apply this so that they agree on which system a collaborator is in.
+    let withDefaultSystems (app: App) =
+        let owner = app.Meta |> Option.map (_.System) |> Option.defaultValue ""
+        let fill (c: CollaboratorDescriptor) =
+            if c.System <> "" then c
+            elif c.Relationship = Relationship.External then { c with System = "External" }
+            else { c with System = owner }
+        { app with Collaborators = app.Collaborators |> List.map fill }
