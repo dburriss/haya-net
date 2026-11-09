@@ -12,7 +12,7 @@ import {
   type Descriptor_$union,
 } from "../fable_output/Haya.Core/Model.ts";
 import { ofArray, type FSharpList } from "../fable_output/fable_modules/fable-library-ts.5.27.0/List.ts";
-import type { Direction, DescriptorInfo, Relationship } from "./analyser.ts";
+import type { AppKind, Direction, DescriptorInfo, Relationship } from "./analyser.ts";
 
 const DIRECTION: Record<Direction, number> = { Upstream: 1, Downstream: 2 };
 const RELATIONSHIP: Record<Relationship, number> = {
@@ -22,6 +22,16 @@ const RELATIONSHIP: Record<Relationship, number> = {
   External: 4,
   InternalUser: 5,
   ExternalUser: 6,
+};
+
+const APP_KIND: Record<AppKind | "Unspecified", number> = {
+  Unspecified: 0,
+  Service: 1,
+  WebApp: 2,
+  Api: 3,
+  Worker: 4,
+  Database: 5,
+  Queue: 6,
 };
 
 export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
@@ -46,7 +56,7 @@ export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
         ),
       );
     case "meta":
-      return Descriptor_Meta(new MetaDescriptor(d.appName, d.description, d.system, d.repository, d.owner));
+      return Descriptor_Meta(new MetaDescriptor(d.appName, d.description, d.system, d.repository, d.owner, d.tech, APP_KIND[d.appKind]));
   }
 };
 

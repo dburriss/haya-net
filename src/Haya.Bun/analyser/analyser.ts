@@ -12,9 +12,11 @@ export const ANNOTATIONS_PACKAGE = "@haya/annotations";
 
 export type Direction = "Upstream" | "Downstream";
 export type Relationship = "Owned" | "Shared" | "Internal" | "External" | "InternalUser" | "ExternalUser";
+export type AppKind = "Service" | "WebApp" | "Api" | "Worker" | "Database" | "Queue";
 
 const DIRECTIONS: readonly Direction[] = ["Upstream", "Downstream"];
 const RELATIONSHIPS: readonly Relationship[] = ["Owned", "Shared", "Internal", "External", "InternalUser", "ExternalUser"];
+const APP_KINDS: readonly AppKind[] = ["Service", "WebApp", "Api", "Worker", "Database", "Queue"];
 
 export interface ResponsibilityInfo {
   kind: "responsibility";
@@ -46,6 +48,9 @@ export interface MetaInfo {
   system: string;
   repository: string;
   owner: string;
+  tech: string;
+  /** Unset is reported as "Unspecified". (Not `kind`: that is the discriminator of the union.) */
+  appKind: AppKind | "Unspecified";
 }
 
 export type DescriptorInfo = ResponsibilityInfo | CollaboratorInfo | MetaInfo;
@@ -69,7 +74,7 @@ export class AnalysisError extends Error {
   }
 }
 
-type OptionSpec = Record<string, { type: "string" | "Direction" | "Relationship" }>;
+type OptionSpec = Record<string, { type: "string" | "Direction" | "Relationship" | "AppKind" }>;
 
 const RESPONSIBILITY_OPTIONS: OptionSpec = { description: { type: "string" } };
 const COLLABORATOR_OPTIONS: OptionSpec = {
@@ -90,6 +95,8 @@ const META_OPTIONS: OptionSpec = {
   description: { type: "string" },
   system: { type: "string" },
   repository: { type: "string" },
+  technology: { type: "string" },
+  kind: { type: "AppKind" },
 };
 
 type AnnotationName = "Responsibility" | "Collaborator" | "meta";
@@ -249,6 +256,7 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
       const value =
         option.type === "string" ? readString(prop.initializer, key)
         : option.type === "Direction" ? readEnum(prop.initializer, "Direction", DIRECTIONS, key)
+        : option.type === "AppKind" ? readEnum(prop.initializer, "AppKind", APP_KINDS, key)
         : readEnum(prop.initializer, "Relationship", RELATIONSHIPS, key);
       if (value !== undefined) result[key] = value;
     }
@@ -310,6 +318,8 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
             system: o.system ?? "",
             repository: o.repository ?? "",
             owner: o.owner ?? "",
+            tech: o.technology ?? "",
+            appKind: (o.kind as AppKind | undefined) ?? "Unspecified",
           },
         });
       }

@@ -65,3 +65,26 @@ Rel(ordering, logistics, "Ship order")
 Rel(billing, visa, "Process payment")
 
 ```
+
+```mermaid
+C4Container
+title C4 Container Diagram for WebShop, Ordering, Billing
+
+System_Boundary(web_shop, "WebShop") {
+  Container(web_shop_storefront, "Storefront", "TypeScript / React", "Customer facing web shop")
+}
+System_Boundary(ordering, "Ordering") {
+  Container(ordering_orders, "Orders", ".NET 10 / ASP.NET Core", "Accepts and tracks customer orders")
+}
+System_Boundary(billing, "Billing") {
+  Container(billing_payments, "Payments", ".NET 10 / ASP.NET Core", "Takes payments for orders")
+}
+System(logistics, "Logistics", "Handles shipping of orders")
+System_Ext(visa, "VISA", "Handles payment processing of Visa cards")
+
+Rel(web_shop_storefront, ordering_orders, "Place order", "HTTPS")
+Rel(ordering_orders, billing_payments, "Request payment", "HTTPS")
+Rel(ordering_orders, logistics, "Ship order", "MQTT")
+Rel(billing_payments, visa, "Process payment", "HTTPS")
+
+```

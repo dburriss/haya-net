@@ -50,7 +50,9 @@
         "description": "Accepts and tracks customer orders",
         "system": "Ordering",
         "repository": "org/orders",
-        "owner": "Ordering Team"
+        "owner": "Ordering Team",
+        "tech": ".NET 10 / ASP.NET Core",
+        "kind": "Api"
       },
       "responsibilities": [
         {
@@ -61,5 +63,5 @@
       ]
     }
   ],
-  "version": "0.1"
+  "version": "0.2"
 }

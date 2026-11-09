@@ -50,6 +50,16 @@ module Decode =
         | "InternalUser" -> Relationship.InternalUser
         | _ -> Relationship.ExternalUser
 
+    let private appKind (s: string) =
+        match s with
+        | "Service" -> AppKind.Service
+        | "WebApp" -> AppKind.WebApp
+        | "Api" -> AppKind.Api
+        | "Worker" -> AppKind.Worker
+        | "Database" -> AppKind.Database
+        | "Queue" -> AppKind.Queue
+        | _ -> AppKind.Unspecified
+
     let private responsibility (v: JsonValue) =
         Responsibility { Description = str "description" v
                          ComponentName = str "componentName" v
@@ -74,7 +84,9 @@ module Decode =
                Description = str "description" v
                System = str "system" v
                Repository = str "repository" v
-               Owner = str "owner" v }
+               Owner = str "owner" v
+               Tech = str "tech" v
+               Kind = appKind (str "kind" v) }
 
     let private isApp (doc: JsonValue) =
         match doc with

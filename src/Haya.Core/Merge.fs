@@ -17,6 +17,8 @@ module Merge =
         conflict "description" x x.Description y.Description
         @ conflict "owner" x x.Owner y.Owner
         @ conflict "repository" x x.Repository y.Repository
+        @ conflict "tech" x x.Tech y.Tech
+        @ conflict "kind" x (Encode.appKind x.Kind) (Encode.appKind y.Kind)
 
     /// Apps with the same system and app name (case-insensitive) become one: responsibilities and
     /// collaborators are concatenated without duplicates and the first meta wins (conflicting fields are

@@ -27,6 +27,16 @@ module Encode =
         | Relationship.InternalUser -> "InternalUser"
         | _ -> "ExternalUser"
 
+    let appKind (k: AppKind) =
+        match k with
+        | AppKind.Service -> "Service"
+        | AppKind.WebApp -> "WebApp"
+        | AppKind.Api -> "Api"
+        | AppKind.Worker -> "Worker"
+        | AppKind.Database -> "Database"
+        | AppKind.Queue -> "Queue"
+        | _ -> ""
+
     let responsibility (x: ResponsibilityDescriptor) =
         record [
             "description", str x.Description
@@ -57,6 +67,9 @@ module Encode =
             "system", str x.System
             "repository", str x.Repository
             "owner", str x.Owner
+            // optional: left out when unset so documents without them stay unchanged
+            if x.Tech <> "" then "tech", str x.Tech
+            if x.Kind <> AppKind.Unspecified then "kind", str (appKind x.Kind)
         ]
 
     /// One app of the document written by `describe`. `meta` is omitted when there is none.

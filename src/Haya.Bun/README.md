@@ -17,9 +17,9 @@ read statically with the TypeScript compiler API; user code is never executed. S
 ## Usage
 
 ```bash
-haya crc <inputPath...> [-o ./CRC.md] [-c]                   # -c adds the C4 level 1 diagram
+haya crc <inputPath...> [-o ./CRC.md] [-c]                   # -c adds the C4 level 1 diagram, -cc also level 2
 haya describe <inputPath...> [-o ./haya.json] [-f json|yaml]
-haya diagram <inputPath...> [-o ./c4-system-context.mermaid]
+haya diagram <inputPath...> [-o ./c4-system-context.mermaid] [-t c4system|c4container]
 haya backstage <inputPath...> [-o ./backstage.yaml] [-f json|yaml]
 ```
 

@@ -10,6 +10,6 @@ dotnet build ../../src/Haya.Tool --nologo -v q
 
 mkdir -p output
 # The input paths go last. Describe files can be mixed with solutions, e.g. `describe/Orders.json ../other/Other.sln`.
-haya crc -c -o output/CRC.md describe/Storefront.json describe/Orders.json describe/Payments.json
+haya crc -cc -o output/CRC.md describe/Storefront.json describe/Orders.json describe/Payments.json
 haya diagram -o output/system.mermaid describe/Storefront.json describe/Orders.json describe/Payments.json
 haya backstage -o output/backstage.yaml describe/Storefront.json describe/Orders.json describe/Payments.json

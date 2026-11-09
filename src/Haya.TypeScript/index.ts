@@ -4,7 +4,7 @@
 // the Haya analyser reads the annotations statically from the source and never runs user code.
 //
 // Option values must be static: string literals, template literals without substitutions, and `Direction.*` /
-// `Relationship.*` members. Anything else is reported as an error by the analyser.
+// `Relationship.*` / `AppKind.*` members. Anything else is reported as an error by the analyser.
 
 /** The direction of the data flow or dependency. */
 export enum Direction {
@@ -20,6 +20,22 @@ export enum Relationship {
   External = "External",
   InternalUser = "InternalUser",
   ExternalUser = "ExternalUser",
+}
+
+/** What kind of application this is. Used to pick the shape of the application in diagrams. */
+export enum AppKind {
+  /** A backend service. */
+  Service = "Service",
+  /** A web application or single page app that users interact with. */
+  WebApp = "WebApp",
+  /** An API that other applications call. */
+  Api = "Api",
+  /** A background worker or job that does not serve requests. */
+  Worker = "Worker",
+  /** A data store. */
+  Database = "Database",
+  /** A message queue or broker. */
+  Queue = "Queue",
 }
 
 /** The responsibility, usecase, or feature of the component. Repeatable. */
@@ -64,6 +80,10 @@ export interface MetaOptions {
   system?: string;
   /** The slug of the VCS repository for this application. */
   repository?: string;
+  /** The technology this application is built with, e.g. "Bun / TypeScript". */
+  technology?: string;
+  /** What kind of application this is. Picks the shape in diagrams (unset: a generic application). */
+  kind?: AppKind;
 }
 
 type ClassDecorator = (target: abstract new (...args: any[]) => unknown, context: ClassDecoratorContext) => void;

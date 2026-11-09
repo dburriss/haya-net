@@ -33,9 +33,11 @@ apps:
       system: Billing
       repository: org/payments
       owner: Billing Team
+      tech: .NET 10 / ASP.NET Core
+      kind: Worker
     responsibilities:
       -
         description: Authorises card payments
         componentName: PaymentService
         componentSource: payments/src/payments.ts
-version: '0.1'
+version: '0.2'

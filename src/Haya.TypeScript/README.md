@@ -5,9 +5,9 @@ package (`src/Haya`). The annotations do nothing at runtime. `haya` (see `src/Ha
 with the TypeScript compiler API and never executes your code.
 
 ```ts
-import { Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";
+import { AppKind, Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";
 
-meta({ appName: "PaymentsApi", system: "Ordering", owner: "Ordering Team" });
+meta({ appName: "PaymentsApi", system: "Ordering", owner: "Ordering Team", technology: "Bun / TypeScript", kind: AppKind.Api });
 
 @Responsibility({ description: "Handles order processing" })
 @Collaborator({ appName: "Checkout", direction: Direction.Upstream, relationship: Relationship.Internal })

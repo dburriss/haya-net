@@ -72,9 +72,14 @@ public class CreditCardPaymentUsecase
 public class PaymentsController
 { }
 ```
-Running the Haya CLI tool will generate a CRC document and a C4 Level 1 diagram.
+Running the Haya CLI tool will generate a CRC document and a C4 Level 1 diagram (the systems and how they relate).
 ```bash
 haya crc --c4 ./Example.sln
+```
+Add the flag twice (`-cc`) to also get a C4 Level 2 diagram: each application inside its system, with the
+`Technology` and `Kind` from its `Meta`. `haya diagram -t c4container` writes only that diagram.
+```bash
+haya crc -cc ./Example.sln
 ```
 
 ## Usage

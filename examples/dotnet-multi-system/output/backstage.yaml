@@ -1,7 +1,5 @@
 apiVersion: backstage.io/v1alpha1
-dependencyOf:
-  - web-shop-orders
-  - ordering-orders
+dependencyOf: []
 dependsOn:
   - ordering-orders
 kind: Component
@@ -16,13 +14,8 @@ spec:
 ---
 apiVersion: backstage.io/v1alpha1
 dependencyOf:
-  - ordering-storefront
-  - ordering-payments
-  - ordering-shipping-service
   - web-shop-storefront
-  - billing-payments
 dependsOn:
-  - web-shop-storefront
   - billing-payments
   - logistics-shipping-service
 kind: Component
@@ -37,11 +30,8 @@ spec:
 ---
 apiVersion: backstage.io/v1alpha1
 dependencyOf:
-  - billing-orders
-  - billing-visa-payment-provider
   - ordering-orders
 dependsOn:
-  - ordering-orders
   - visa-visa-payment-provider
 kind: Component
 metadata:

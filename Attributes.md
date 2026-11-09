@@ -14,15 +14,30 @@ The `MetaAttribute` attribute has the following properties:
 - `System` - The system that the application belongs to.
 - `Repository` - The VCS repository where the codebase is stored.
 - `Owner` - The owner of the application.
+- `Technology` - What the application is built with, e.g. `.NET 10 / ASP.NET Core`. Shown in the container diagram (`crc -cc`).
+- `Kind` - What kind of application it is (`AppKind`), which picks its shape in diagrams. Unset is a generic application.
+
+| `AppKind` | Meaning |
+| --- | --- |
+| `Service` | A backend service |
+| `WebApp` | A web application or single page app that users interact with |
+| `Api` | An API that other applications call |
+| `Worker` | A background worker or job that does not serve requests |
+| `Database` | A data store |
+| `Queue` | A message queue or broker |
 
 ```csharp
 using Haya;
 [assembly:Meta(
     AppName = "CheckoutApi", 
     Description = "Handles processing payment for a shopping cart", 
-    System = "HayaEcomm"
-    Repository = "dburriss/haya-net")]
+    System = "HayaEcomm",
+    Repository = "dburriss/haya-net",
+    Technology = ".NET 10 / ASP.NET Core",
+    Kind = AppKind.Api)]
 ```
+
+In TypeScript the same options are `technology` and `kind: AppKind.Api` on `meta()`.
 ## Responsibility
 
 The `ResponsibilityAttribute` attribute is used to define a responsibility that an application has.

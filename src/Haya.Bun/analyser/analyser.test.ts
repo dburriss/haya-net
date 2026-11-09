@@ -27,7 +27,7 @@ const project = (files: Record<string, string>): string => {
 
 afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })));
 
-const imports = `import { Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";\n`;
+const imports = `import { AppKind, Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";\n`;
 const problemsOf = (root: string): string[] => {
   try {
     analyse(root, root);
@@ -57,7 +57,17 @@ export class Plain {}`,
     expect(other).toMatchObject({ appName: "Other", direction: "Upstream", relationship: "External", tech: "Go", description: "tpl", protocol: "", owner: "" });
     // unset properties default like Haya.Roslyn: "", Downstream, Internal
     expect(ds[2]).toMatchObject({ appName: "Plain", direction: "Downstream", relationship: "Internal", tech: "", protocol: "" });
-    expect(ds[3]).toEqual({ kind: "meta", appName: "App", description: "", system: "Sys", repository: "", owner: "" });
+    expect(ds[3]).toEqual({ kind: "meta", appName: "App", description: "", system: "Sys", repository: "", owner: "", tech: "", appKind: "Unspecified" });
+  });
+
+  test("reads technology and kind of meta", () => {
+    const root = project({ "src/a.ts": imports + `meta({ appName: "App", technology: "Bun", kind: AppKind.Database });` });
+    expect(analyse(root, root)[0]).toMatchObject({ kind: "meta", tech: "Bun", appKind: "Database" });
+  });
+
+  test("a kind that is not an AppKind member is an error", () => {
+    const root = project({ "src/a.ts": imports + `meta({ appName: "App", kind: "Database" });` });
+    expect(problemsOf(root)[0]).toMatch(/^src\/a\.ts:2:\d+ 'kind' must be a AppKind member/);
   });
 
   test("orders responsibilities, then collaborators, then meta; files by path; repeated decorators in source order", () => {

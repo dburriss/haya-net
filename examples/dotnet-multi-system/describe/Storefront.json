@@ -22,7 +22,9 @@
         "description": "Customer facing web shop",
         "system": "WebShop",
         "repository": "org/storefront",
-        "owner": "Storefront Team"
+        "owner": "Storefront Team",
+        "tech": "TypeScript / React",
+        "kind": "WebApp"
       },
       "responsibilities": [
         {
@@ -33,5 +35,5 @@
       ]
     }
   ],
-  "version": "0.1"
+  "version": "0.2"
 }

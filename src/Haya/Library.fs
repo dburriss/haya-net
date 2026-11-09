@@ -12,6 +12,23 @@ type Direction =
 /// The type of relationship between the team and the application or system
 type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4 | InternalUser = 5 | ExternalUser = 6
 
+/// What kind of application this is. Used to pick the shape of the application in diagrams.
+type AppKind =
+    /// Not specified: shown as a generic application
+    Unspecified = 0
+    /// A backend service
+    | Service = 1
+    /// A web application or single page app that users interact with
+    | WebApp = 2
+    /// An API that other applications call
+    | Api = 3
+    /// A background worker or job that does not serve requests
+    | Worker = 4
+    /// A data store
+    | Database = 5
+    /// A message queue or broker
+    | Queue = 6
+
 /// The responsibility, usecase, or feature of the component
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = true)>]
 type ResponsibilityAttribute() =
@@ -58,3 +75,7 @@ type MetaAttribute() =
     member val System = "" with get,set
     /// The slug of the VCS repository for this application
     member val Repository = "" with get,set
+    /// The technology this application is built with, e.g. ".NET 10 / ASP.NET Core"
+    member val Technology = "" with get,set
+    /// What kind of application this is. Picks the shape in diagrams.
+    member val Kind = AppKind.Unspecified with get,set

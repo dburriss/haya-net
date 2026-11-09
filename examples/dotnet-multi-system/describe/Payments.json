@@ -36,7 +36,9 @@
         "description": "Takes payments for orders",
         "system": "Billing",
         "repository": "org/payments",
-        "owner": "Billing Team"
+        "owner": "Billing Team",
+        "tech": ".NET 10 / ASP.NET Core",
+        "kind": "Worker"
       },
       "responsibilities": [
         {
@@ -47,5 +49,5 @@
       ]
     }
   ],
-  "version": "0.1"
+  "version": "0.2"
 }

@@ -1,19 +1,8 @@
 namespace Haya.Core
 
-open System.Text.RegularExpressions
+open Haya.Core.Naming
 
 module Backstage =
-    let private toKebabCase (input: string) =
-        let pattern = @"([a-z])([A-Z])"
-        let replacement = "$1-$2"
-        Regex.Replace(input, pattern, replacement).ToLower().Replace(" ", "-")
-
-    let private createName (systemName: string) (appName: string) =
-        let systemId = toKebabCase systemName
-        let appId = toKebabCase appName
-        if systemId = "" then appId else $"{systemId}-{appId}"
-
-    
     let private nameOfApp (meta: Analysis.MetaDescriptor) = createName meta.System meta.AppName
 
     /// An upstream collaborator calls this app, so it is a dependency of this app's `dependencyOf`; a downstream

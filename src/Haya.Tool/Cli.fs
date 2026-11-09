@@ -45,7 +45,7 @@ type DiagramArgs =
             match s with
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid)"
-            | DiagramType _ -> "Output format. c4system (default: c4system)"
+            | DiagramType _ -> "Diagram type. c4system (system context) or c4container (apps inside their systems) (default: c4system)"
             | DiagramFormat _ -> "Output format. mermaid (default: mermaid)"
 
 type CliArguments =

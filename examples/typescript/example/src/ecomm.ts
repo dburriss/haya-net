@@ -1,4 +1,4 @@
-import { Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";
+import { AppKind, Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";
 
 meta({
   appName: "PaymentsApi",
@@ -6,6 +6,8 @@ meta({
   system: "Ordering",
   owner: "Ordering Team",
   repository: "org/payment-api",
+  technology: ".NET 10 / ASP.NET Core",
+  kind: AppKind.Api,
 });
 
 @Responsibility({ description: "Handles order processing" })

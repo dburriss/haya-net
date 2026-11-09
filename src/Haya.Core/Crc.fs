@@ -24,6 +24,10 @@ module Crc =
         let diagram = Diagram.sprintMermaidC4L1 apps
         doc |> Markdown.addCode (Some "mermaid") diagram
 
+    let internal mermaidC4Level2 (apps: App list) doc =
+        let diagram = Diagram.sprintMermaidC4L2 apps
+        doc |> Markdown.addBlankLine |> Markdown.addCode (Some "mermaid") diagram
+
     /// One app keeps the original layout; with several apps each gets its own section.
     let private appSections (apps: App list) doc =
         match apps with
@@ -51,4 +55,5 @@ module Crc =
             |> Markdown.addParagraph "This document describes the components, responsibilities, and collaborators for a codebase."
             |> appSections apps
             |> fun d -> if cmd.IncludeL1Diagram then mermaidC4Level1 apps d else d
+            |> fun d -> if cmd.IncludeL2Diagram then mermaidC4Level2 apps d else d
         Markdown.render doc

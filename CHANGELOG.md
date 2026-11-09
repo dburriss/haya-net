@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- C4 Level 2 (container) diagram: `crc -cc` adds it after the level 1 diagram and `diagram -t c4container` writes only
+  it, in both `Haya.Tool` and `Haya.Bun`. Each app is drawn inside the boundary of its system; other systems are
+  drawn as systems, and collaborator `Technology`/`Protocol` label the relationships. See ADR007.
+- `Technology` and `Kind` on `Meta` (`meta({ technology, kind })` in TypeScript). `Kind` is an `AppKind`
+  (`Service`, `WebApp`, `Api`, `Worker`, `Database`, `Queue`) and picks the shape of the app in the level 2 diagram.
 - Every command accepts several inputs (solutions, tsconfig projects and/or describe files, mixed) and builds one
   system from them, in both `Haya.Tool` and `Haya.Bun`: `haya backstage a.json b.json ../other/Other.sln`.
   Apps with the same system and name are merged (conflicting meta fields produce a warning, first wins). `diagram`
@@ -20,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (or converted json/yaml) without re-analysing the code. Decoding lives in `Haya.Core` (`Decode.fs`).
 
 ### Changed
+- The `describe` document is now version `0.2`: an app's `meta` may have `tech` and `kind` (left out when unset).
+  Versions `0.0` and `0.1` are still read as input.
 - The `describe` document is now version `0.1`: `{ "apps": [ { meta, responsibilities, collaborators } ], "version": "0.1" }`
   (was a single app at the top level, version `0.0`). Version `0.0` files are still read as input.
 - Library API: `Describe`, `Crc`, `Diagram` and `Backstage` take an `App list` instead of a `Descriptor list`;

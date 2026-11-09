@@ -119,10 +119,10 @@ await yargs(hideBin(Bun.argv))
     (y) =>
       inputPath(y)
         .option("output-path", { alias: "o", type: "string", default: "./c4-system-context.mermaid", describe: "Path to output folder or file" })
-        .option("diagram-type", { alias: "t", choices: ["c4system"] as const, default: "c4system" as const, describe: "Diagram type" })
+        .option("diagram-type", { alias: "t", choices: ["c4system", "c4container"] as const, default: "c4system" as const, describe: "Diagram type" })
         .option("diagram-format", { alias: "f", choices: ["mermaid"] as const, default: "mermaid" as const, describe: "Diagram format" }),
     (argv) => {
-      const cmd = new DiagramCommand(ofArray(argv.inputPaths), argv["output-path"], DiagramType.C4System, DiagramFormat.Mermaid, process.cwd());
+      const cmd = new DiagramCommand(ofArray(argv.inputPaths), argv["output-path"], argv["diagram-type"] === "c4container" ? DiagramType.C4Container : DiagramType.C4System, DiagramFormat.Mermaid, process.cwd());
       exec("Diagram", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
     },
   )

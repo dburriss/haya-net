@@ -8,6 +8,9 @@ type Direction =
 /// The type of relationship between the team and the application or system. Mirrors `Haya.Relationship`.
 type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4 | InternalUser = 5 | ExternalUser = 6
 
+/// What kind of application this is. Used to pick the shape of the app in diagrams. Mirrors `Haya.AppKind`.
+type AppKind = Unspecified = 0 | Service = 1 | WebApp = 2 | Api = 3 | Worker = 4 | Database = 5 | Queue = 6
+
 type ResponsibilityDescriptor = {
     Description: string
     ComponentName: string
@@ -35,6 +38,9 @@ type MetaDescriptor = {
     System: string
     Repository: string
     Owner: string
+    /// The technology the application is built with, e.g. ".NET 10 / ASP.NET Core".
+    Tech: string
+    Kind: AppKind
 }
 
 type Descriptor =
@@ -62,7 +68,7 @@ type App = {
 }
 
 module App =
-    let private emptyMeta = { AppName = ""; Description = ""; Owner = ""; System = ""; Repository = "" }
+    let private emptyMeta = { AppName = ""; Description = ""; Owner = ""; System = ""; Repository = ""; Tech = ""; Kind = AppKind.Unspecified }
 
     let ofDescriptors (descriptors: Descriptor list) =
         { Meta = descriptors |> Descriptor.metas |> List.tryHead

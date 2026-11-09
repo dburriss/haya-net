@@ -4,7 +4,9 @@
     Description = "Handles processing payment for a shopping cart", 
     System = "Ordering",
     Owner = "Ordering Team",
-    Repository = "org/payment-api")]
+    Repository = "org/payment-api",
+    Technology = ".NET 10 / ASP.NET Core",
+    Kind = AppKind.Api)]
 
 namespace Example;
 

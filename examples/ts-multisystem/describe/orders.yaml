@@ -46,9 +46,11 @@ apps:
       system: Ordering
       repository: org/orders
       owner: Ordering Team
+      tech: .NET 10 / ASP.NET Core
+      kind: Api
     responsibilities:
       -
         description: Creates and tracks orders
         componentName: OrderService
         componentSource: orders/src/orders.ts
-version: '0.1'
+version: '0.2'

@@ -23,6 +23,7 @@ const cases: { file: string; args: string[] }[] = [
   { file: "crc-c.md", args: ["crc", "-c", "-o", "crc-c.md"] },
   { file: "crc-cc.md", args: ["crc", "-cc", "-o", "crc-cc.md"] },
   { file: "diagram.mermaid", args: ["diagram", "-o", "diagram.mermaid"] },
+  { file: "diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "diagram-l2.mermaid"] },
   { file: "backstage.yaml", args: ["backstage", "-o", "backstage.yaml"] },
   { file: "backstage.json", args: ["backstage", "-f", "json", "-o", "backstage.json"] },
 ];
@@ -43,7 +44,9 @@ const fixtures = [join(repo, "src/Haya.Bun/scripts/fixtures/ordering.json"), joi
 const multiCases: { file: string; args: string[] }[] = [
   { file: "multi-describe.json", args: ["describe", "-o", "multi-describe.json"] },
   { file: "multi-crc.md", args: ["crc", "-c", "-o", "multi-crc.md"] },
+  { file: "multi-crc-cc.md", args: ["crc", "-cc", "-o", "multi-crc-cc.md"] },
   { file: "multi-diagram.mermaid", args: ["diagram", "-o", "multi-diagram.mermaid"] },
+  { file: "multi-diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "multi-diagram-l2.mermaid"] },
   { file: "multi-backstage.yaml", args: ["backstage", "-o", "multi-backstage.yaml"] },
 ];
 

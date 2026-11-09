@@ -78,12 +78,16 @@ module Descriptors =
                     let owner = map |> Map.tryFind "Owner" |> Option.defaultValue ""
                     let system = map |> Map.tryFind "System" |> Option.defaultValue ""
                     let repository = map |> Map.tryFind "Repository" |> Option.defaultValue ""
+                    let tech = map |> Map.tryFind "Technology" |> Option.defaultValue ""
+                    let kind = map |> Map.tryFind "Kind" |> Option.map parseEnum<AppKind> |> Option.defaultValue AppKind.Unspecified
                     Meta {
                         AppName = appName
                         Description = description
                         System = system
                         Repository = repository
                         Owner = owner
+                        Tech = tech
+                        Kind = kind
                     }
                 ) |> Some
             else None // no attributes

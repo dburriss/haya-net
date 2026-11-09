@@ -20,9 +20,11 @@ apps:
       system: WebShop
       repository: org/storefront
       owner: Storefront Team
+      tech: TypeScript / React
+      kind: WebApp
     responsibilities:
       -
         description: Shows the catalog and takes checkout requests
         componentName: CheckoutPage
         componentSource: storefront/src/storefront.ts
-version: '0.1'
+version: '0.2'

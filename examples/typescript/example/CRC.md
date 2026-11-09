@@ -32,3 +32,20 @@ Rel(ordering, visa, "Process payment")
 Rel(ordering, shipping, "Ship order")
 
 ```
+
+```mermaid
+C4Container
+title C4 Container Diagram for Ordering
+
+System_Boundary(ordering, "Ordering") {
+  Container(ordering_payments_api, "PaymentsApi", ".NET 10 / ASP.NET Core", "Handles processing payment for a shopping cart")
+}
+System(web_shop, "WebShop", "Handles cart checkout for a customer")
+System_Ext(visa, "VISA", "Handles payment processing of Visa cards")
+System(shipping, "Shipping", "Handles shipping of orders")
+
+Rel(web_shop, ordering_payments_api, "Request payment", "HTTPS")
+Rel(ordering_payments_api, visa, "Process payment", "HTTPS")
+Rel(ordering_payments_api, shipping, "Ship order", "MQTT")
+
+```

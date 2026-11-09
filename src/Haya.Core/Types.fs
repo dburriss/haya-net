@@ -26,7 +26,7 @@ type BackstageCommand = {
     CurrentDirectory: string
 }
 
-type DiagramType = | C4System
+type DiagramType = | C4System | C4Container
 type DiagramFormat = | Mermaid
 type DiagramCommand = {
     InputPaths: string list
