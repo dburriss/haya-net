@@ -28,6 +28,7 @@ const project = (files: Record<string, string>): string => {
 afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })));
 
 const imports = `import { AppKind, Collaborator, Direction, meta, Relationship, Responsibility } from "@haya/annotations";\n`;
+const definers = `import { AppKind, Direction, Relationship, defineCollaborator, defineMeta, defineResponsibility, meta } from "@haya/annotations";\n`;
 const problemsOf = (root: string): string[] => {
   try {
     analyse(root, root);
@@ -250,5 +251,96 @@ export class PayUsecase { adapter = new VisaAdapter(); }\n`;
   test("collaborator in a project-referenced package is found", () => {
     const root = monorepo("references");
     expect(names(analyse(join(root, "api"), root))).toEqual(["PayUsecase", "VisaAdapter"]);
+  });
+});
+
+describe("custom annotations with defaults", () => {
+  test("a custom collaborator applies its defaults and usage-site options override them", () => {
+    const root = project({
+      "src/a.ts":
+        definers +
+        `export const CallsPayments = defineCollaborator({ appName: "Payments", protocol: "gRPC", system: "Acme", direction: Direction.Upstream, relationship: Relationship.External });
+@CallsPayments({ dataDescription: "charge" })
+export class OrderService {}
+@CallsPayments({ appName: "Refunds", direction: Direction.Downstream })
+export class RefundService {}`,
+    });
+    const ds = analyse(root, root);
+    expect(ds[0]).toMatchObject({
+      kind: "collaborator", appName: "Payments", protocol: "gRPC", system: "Acme", direction: "Upstream",
+      relationship: "External", dataDescription: "charge", componentName: "OrderService",
+    });
+    expect(ds[1]).toMatchObject({ appName: "Refunds", protocol: "gRPC", direction: "Downstream", componentName: "RefundService" });
+  });
+
+  test("the options argument can be left out when the defaults cover what is required", () => {
+    const root = project({
+      "src/a.ts": definers + `export const CallsPayments = defineCollaborator({ appName: "Payments" });\n@CallsPayments()\nexport class A {}`,
+    });
+    expect(analyse(root, root)[0]).toMatchObject({ kind: "collaborator", appName: "Payments", componentName: "A" });
+  });
+
+  test("a custom responsibility applies its defaults", () => {
+    const root = project({
+      "src/a.ts": definers + `export const UseCase = defineResponsibility({ description: "Place orders" });\n@UseCase()\nexport class A {}\n@UseCase({ description: "Other" })\nexport class B {}`,
+    });
+    const ds = analyse(root, root);
+    expect(ds.map((d) => (d as { description: string }).description)).toEqual(["Place orders", "Other"]);
+  });
+
+  test("a custom meta applies its defaults and counts as the one meta of the project", () => {
+    const root = project({
+      "src/a.ts":
+        definers +
+        `export const acmeMeta = defineMeta({ owner: "Acme Team", system: "Acme", kind: AppKind.Api, technology: "Bun" });
+acmeMeta({ appName: "Shop" });`,
+    });
+    expect(analyse(root, root)).toEqual([
+      { kind: "meta", appName: "Shop", description: "", system: "Acme", repository: "", owner: "Acme Team", tech: "Bun", appKind: "Api" },
+    ]);
+    const two = project({
+      "src/a.ts": definers + `export const acmeMeta = defineMeta({ owner: "Acme Team" });\nacmeMeta({ appName: "one" });\nmeta({ appName: "two" });`,
+    });
+    expect(problemsOf(two).some((p) => /^src\/a\.ts:4:\d+ meta\(\) can only be called once per project/.test(p))).toBe(true);
+  });
+
+  test("a custom annotation defined in another file is found through an import (and an alias)", () => {
+    const root = project({
+      "src/annotations.ts": definers + `export const CallsPayments = defineCollaborator({ appName: "Payments", protocol: "gRPC" });`,
+      "src/a.ts": `import { CallsPayments as Pays } from "./annotations";\n@Pays({ dataDescription: "charge" })\nexport class A {}`,
+    });
+    expect(analyse(root, root)[0]).toMatchObject({ appName: "Payments", protocol: "gRPC", dataDescription: "charge", componentName: "A" });
+  });
+
+  test("a custom annotation defined in another package is found by name", () => {
+    const root = project({
+      "src/a.ts": `import { CallsPayments } from "@acme/annotations";\n@CallsPayments({ dataDescription: "charge" })\nexport class A {}`,
+    });
+    // a linked workspace package: its real folder is outside node_modules, so its source is analysed
+    const real = mkdtempSync(join(tmpdir(), "haya-acme-"));
+    roots.push(real);
+    mkdirSync(join(real, "node_modules/@haya"), { recursive: true });
+    symlinkSync(annotations, join(real, "node_modules/@haya/annotations"));
+    writeFileSync(join(real, "package.json"), '{"name":"@acme/annotations","type":"module","main":"./index.ts","types":"./index.ts"}');
+    writeFileSync(join(real, "index.ts"), `import { defineCollaborator } from "@haya/annotations";\nexport const CallsPayments = defineCollaborator({ appName: "Payments", system: "Acme" });`);
+    mkdirSync(join(root, "node_modules/@acme"), { recursive: true });
+    symlinkSync(real, join(root, "node_modules/@acme/annotations"));
+    expect(analyse(root, root)[0]).toMatchObject({ appName: "Payments", system: "Acme", dataDescription: "charge", componentName: "A" });
+  });
+
+  test("non-static defaults are reported once, at the define call", () => {
+    const root = project({
+      "src/a.ts": definers + `const name = "x";\nexport const C = defineCollaborator({ appName: name });\n@C()\nexport class A {}\n@C()\nexport class B {}`,
+    });
+    const problems = problemsOf(root);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/^src\/a\.ts:3:\d+ 'appName' must be a string literal/);
+  });
+
+  test("a wrapper that is not a define* call is ignored, as before", () => {
+    const root = project({
+      "src/a.ts": imports + `export const Mine = (o: { appName: string }) => Collaborator({ appName: o.appName });\n@Mine({ appName: "X" })\nexport class A {}`,
+    });
+    expect(analyse(root, root)).toEqual([]);
   });
 });

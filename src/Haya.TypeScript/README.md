@@ -19,6 +19,16 @@ export class CreditCardPaymentUsecase {}
 - Values must be static: string literals, template literals without substitutions, and `AppKind.*`, `Direction.*` /
   `Relationship.*` members. Otherwise `haya` reports an error with file and line.
 
+To bake options into your own annotation, declare it with `defineResponsibility`, `defineCollaborator` or
+`defineMeta`; options written at the usage site override the defaults:
+
+```ts
+export const CallsPayments = defineCollaborator({ appName: "Payments", protocol: "gRPC" });
+
+@CallsPayments({ dataDescription: "Charge a card" })
+export class CheckoutHandler {}
+```
+
 All options are in the [attribute reference](../../docs/reference/attributes.md); a walkthrough is in the
 [TypeScript tutorial](../../docs/tutorials/getting-started-typescript.md). No special `tsconfig` settings are needed.
 

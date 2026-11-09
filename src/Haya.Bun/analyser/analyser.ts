@@ -191,14 +191,46 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
     return sym;
   };
 
-  /** Which Haya annotation a call's callee refers to, if any. */
-  const annotationOf = (callee: ts.Expression): AnnotationName | undefined => {
-    const nameNode = ts.isIdentifier(callee) ? callee : ts.isPropertyAccessExpression(callee) ? callee.name : undefined;
+  const calleeName = (callee: ts.Expression): ts.Identifier | undefined =>
+    ts.isIdentifier(callee) ? callee : ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name) ? callee.name : undefined;
+
+  const DEFINERS: Record<string, AnnotationName> = {
+    defineResponsibility: "Responsibility",
+    defineCollaborator: "Collaborator",
+    defineMeta: "meta",
+  };
+
+  /** Defaults of a custom annotation, read once per `define*` call so a problem in them is reported once. */
+  const defaultsCache = new Map<ts.CallExpression, Record<string, string>>();
+
+  /**
+   * Which Haya annotation a call's callee refers to, if any, with the defaults it carries. The callee is either an
+   * annotation from the Haya package, or a custom annotation: a `const` initialised with `defineX({...})`.
+   */
+  const annotationOf = (callee: ts.Expression): { name: AnnotationName; defaults: Record<string, string>; custom: boolean } | undefined => {
+    const nameNode = calleeName(callee);
     if (!nameNode) return undefined;
     const sym = resolveSymbol(nameNode);
     const decls = sym?.declarations ?? [];
-    if (!sym || !decls.some(isHayaDeclaration)) return undefined;
-    return sym.name === "Responsibility" || sym.name === "Collaborator" || sym.name === "meta" ? sym.name : undefined;
+    if (!sym) return undefined;
+    if (decls.some(isHayaDeclaration)) {
+      return sym.name === "Responsibility" || sym.name === "Collaborator" || sym.name === "meta"
+        ? { name: sym.name, defaults: {}, custom: false }
+        : undefined;
+    }
+    const decl = decls.find(ts.isVariableDeclaration);
+    const init = decl?.initializer;
+    if (!decl || !init || !ts.isCallExpression(init) || !(decl.parent.flags & ts.NodeFlags.Const)) return undefined;
+    const definerName = calleeName(init.expression);
+    const definer = definerName ? resolveSymbol(definerName) : undefined;
+    const name = definer && (definer.declarations ?? []).some(isHayaDeclaration) ? DEFINERS[definer.name] : undefined;
+    if (name === undefined) return undefined;
+    let defaults = defaultsCache.get(init);
+    if (!defaults) {
+      defaults = readOptions(init, name, `${definer!.name}()`);
+      defaultsCache.set(init, defaults);
+    }
+    return { name, defaults, custom: true };
   };
 
   const readEnum = (expr: ts.Expression, enumName: string, allowed: readonly string[], option: string): string | undefined => {
@@ -221,13 +253,12 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
   };
 
   /** Read the options object of an annotation call statically. Unset options are absent from the result. */
-  const readOptions = (call: ts.CallExpression, name: AnnotationName): Record<string, string> => {
+  const readOptions = (call: ts.CallExpression, name: AnnotationName, label: string, allowMissing = false): Record<string, string> => {
     const spec = SPECS[name];
-    const label = name === "meta" ? "meta()" : `@${name}`;
     const result: Record<string, string> = {};
     const arg = call.arguments[0];
     if (!arg) {
-      problemAt(call, `${label} requires an options object`);
+      if (!allowMissing) problemAt(call, `${label} requires an options object`);
       return result;
     }
     if (!ts.isObjectLiteralExpression(arg)) {
@@ -273,17 +304,19 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
       const componentSource = makeRelativePath(cwd, sf.fileName);
       for (const decorator of ts.getDecorators(node) ?? []) {
         const call = ts.isCallExpression(decorator.expression) ? decorator.expression : undefined;
-        const name = annotationOf(call ? call.expression : decorator.expression);
-        if (name === undefined) continue;
+        const annotation = annotationOf(call ? call.expression : decorator.expression);
+        if (annotation === undefined) continue;
+        const { name } = annotation;
+        const written = call ? calleeName(call.expression)?.text ?? name : calleeName(decorator.expression)?.text ?? name;
         if (name === "meta") {
-          problemAt(decorator, "meta() is a function call, not a decorator");
+          problemAt(decorator, `${annotation.custom ? written : "meta"}() is a function call, not a decorator`);
           continue;
         }
         if (!call) {
-          problemAt(decorator, `@${name} must be called with an options object`);
+          problemAt(decorator, `@${written} must be called with an options object`);
           continue;
         }
-        const o = readOptions(call, name);
+        const o = { ...annotation.defaults, ...readOptions(call, name, `@${written}`, annotation.custom) };
         if (name === "Responsibility") {
           responsibilities.push({ kind: "responsibility", description: o.description ?? "", componentName, componentSource });
         } else {
@@ -304,11 +337,13 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
           });
         }
       }
-    } else if (ts.isCallExpression(node) && annotationOf(node.expression) === "meta") {
+    } else if (ts.isCallExpression(node) && annotationOf(node.expression)?.name === "meta") {
+      const annotation = annotationOf(node.expression)!;
+      const written = calleeName(node.expression)?.text ?? "meta";
       if (!(ts.isExpressionStatement(node.parent) && ts.isSourceFile(node.parent.parent))) {
-        problemAt(node, "meta() must be a top-level statement");
+        problemAt(node, `${written}() must be a top-level statement`);
       } else {
-        const o = readOptions(node, "meta");
+        const o = { ...annotation.defaults, ...readOptions(node, "meta", `${written}()`, annotation.custom) };
         metas.push({
           node,
           info: {

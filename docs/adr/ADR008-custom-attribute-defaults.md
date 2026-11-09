@@ -32,5 +32,11 @@ symbols, and it evaluates the constants itself.
 - Three new public types in the netstandard2.0 `Haya` package, with property lists that must be kept in step with the
   attributes they default.
 - Reflection at runtime does not see the defaults; Haya is the only consumer.
-- TypeScript has no inheritance. Its counterpart (`defineResponsibility`, `defineCollaborator`, `defineMeta`) is added
-  separately and keeps the same rule: static defaults, usage-site options win.
+- TypeScript has no attribute inheritance, so its counterpart is declarative too: `defineResponsibility`,
+  `defineCollaborator` and `defineMeta` in `@haya/annotations` take the default options, and the result is used like the
+  annotation it wraps. The analyser follows a callee to a `const` initialised with a `define...` call from the Haya
+  package and reads its options statically, with the same rules as for the annotations. Usage-site options win. The
+  types make options that are already defaults optional.
+- A hand-written wrapper function is not recognised in TypeScript: reading it would need evaluating code.
+- A `define...` declaration that is only available as compiled `.d.ts` is not supported, because declaration files do not
+  keep the initialiser. (The C# marker attributes do not have this limit.)

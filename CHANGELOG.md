@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Custom TypeScript annotations with defaults: `defineResponsibility`, `defineCollaborator` and `defineMeta` in
+  `@haya/annotations` declare an annotation with options baked in; options at the usage site override them. See
+  [the tutorial](docs/tutorials/custom-attributes-typescript.md) and ADR008.
 - Custom C# attributes with defaults: derive from `ResponsibilityAttribute`, `CollaboratorAttribute` or `MetaAttribute` and
   put `ResponsibilityDefaults`, `CollaboratorDefaults` or `MetaDefaults` on the class to bake in values; values at the
   usage site override them. Works for attributes in source and in compiled assemblies. See

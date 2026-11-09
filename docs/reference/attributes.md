@@ -125,5 +125,37 @@ public class CheckoutHandler { }
 - A value at the usage site overrides the default. For a chain of custom attributes, a derived attribute's defaults
   override those of its base attribute.
 - Custom attributes can be defined in the analysed source or in a compiled assembly (for example a NuGet package).
+- TypeScript has [an equivalent](#custom-annotations-with-defaults-typescript).
 - A custom attribute without a defaults attribute is still recognised; it simply has no defaults.
 - The defaults attribute is not itself reported as a responsibility, collaborator or meta.
+
+## Custom annotations with defaults (TypeScript)
+
+TypeScript has no attribute inheritance, so a custom annotation is declared with one of three functions from
+`@haya/annotations`:
+
+| Annotation | Declare with | Used as |
+| --- | --- | --- |
+| `@Responsibility` | `defineResponsibility({...})` | class decorator |
+| `@Collaborator` | `defineCollaborator({...})` | class decorator |
+| `meta()` | `defineMeta({...})` | top-level call, once per project |
+
+```ts
+export const CallsPayments = defineCollaborator({ appName: "Payments", system: "Acme", protocol: "gRPC" });
+
+@CallsPayments({ dataDescription: "Charge a card" })
+export class CheckoutHandler {}
+```
+
+- The options are the same as those of the annotation being wrapped. Options already given as defaults are no longer
+  required, and the argument can be left out (`@CallsPayments()`) when nothing required is left.
+- An option at the usage site overrides the default.
+- The `define...` call must be the initialiser of a `const` and its options must be static, with the same rules as the
+  annotations. Anything else is reported with file and line, once, at the `define...` call.
+- It may be declared in another file or in a linked workspace package, and imported (also under another name).
+- A custom `meta` counts as the project's single `meta`.
+- A function you wrote yourself that calls `Collaborator(...)` is not recognised; use `defineCollaborator`.
+- Declarations that only exist as compiled `.d.ts` files (a package installed from a registry) do not work: TypeScript
+  does not keep the options in declaration files.
+
+The C# equivalent is [custom attributes with defaults](#custom-attributes-with-defaults-c).
