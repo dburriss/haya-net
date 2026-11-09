@@ -175,3 +175,11 @@ let ``Diagram declares each system once and relates them`` () =
     Assert.Contains("System(billing, Billing,", text)
     Assert.Contains("Rel(ordering, billing, \"uses\")", text)
     Assert.Equal(1, text.Split("System(ordering,").Length - 1)
+
+[<Fact>]
+let ``A class with both Responsibility and Collaborator yields one of each`` () =
+    let ds = multiProjectDescriptors |> filterToComponentName "Both"
+    let r = ds |> Descriptor.responsibilities |> List.exactlyOne
+    let c = ds |> Descriptor.collaborators |> List.exactlyOne
+    Assert.Equal("Does both", r.Description)
+    Assert.Equal("Elsewhere", c.AppName)

@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `Haya.Bun` now finds annotations in workspace packages imported by name (symlinked into `node_modules`) and in
   projects listed under tsconfig `references`; both were silently skipped before.
+- `Haya.Tool` no longer emits a responsibility twice and drops the collaborator for a C# class that has both
+  `[Responsibility]` and `[Collaborator]`; both are now emitted once, matching `Haya.Bun`.
 
 ### Added
 - `Haya.Bun` is a working CLI: `crc`, `describe`, `diagram` and `backstage` for TypeScript projects, with a static analyser

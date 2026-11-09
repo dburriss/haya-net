@@ -90,11 +90,10 @@ module Descriptors =
         else None // not an assembly
     
     let mapDescriptors (rootPath: string) (symbol: ISymbol) =
-        match symbol with
-        | IsResponsibility rootPath xs -> xs
-        | IsCollaborator rootPath xs -> xs
-        | IsMeta xs -> xs
-        | _ -> []//failwith "Not implemented"
+        // A symbol may carry several Haya attributes (e.g. Responsibility and Collaborator): collect all of them.
+        [ match symbol with IsResponsibility rootPath xs -> yield! xs | _ -> ()
+          match symbol with IsCollaborator rootPath xs -> yield! xs | _ -> ()
+          match symbol with IsMeta xs -> yield! xs | _ -> () ]
     
     let getDescriptors (rootPath: string) (attributeNames: string list) (solution: Solution) =
         task {
@@ -105,7 +104,8 @@ module Descriptors =
                         |> List.map (fun n -> Roslyn.findAllAssembliesWithAttribute n solution)
                         |> Task.WhenAll
             let toDescriptors (symbols: ISymbol list seq) =
-                symbols |> Seq.concat |> Seq.toList |> List.collect (mapDescriptors rootPath)
+                // the same symbol is found once per attribute name searched: map each only once
+                symbols |> Seq.concat |> Seq.distinctBy (fun s -> s.ToDisplayString(), s.Kind) |> Seq.toList |> List.collect (mapDescriptors rootPath)
             let classes = toDescriptors classes
             let meta = toDescriptors meta
             return classes @ meta
