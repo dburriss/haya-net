@@ -216,6 +216,16 @@ let ``Backstage splits collaborators by direction`` () =
     Assert.DoesNotContain("web-shop-checkout", docs[0].Split("dependsOn:")[1])
 
 [<Fact>]
+let ``Backstage links an app to an in-catalog app that lists it as upstream`` () =
+    // Billing lists Ordering as upstream (Ordering calls Billing) and Ordering does not mention Billing
+    let ordering = app "Api" "Ordering" []
+    let billing = app "Payments" "Billing" [ "Api", "Ordering", Relationship.Internal ]
+    let billing = { billing with Collaborators = billing.Collaborators |> List.map (fun c -> { c with Direction = Direction.Upstream }) }
+    let docs = (Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ ordering; billing ]).Split("---\n")
+    Assert.Contains("billing-payments", docs[0].Split("dependsOn:")[1]) // ordering-api dependsOn billing-payments
+    Assert.Contains("ordering-api", docs[1].Split("dependsOn:")[0])     // billing-payments dependencyOf ordering-api
+
+[<Fact>]
 let ``Backstage honours the json format`` () =
     let api = app "Api" "Ordering" []
     let json = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Json; CurrentDirectory = "" } [ api ]

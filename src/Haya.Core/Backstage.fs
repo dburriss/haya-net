@@ -25,14 +25,15 @@ module Backstage =
 
     /// An upstream collaborator calls this app, so it is a dependency of this app's `dependencyOf`; a downstream
     /// collaborator is called by this app, so it goes in `dependsOn`. `dependents` are the apps in the same catalog
-    /// that call this app.
-    let genComponent (meta: Analysis.MetaDescriptor) (collaborators: Analysis.CollaboratorDescriptor list) (dependents: string list) =
+    /// that call this app; `dependencies` are the apps in the same catalog that this app calls without declaring it
+    /// (they list this app as upstream).
+    let genComponent (meta: Analysis.MetaDescriptor) (collaborators: Analysis.CollaboratorDescriptor list) (dependents: string list) (dependencies: string list) =
         let named (cs: Analysis.CollaboratorDescriptor list) =
             cs |> List.map (fun c -> createName c.System c.AppName)
         let isUpstream (c: Analysis.CollaboratorDescriptor) = c.Direction = Analysis.Direction.Upstream
 
         let dependsOn =
-            collaborators |> List.filter (isUpstream >> not) |> named |> List.distinct
+            (collaborators |> List.filter (isUpstream >> not) |> named) @ dependencies |> List.distinct
 
         let dependencyOf =
             (collaborators |> List.filter isUpstream |> named) @ dependents |> List.distinct
@@ -72,7 +73,14 @@ module Backstage =
                 && a.Collaborators |> List.exists (fun c ->
                     c.Direction = Analysis.Direction.Downstream && createName c.System c.AppName = nameOfApp target))
             |> List.map (fun (m, _) -> nameOfApp m)
-        let appComponents = withMeta |> List.map (fun (m, a) -> genComponent m a.Collaborators (dependentsOf m))
+        let dependenciesOf (target: Analysis.MetaDescriptor) =
+            withMeta
+            |> List.filter (fun (m, a) ->
+                nameOfApp m <> nameOfApp target
+                && a.Collaborators |> List.exists (fun c ->
+                    c.Direction = Analysis.Direction.Upstream && createName c.System c.AppName = nameOfApp target))
+            |> List.map (fun (m, _) -> nameOfApp m)
+        let appComponents = withMeta |> List.map (fun (m, a) -> genComponent m a.Collaborators (dependentsOf m) (dependenciesOf m))
         let otherComponents = apps |> List.collect (_.Collaborators) |> genCollaboratorComponents knownApps
         let components = appComponents @ otherComponents
         if components |> List.isEmpty then
