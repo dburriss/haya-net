@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Not part of CustomAttributes.sln on purpose: Checkout uses the prebuilt lib/Acme.Shared.dll, like a NuGet package.
+       Rebuild it with ./build.sh. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <DebugType>none</DebugType>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Haya\Haya.fsproj" />
+  </ItemGroup>
+
+</Project>

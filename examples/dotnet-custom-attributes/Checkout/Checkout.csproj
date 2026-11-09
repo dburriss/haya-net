@@ -11,4 +11,11 @@
     <ProjectReference Include="..\..\..\src\Haya\Haya.fsproj" />
   </ItemGroup>
 
+  <!-- A prebuilt library, like a NuGet package: its source is in ../Acme.Shared (rebuild with build.sh). -->
+  <ItemGroup>
+    <Reference Include="Acme.Shared">
+      <HintPath>..\lib\Acme.Shared.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

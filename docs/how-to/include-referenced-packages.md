@@ -16,6 +16,12 @@ into `.d.ts` files, so `Haya.Bun` cannot read them from `node_modules`.
 
 3. `--verbose` prints `Including <assembly>: <type>` for every type picked up, so you can check the scope.
 
+A runnable sample is in `examples/dotnet-custom-attributes`: `Checkout` references the prebuilt `lib/Acme.Shared.dll`
+(source in `Acme.Shared`, rebuild with `Acme.Shared/build.sh`). Compare
+its [`CRC.md`](../../examples/dotnet-custom-attributes/CRC.md) with
+[`CRC.with-references.md`](../../examples/dotnet-custom-attributes/CRC.with-references.md), generated with
+`haya crc -cc --include-references` (the two extra rows and the `Geocoding` container come from the DLL).
+
 ## What is included
 
 - Only assemblies that reference `Haya` are scanned. `--include-references` scans all of those; `--include-assembly`
