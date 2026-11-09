@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Releases are tag-driven: pushing a `v*` tag publishes `Haya`, `Haya.Core`, `Haya.Roslyn` and `Haya.Tool` to NuGet with
+  Trusted Publishing (no API key), all at one version. Use `./publish.sh` to bump, tag and push. Previously every push to
+  `main` tried to publish.
+
 ### Added
 - Custom TypeScript annotations with defaults: `defineResponsibility`, `defineCollaborator` and `defineMeta` in
   `@haya/annotations` declare an annotation with options baked in; options at the usage site override them. See

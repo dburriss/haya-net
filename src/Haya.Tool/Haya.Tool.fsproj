@@ -4,8 +4,6 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
         
-        <Version>0.0.4</Version>
-        <VersionSuffix>alpha2</VersionSuffix>
 
         <Title>Haya.Tool</Title>
         <Description>
@@ -19,7 +17,7 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <RepositoryUrl>https://github.com/dburriss/heya-net</RepositoryUrl>
+        <RepositoryUrl>https://github.com/dburriss/haya-net</RepositoryUrl>
         
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackAsTool>true</PackAsTool>
