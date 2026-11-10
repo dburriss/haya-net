@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no relationship with it. There is one numbered line per pair of boxes with an arrowhead per direction, small nodes with
   glyphs for kind, tier and lifecycle, kind/tier/lifecycle buttons that double as the legend and fade what is switched
   off, search that reveals hidden apps, and a side panel with details, inbound and outbound relationships. Apps known only
-  from a collaborator are marked undocumented. A Theme button switches between automatic, light and dark, and each system's border is coloured from green (fewest apps) to red (most). Both stacks emit identical pages. See
+  from a collaborator are marked undocumented. A Theme button switches between automatic, light and dark, and the borders of systems, and the lines between them, are coloured yellow to deep red once they get complex (7 or more apps, 3 or more relationships), so the heavy ones stand out. Both stacks emit identical pages. See
   [the how-to](docs/how-to/explore-the-system-graph.md), the [graph format](docs/reference/graph-format.md) and ADR011.
 - `haya datadog` writes Datadog Software Catalog entities (`entity.datadog.yaml`, schema v3) on both the .NET tool and
   the Bun CLI: a `service`, `datastore` or `queue` per application with `dependsOn`, a `system` per system, and stubs for

@@ -28,6 +28,12 @@ What is drawn follows from a set of shown apps. A system with shown apps is a bo
 box; lines between hidden apps roll up into one line between their systems. Selecting a node mutes what has no
 relationship with it. See `sync`, `desired` and `applyFocus` in `app.js`.
 
+## Colour
+
+`HEAT_APPS` and `HEAT_LINKS` at the top of `app.js` are the four stops of the ramp for a system's border (by apps) and for a line
+between systems (by relationships): below the first it is plain, yellow starts there, orange by the third, deepest red at the
+fourth. `HEAT_COLOURS` are the muted colours at the stops. Past the last stop the red end stretches to the largest value in the page.
+
 ## Poking at it
 
 - `window.__haya` is the Cytoscape instance.

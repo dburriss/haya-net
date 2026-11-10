@@ -22,35 +22,48 @@ for (const e of data.edges) for (const id of [e.from, e.to]) {
   touching.get(id).push(e);
 }
 
-// Complexity: an own system's border runs from green (the fewest apps) through yellow and orange to red (the most), scaled
-// to the systems in this graph, so the biggest is always red. Equal counts, or a single system, say nothing and stay plain.
+// Heat: a count is coloured by a ramp with four stops. Below the first stop it is plain; the first stop is where yellow starts,
+// the second is full yellow (fading to orange from there), the third is orange (fading to red from there) and the fourth is the
+// deepest red, kept for the most complex. If the data goes past the last stop, the red end stretches to the largest value, so the most
+// complex system or pair always has the deepest red. Change the numbers here.
+const HEAT_APPS = [7, 9, 13, 20];   // apps in a system: the border of an own system
+const HEAT_LINKS = [3, 4, 6, 9];    // relationships between two systems: the line between them
+const HEAT_COLOURS = [[58, 0.42, 0.6], [48, 0.5, 0.52], [28, 0.5, 0.5], [4, 0.5, 0.44]]; // hue, saturation, lightness: muted
 const hsl = (h, s, l) => {
   const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
   const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
   return "#" + [f(0), f(8), f(4)].map((x) => x.toString(16).padStart(2, "0")).join("");
 };
-const heatColor = (t) => hsl(115 * (1 - t), 0.42, 0.5); // 0 is green, 1 is red; kept muted so it informs without shouting
-const heatOf = new Map(); // own system id -> border colour
-{
-  const counts = data.nodes.filter((n) => n.kind === "system" && n.ownSystem && (appsOf.get(n.id) || []).length).map((n) => [n.id, appsOf.get(n.id).length]);
-  const lo = Math.min(...counts.map(([, c]) => c)), hi = Math.max(...counts.map(([, c]) => c));
-  if (counts.length && hi > lo) for (const [id, c] of counts) heatOf.set(id, heatColor((c - lo) / (hi - lo)));
-}
+const stretch = (stops, largest) => [stops[0], stops[1], stops[2], Math.max(stops[3], largest)];
+/** The colour of `value` on the ramp, or undefined while it is below the first stop. */
+const heat = (stops, value) => {
+  if (value < stops[0]) return undefined;
+  if (value >= stops[3]) return hsl(...HEAT_COLOURS[3]);
+  let i = 0;
+  while (value >= stops[i + 1]) i++;
+  const t = (value - stops[i]) / (stops[i + 1] - stops[i]), [a, b] = [HEAT_COLOURS[i], HEAT_COLOURS[i + 1]];
+  return hsl(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
+};
+const heatBar = () => h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + HEAT_COLOURS.map((c) => hsl(...c)).join(",") + ")" });
 
-// Coupling: a line between two systems takes the same green-to-red colour by how many relationships there are between the
-// systems in total (not what is drawn right now, so it does not shift as things are opened). Lines to or from an app stay plain.
+// An own system's border, by how many apps it holds.
+const heatOf = new Map(); // own system id -> border colour
+const counts = data.nodes.filter((n) => n.kind === "system" && n.ownSystem).map((n) => [n.id, (appsOf.get(n.id) || []).length]);
+const appStops = stretch(HEAT_APPS, Math.max(0, ...counts.map(([, c]) => c)));
+for (const [id, c] of counts) { const colour = heat(appStops, c); if (colour) heatOf.set(id, colour); }
+
+// A line between two systems, by the total number of relationships between them in the data (not what is drawn right now, so it
+// does not shift as things are opened). Lines to or from an app stay plain.
 const systemOf = (id) => { const n = nodes.get(id); return n.kind === "system" ? id : n.parent || id; };
 const pairKey = (a, b) => (a < b ? a + "|" + b : b + "|" + a);
 const lineHeat = new Map(); // pairKey of two systems -> colour
-{
-  const total = new Map();
-  for (const e of data.edges) {
-    const a = systemOf(e.from), b = systemOf(e.to);
-    if (a !== b) total.set(pairKey(a, b), (total.get(pairKey(a, b)) || 0) + 1);
-  }
-  const counts = [...total.values()], lo = Math.min(...counts), hi = Math.max(...counts);
-  if (counts.length && hi > lo) for (const [k, c] of total) lineHeat.set(k, heatColor((c - lo) / (hi - lo)));
+const pairTotal = new Map();
+for (const e of data.edges) {
+  const a = systemOf(e.from), b = systemOf(e.to);
+  if (a !== b) pairTotal.set(pairKey(a, b), (pairTotal.get(pairKey(a, b)) || 0) + 1);
 }
+const linkStops = stretch(HEAT_LINKS, Math.max(0, ...pairTotal.values()));
+for (const [k, c] of pairTotal) { const colour = heat(linkStops, c); if (colour) lineHeat.set(k, colour); }
 
 // ---------------------------------------------------------------- state
 // What is visible follows from `shown` (the apps drawn): a system with shown apps is a boundary around them, one
@@ -545,8 +558,8 @@ function renderPanel() {
     [glyphImg("System", GREY), "System, with its number of apps"],
     [glyphImg("External", GREY), "Outside the documented systems"],
     [glyphImg("Undocumented", AMBER), "Undocumented: no [Meta] of its own"],
-    ...(lineHeat.size ? [[h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + [0, 0.25, 0.5, 0.75, 1].map(heatColor).join(",") + ")" }), "Line between systems: fewest relationships (green) to most (red)"]] : []),
-    ...(heatOf.size ? [[h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + [0, 0.25, 0.5, 0.75, 1].map(heatColor).join(",") + ")" }), "System border: fewest apps (green) to most (red)"]] : []),
+    [heatBar(), `System border, by apps: plain under ${appStops[0]}, yellow from ${appStops[0]}, orange by ${appStops[2]}, deep red at ${appStops[3]}`],
+    [heatBar(), `Line between systems, by relationships: plain under ${linkStops[0]}, yellow from ${linkStops[0]}, orange by ${linkStops[2]}, deep red at ${linkStops[3]}`],
     [h("span", { class: "arrows" }, "→ ↔"), "One line per pair, with the number of relationships"],
   ];
   document.getElementById("legend-list").append(...items.map(([g, t]) => h("li", {}, g, h("span", {}, t))));
