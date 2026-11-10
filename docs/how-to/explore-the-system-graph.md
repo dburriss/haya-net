@@ -33,10 +33,12 @@ The page is self-contained: open the file in a browser, attach it to a ticket or
   systems are the focus for muting (when several are open, what relates to any of them stays). Double-click again to collapse it.
 - A system's app list is sorted by kind, then by name. In it, an app that is on the graph has its kind glyph before its name; an app that is in the system
   but not drawn yet has a **closed eye** instead. Click its name to add just that app (screen readers announce it as "hidden").
+- **Enter or Space** does the same as a double-click on the selected node: open or collapse a system, or show the apps an app
+  connects to. It is ignored while a button, link or text field has focus, so those keep their usual keys.
 - **Double-click an app** to show the apps it connects to. The panel buttons do the same, and **Hide** removes one app.
 - **Search** finds an app or system by name, description, technology or owner, even if it is hidden, and shows just that app. Press **/** to jump to the search box from anywhere on the page (it is ignored while you are typing in a field), and **Esc** to leave it.
 - The **Kind, Tier and Lifecycle** buttons all start on. Switch one off to fade the apps that have that value (and the lines
-  to them); switch it back on to restore them. **Fit** zooms to everything and **Reset** starts over.
+  to them); switch it back on to restore them. **Fit** zooms to everything and **Reset** (or **r**) starts over.
 - **Theme** cycles Auto (follows your system), Light and Dark. The choice is remembered in the browser when it allows storage.
 - An app with a **?** and a dashed outline is **undocumented**: it is known only because another app declares it as a
   collaborator and has no `[Meta]` of its own, so the panel shows what the collaborator said about it. The overview lists them

@@ -303,11 +303,12 @@ const reset = () => {
 cy.on("tap", "node", (e) => select({ kind: "node", id: e.target.id() }));
 cy.on("tap", "edge", (e) => select({ kind: "edge", id: e.target.id() }));
 cy.on("tap", (e) => { if (e.target === cy) select(null); });
-cy.on("dbltap", "node", (e) => {
-  const id = e.target.id(), n = nodes.get(id);
-  if (n.kind === "system") isOpen(id) ? collapseSystem(id) : openSystem(id);
+// what double-click and Enter/Space do: open or collapse a system, or show the apps an app connects to
+const toggleExpand = (id) => {
+  if (nodes.get(id).kind === "system") isOpen(id) ? collapseSystem(id) : openSystem(id);
   else expandNeighbours(id);
-});
+};
+cy.on("dbltap", "node", (e) => toggleExpand(e.target.id()));
 
 // ---------------------------------------------------------------- filters
 const matches = (n) => FILTERS.every((f) => enabled[f.key].has(f.of(n)));
@@ -381,14 +382,24 @@ searchBox.addEventListener("keydown", (e) => {
   if (e.key === "Enter") { const f = searchFor(searchBox.value)[0]; if (f) pick(f.id); }
   if (e.key === "Escape") { closeResults(); searchBox.value = ""; searchBox.blur(); }
 });
-// "/" jumps to the search box, as in vim and most web apps. Not while typing somewhere, and not with a modifier held.
+// Page-level keys. They leave alone anything that already handles keys itself: fields, buttons and links, and any modifier.
+const handlesKeys = (t) => t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A", "SUMMARY"].includes(t.tagName));
 document.addEventListener("keydown", (e) => {
-  if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
-  const t = e.target;
-  if (t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
-  e.preventDefault();
-  searchBox.focus();
-  searchBox.select();
+  if (e.ctrlKey || e.metaKey || e.altKey || handlesKeys(e.target)) return;
+  if (e.key === "/") {
+    // jump to the search box, as in vim and most web apps
+    e.preventDefault();
+    searchBox.focus();
+    searchBox.select();
+  } else if (e.key === "r") {
+    // start over, like the Reset button
+    e.preventDefault();
+    reset();
+  } else if ((e.key === "Enter" || e.key === " ") && selected && selected.kind === "node") {
+    // expand the selected node, like a double-click
+    e.preventDefault(); // Space would scroll the page
+    toggleExpand(selected.id);
+  }
 });
 document.getElementById("fit").addEventListener("click", () => cy.animate({ fit: { eles: cy.elements(), padding: 40 }, duration: 250 }));
 document.getElementById("reset").addEventListener("click", reset);
@@ -460,7 +471,7 @@ function overviewPanel() {
   return [
     h("h2", {}, "Overview"),
     h("p", {}, `${systems.length} systems, ${apps.length} apps, ${data.edges.length} relationships.`),
-    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
+    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Press Enter or Space to do the same to the selected node, r to start over. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
     section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),
   ];
