@@ -43,6 +43,7 @@
         <Compile Include="Diagram.fs" />
         <Compile Include="Markdown.fs" />
         <Compile Include="Crc.fs" />
+        <Compile Include="Catalog.fs" />
         <Compile Include="Backstage.fs" />
     </ItemGroup>
 

@@ -3,25 +3,22 @@ namespace Haya.Core
 open Haya.Core.Naming
 
 module Backstage =
-    let private nameOfApp (meta: Analysis.MetaDescriptor) = createName meta.System meta.AppName
 
     /// An upstream collaborator calls this app, so it is a dependency of this app's `dependencyOf`; a downstream
     /// collaborator is called by this app, so it goes in `dependsOn`. `dependents` are the apps in the same catalog
     /// that call this app; `dependencies` are the apps in the same catalog that this app calls without declaring it
     /// (they list this app as upstream).
     let genComponent (meta: Analysis.MetaDescriptor) (collaborators: Analysis.CollaboratorDescriptor list) (dependents: string list) (dependencies: string list) =
-        let named (cs: Analysis.CollaboratorDescriptor list) =
-            cs |> List.map (fun c -> createName c.System c.AppName)
-        let isUpstream (c: Analysis.CollaboratorDescriptor) = c.Direction = Analysis.Direction.Upstream
+        let named (cs: Analysis.CollaboratorDescriptor list) = cs |> List.map Catalog.nameOfCollaborator
 
         let dependsOn =
-            (collaborators |> List.filter (isUpstream >> not) |> named) @ dependencies |> List.distinct
+            (collaborators |> List.filter (Catalog.isUpstream >> not) |> named) @ dependencies |> List.distinct
 
         let dependencyOf =
-            (collaborators |> List.filter isUpstream |> named) @ dependents |> List.distinct
+            (collaborators |> List.filter Catalog.isUpstream |> named) @ dependents |> List.distinct
 
         Encode.backstageComponent
-            (nameOfApp meta) meta.AppName meta.Description
+            (Catalog.nameOfApp meta) meta.AppName meta.Description
             meta.Owner meta.System
             dependsOn dependencyOf
 
@@ -30,36 +27,23 @@ module Backstage =
         // An AppName in the decriptors matches a Backstage System
         // A system in the descriptors matches a Backstage Domain
         // Components seem to be the same
-        collaborators
-        |> List.distinctBy (fun x -> createName x.System x.AppName)
-        |> List.filter (fun x -> not (List.contains (createName x.System x.AppName) knownApps))
+        Catalog.externalCollaborators knownApps collaborators
         |> List.map (fun x ->
             // no upstream (dependsOn) or downstream (dependencyOf) known for external systems
             Encode.backstageComponent
-                (createName x.System x.AppName) x.AppName x.Description
+                (Catalog.nameOfCollaborator x) x.AppName x.Description
                 x.Owner x.System
                 [] [])
 
     let generateCatalog (cmd: BackstageCommand) (apps: Analysis.App list) =
         // apps without a meta have no identity, so only their collaborators are catalogued
-        let apps = apps |> List.map Analysis.App.withDefaultSystems
-        let withMeta = apps |> List.choose (fun a -> a.Meta |> Option.map (fun m -> m, a))
-        let knownApps = withMeta |> List.map (fun (m, _) -> nameOfApp m)
-        let dependentsOf (target: Analysis.MetaDescriptor) =
+        let apps = Catalog.withDefaultSystems apps
+        let withMeta = Catalog.withMeta apps
+        let knownApps = withMeta |> List.map (fst >> Catalog.nameOfApp)
+        let appComponents =
             withMeta
-            |> List.filter (fun (m, a) ->
-                nameOfApp m <> nameOfApp target
-                && a.Collaborators |> List.exists (fun c ->
-                    c.Direction = Analysis.Direction.Downstream && createName c.System c.AppName = nameOfApp target))
-            |> List.map (fun (m, _) -> nameOfApp m)
-        let dependenciesOf (target: Analysis.MetaDescriptor) =
-            withMeta
-            |> List.filter (fun (m, a) ->
-                nameOfApp m <> nameOfApp target
-                && a.Collaborators |> List.exists (fun c ->
-                    c.Direction = Analysis.Direction.Upstream && createName c.System c.AppName = nameOfApp target))
-            |> List.map (fun (m, _) -> nameOfApp m)
-        let appComponents = withMeta |> List.map (fun (m, a) -> genComponent m a.Collaborators (dependentsOf m) (dependenciesOf m))
+            |> List.map (fun (m, a) ->
+                genComponent m a.Collaborators (Catalog.dependentsOf withMeta m) (Catalog.dependenciesOf withMeta m))
         let otherComponents = apps |> List.collect (_.Collaborators) |> genCollaboratorComponents knownApps
         let components = appComponents @ otherComponents
         if components |> List.isEmpty then
