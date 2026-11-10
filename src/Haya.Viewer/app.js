@@ -391,7 +391,7 @@ searchBox.addEventListener("input", () => {
   resultsEl.replaceChildren(...found.map((n) => h("li", {}, h("button", { type: "button", onclick: () => pick(n.id), onkeydown: (e) => {
     if (e.key === "ArrowDown") { e.preventDefault(); e.currentTarget.parentElement.nextElementSibling?.firstChild.focus(); }
     if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.parentElement.previousElementSibling?.firstChild || searchBox).focus(); }
-    if (e.key === "Escape") { closeResults(); searchBox.focus(); }
+    if (e.key === "Escape") { e.stopPropagation(); closeResults(); searchBox.focus(); } // not also a deselect
   } }, name(n.id) + (n.kind === "app" && n.parent ? " · " + name(n.parent) : n.kind === "system" ? " · system" : "")))));
   resultsEl.hidden = found.length === 0;
 });
@@ -399,6 +399,15 @@ searchBox.addEventListener("keydown", (e) => {
   if (e.key === "ArrowDown") { e.preventDefault(); resultsEl.querySelector("button")?.focus(); }
   if (e.key === "Enter") { const f = searchFor(searchBox.value)[0]; if (f) pick(f.id); }
   if (e.key === "Escape") { closeResults(); searchBox.value = ""; searchBox.blur(); }
+});
+// Esc lets go of the selection. Unlike the keys below it works with a button or link focused (Esc does nothing there), but not in
+// a text field or the search results, where Esc already means "close this".
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || e.ctrlKey || e.metaKey || e.altKey || !selected) return;
+  const t = e.target;
+  if (t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.closest("#results"))) return;
+  e.preventDefault();
+  select(null);
 });
 // Page-level keys. They leave alone anything that already handles keys itself: fields, buttons and links, and any modifier.
 const handlesKeys = (t) => t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A", "SUMMARY"].includes(t.tagName));
@@ -489,7 +498,7 @@ function overviewPanel() {
   return [
     h("h2", {}, "Overview"),
     h("p", {}, `${systems.length} systems, ${apps.length} apps, ${data.edges.length} relationships.`),
-    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Press Enter or Space to do the same to the selected node, r to start over. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
+    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Press Enter or Space to do the same to the selected node, Esc to deselect, r to start over. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
     section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),
   ];

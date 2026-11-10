@@ -37,6 +37,8 @@ The page is self-contained: open the file in a browser, attach it to a ticket or
   systems are the focus for muting (when several are open, what relates to any of them stays). Double-click again to collapse it.
 - A system's app list is sorted by kind, then by name. In it, an app that is on the graph has its kind glyph before its name; an app that is in the system
   but not drawn yet has a **closed eye** instead. Click its name to add just that app (screen readers announce it as "hidden").
+- **Esc** deselects, so the panel returns to the overview and the muting that came from the selection lifts. In the search box
+  Esc closes the search first. Esc does not collapse systems: while one is open, the rest stays muted until you collapse it or press **r**.
 - **Enter or Space** does the same as a double-click on the selected node: open or collapse a system, or show the apps an app
   connects to. It is ignored while a button, link or text field has focus, so those keep their usual keys.
 - **Double-click an app** to show the apps it connects to. The panel buttons do the same, and **Hide** removes one app.
