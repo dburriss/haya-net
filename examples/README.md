@@ -39,13 +39,13 @@ and [TypeScript](../docs/tutorials/custom-attributes-typescript.md). Generate ea
 ## Multiple systems
 
 Two more examples build a whole system from describe files only. Three apps (Storefront, Orders and Payments, each in
-its own system) were described separately, in their own repositories; one `crc`, `diagram` and `backstage` run takes all
+its own system) were described separately, in their own repositories; one `crc`, `diagram`, `backstage` and `datadog` run takes all
 the describe files and produces system-wide output.
 
 | Tool | Example | Describe files | Generated |
 | --- | --- | --- | --- |
-| `Haya.Tool` | [dotnet-multi-system](dotnet-multi-system) | JSON | [CRC.md](dotnet-multi-system/output/CRC.md), [system.mermaid](dotnet-multi-system/output/system.mermaid), [backstage.yaml](dotnet-multi-system/output/backstage.yaml) |
-| `Haya.Bun` | [ts-multisystem](ts-multisystem) | YAML | [CRC.md](ts-multisystem/output/CRC.md), [system.mermaid](ts-multisystem/output/system.mermaid), [backstage.yaml](ts-multisystem/output/backstage.yaml) |
+| `Haya.Tool` | [dotnet-multi-system](dotnet-multi-system) | JSON | [CRC.md](dotnet-multi-system/output/CRC.md), [system.mermaid](dotnet-multi-system/output/system.mermaid), [backstage.yaml](dotnet-multi-system/output/backstage.yaml), [entity.datadog.yaml](dotnet-multi-system/output/entity.datadog.yaml) |
+| `Haya.Bun` | [ts-multisystem](ts-multisystem) | YAML | [CRC.md](ts-multisystem/output/CRC.md), [system.mermaid](ts-multisystem/output/system.mermaid), [backstage.yaml](ts-multisystem/output/backstage.yaml), [entity.datadog.yaml](ts-multisystem/output/entity.datadog.yaml) |
 
 Run `generate.sh` in either folder. The two sets of describe files hold the same system, so the diagram and catalog are
 identical. Orders also depends on a Shipping service that has no describe file, so it appears as a stub in the Backstage

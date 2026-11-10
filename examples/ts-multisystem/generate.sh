@@ -11,3 +11,4 @@ mkdir -p output
 haya crc -cc -o output/CRC.md describe/storefront.yaml describe/orders.yaml describe/payments.yaml
 haya diagram -o output/system.mermaid describe/storefront.yaml describe/orders.yaml describe/payments.yaml
 haya backstage -o output/backstage.yaml describe/storefront.yaml describe/orders.yaml describe/payments.yaml
+haya datadog -o output/entity.datadog.yaml describe/storefront.yaml describe/orders.yaml describe/payments.yaml

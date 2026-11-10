@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `main` tried to publish. `Haya.Core` and `Haya.Roslyn` are no longer packable; `Haya.Tool` bundles them.
 
 ### Added
+- `haya datadog` writes Datadog Software Catalog entities (`entity.datadog.yaml`, schema v3) on both the .NET tool and
+  the Bun CLI: a `service`, `datastore` or `queue` per application with `dependsOn`, a `system` per system, and stubs for
+  collaborators that are not in the catalog. Checked against Datadog's JSON Schemas in the tests. See
+  [the how-to](docs/how-to/publish-to-datadog.md) and ADR010.
+- `Lifecycle` and `Tier` on `Meta` (C# attributes and TypeScript `meta()`), written to the Datadog entity.
+- Describe format `0.3`: optional `meta.lifecycle`, `meta.tier` and an app-level `language` (`dotnet` or `javascript`)
+  stamped by the analyser. `0.2` and older files are still read.
 - `--include-references` and `--include-assembly <glob>` (with `--verbose`) read Haya attributes from public types in
   referenced packages/DLLs (C# only). Off by default. See
   [the how-to](docs/how-to/include-referenced-packages.md) and ADR009.

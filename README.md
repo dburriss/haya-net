@@ -6,7 +6,7 @@
 
 <p align="center">
   Haya reads small annotations you put next to your code (<code>Responsibility</code>, <code>Collaborator</code>, <code>Meta</code>)
-  and generates CRC documents, C4 diagrams and a Backstage catalog, for <b>C#</b> and <b>TypeScript</b> codebases.
+  and generates CRC documents, C4 diagrams, a Backstage catalog and Datadog Software Catalog entities, for <b>C#</b> and <b>TypeScript</b> codebases.
 </p>
 
 <p align="center">
@@ -54,6 +54,7 @@ See the annotated [C# example](examples/dotnet/Example/HayaEcomm.cs) and its [ge
 - **CRC documents.** Components, Responsibilities and Collaborators as Markdown, optionally with embedded diagrams. See the [CLI reference](docs/reference/cli.md).
 - **C4 diagrams.** Level 1 (system context) and level 2 (containers) as Mermaid. See [Generate C4 diagrams](docs/how-to/generate-diagrams.md).
 - **Backstage catalog.** One component per application with dependencies. See [Publish to Backstage](docs/how-to/publish-to-backstage.md).
+- **Datadog Software Catalog.** `entity.datadog.yaml` with services, datastores, queues, systems and their dependencies. See [Publish to Datadog](docs/how-to/publish-to-datadog.md).
 - **Describe files.** A JSON/YAML description of an application that every other command accepts as input. See the [describe format](docs/reference/describe-format.md).
 - **Many systems at once.** Merge several codebases, C# and TypeScript mixed, into one picture. See [Document several systems together](docs/how-to/document-multiple-systems.md).
 - **Same output on both stacks.** The C# tool (`Haya.Tool`) and the TypeScript tool (`Haya.Bun`) share one rendering core. See [Architecture](docs/explanation/architecture.md).

@@ -1,0 +1,96 @@
+apiVersion: v3
+kind: system
+metadata:
+  name: web-shop
+  displayName: WebShop
+spec:
+  components:
+    - service:web-shop-storefront
+---
+apiVersion: v3
+kind: system
+metadata:
+  name: ordering
+  displayName: Ordering
+spec:
+  components:
+    - service:ordering-orders
+---
+apiVersion: v3
+kind: system
+metadata:
+  name: billing
+  displayName: Billing
+spec:
+  components:
+    - service:billing-payments
+---
+apiVersion: v3
+kind: system
+metadata:
+  name: logistics
+  displayName: Logistics
+spec:
+  components:
+    - service:logistics-shipping-service
+---
+apiVersion: v3
+kind: system
+metadata:
+  name: visa
+  displayName: VISA
+spec:
+  components:
+    - service:visa-visa-payment-provider
+---
+apiVersion: v3
+kind: service
+metadata:
+  name: web-shop-storefront
+  displayName: Storefront
+  description: Customer facing web shop
+  owner: Storefront Team
+spec:
+  type: web
+  dependsOn:
+    - service:ordering-orders
+---
+apiVersion: v3
+kind: service
+metadata:
+  name: ordering-orders
+  displayName: Orders
+  description: Accepts and tracks customer orders
+  owner: Ordering Team
+spec:
+  type: rest
+  dependsOn:
+    - service:billing-payments
+    - service:logistics-shipping-service
+---
+apiVersion: v3
+kind: service
+metadata:
+  name: billing-payments
+  displayName: Payments
+  description: Takes payments for orders
+  owner: Billing Team
+spec:
+  dependsOn:
+    - service:visa-visa-payment-provider
+---
+apiVersion: v3
+kind: service
+metadata:
+  name: logistics-shipping-service
+  displayName: Shipping Service
+  description: Handles shipping of orders
+  owner: Logistics Team
+---
+apiVersion: v3
+kind: service
+metadata:
+  name: visa-visa-payment-provider
+  displayName: Visa Payment Provider
+  description: Handles payment processing of Visa cards
+  owner: Visa

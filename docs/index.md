@@ -13,6 +13,7 @@ Pick the page that matches what you are doing right now.
 
 - [Generate C4 diagrams](how-to/generate-diagrams.md)
 - [Publish to a Backstage catalog](how-to/publish-to-backstage.md)
+- [Publish to the Datadog Software Catalog](how-to/publish-to-datadog.md)
 - [Document several systems together](how-to/document-multiple-systems.md)
 - [Include attributes from referenced packages](how-to/include-referenced-packages.md)
 - [Run Haya in CI](how-to/run-in-ci.md)

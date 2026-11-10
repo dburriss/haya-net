@@ -27,6 +27,8 @@ The application represented by the codebase.
 | `Owner` | | Owner of the application (a team). |
 | `Technology` | | What it is built with, e.g. `.NET 10 / ASP.NET Core`. Shown in the container diagram. |
 | `Kind` | | An `AppKind`. Picks the shape in diagrams. Unset is a generic application. |
+| `Lifecycle` | | Lifecycle stage, e.g. `production` or `experimental`. Written to the Datadog entity; not validated. |
+| `Tier` | | Criticality tier, e.g. `1`. Written to the Datadog entity; not validated. |
 
 | `AppKind` | Meaning |
 | --- | --- |
@@ -39,12 +41,13 @@ The application represented by the codebase.
 
 ```csharp
 [assembly: Meta(AppName = "CheckoutApi", Description = "Handles payment for a cart", System = "HayaEcomm",
-    Repository = "dburriss/haya-net", Technology = ".NET 10 / ASP.NET Core", Kind = AppKind.Api)]
+    Repository = "dburriss/haya-net", Technology = ".NET 10 / ASP.NET Core", Kind = AppKind.Api,
+    Lifecycle = "production", Tier = "1")]
 ```
 
 ```ts
 meta({ appName: "CheckoutApi", description: "Handles payment for a cart", system: "HayaEcomm",
-       technology: "Bun / TypeScript", kind: AppKind.Api });
+       technology: "Bun / TypeScript", kind: AppKind.Api, lifecycle: "production", tier: "1" });
 ```
 
 ## Responsibility

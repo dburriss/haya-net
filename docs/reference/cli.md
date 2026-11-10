@@ -62,5 +62,16 @@ A [describe file](describe-format.md) of the analysed code.
 | `-o`, `--output-path` | Output file | `./backstage.yaml` or `./backstage.json` |
 | `-f`, `--format` | `json` or `yaml` | `yaml` |
 
+## `datadog`
+
+| Flag | Meaning | Default |
+| --- | --- | --- |
+| `-o`, `--output-path` | Output file | `./entity.datadog.yaml` or `./entity.datadog.json` |
+| `-f`, `--format` | `json` or `yaml` | `yaml` |
+
+Datadog only discovers a file named `entity.datadog.yaml` (or `service.datadog.yaml`) in your repository. The JSON
+output, an array of entities, is for the Datadog Catalog API.
+
 How-to guides: [diagrams](../how-to/generate-diagrams.md), [Backstage](../how-to/publish-to-backstage.md),
+[Datadog](../how-to/publish-to-datadog.md),
 [several systems](../how-to/document-multiple-systems.md), [CI](../how-to/run-in-ci.md).

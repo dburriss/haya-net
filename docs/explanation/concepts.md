@@ -8,7 +8,7 @@ This page explains the vocabulary Haya uses and the thinking behind it. For look
 Documentation drifts when it lives far from the thing it describes. Haya puts the facts that are hard to recover from
 code (what an application is for, who it talks to, who owns it) next to the code, where a reviewer sees them change
 in the same pull request. Because they are structured, they can be rendered into human formats (CRC, diagrams) and
-machine formats (describe files, a Backstage catalog) from one source.
+machine formats (describe files, a Backstage catalog, Datadog entities) from one source.
 
 It is a floor, not a replacement for good documentation: enough for a new joiner to start exploring.
 

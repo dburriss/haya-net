@@ -10,6 +10,7 @@ Why Haya is built the way it is. Each record is one decision; newer records can 
 | [ADR004](ADR004-fable-compatible-core-libraries.md) | Fable-compatible libraries in the core | |
 | [ADR005](ADR005-typescript-annotations-and-analyser.md) | TypeScript annotations and static analyser | |
 | [ADR006](ADR006-multi-app-system-model.md) | Multi-app system model, describe format 0.1 | Describe format superseded by 0.2 in ADR007 |
-| [ADR007](ADR007-container-diagram-and-app-kind.md) | C4 container diagram and `AppKind`, describe format 0.2 | |
+| [ADR007](ADR007-container-diagram-and-app-kind.md) | C4 container diagram and `AppKind`, describe format 0.2 | Describe format superseded by 0.3 in ADR010 |
 | [ADR008](ADR008-custom-attribute-defaults.md) | Defaults for custom attributes and annotations | |
 | [ADR009](ADR009-referenced-assembly-analysis.md) | Opt-in analysis of referenced assemblies (C#) | |
+| [ADR010](ADR010-datadog-command-and-language.md) | Datadog command, analyser-stamped language, lifecycle and tier, describe format 0.3 | |

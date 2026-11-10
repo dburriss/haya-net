@@ -13,3 +13,4 @@ mkdir -p output
 haya crc -cc -o output/CRC.md describe/Storefront.json describe/Orders.json describe/Payments.json
 haya diagram -o output/system.mermaid describe/Storefront.json describe/Orders.json describe/Payments.json
 haya backstage -o output/backstage.yaml describe/Storefront.json describe/Orders.json describe/Payments.json
+haya datadog -o output/entity.datadog.yaml describe/Storefront.json describe/Orders.json describe/Payments.json

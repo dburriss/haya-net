@@ -1,14 +1,14 @@
 # Haya.Bun
 
 Haya for **TypeScript** codebases: the same concepts, commands (`crc`, `describe`, `diagram`,
-`backstage`) and outputs as `Haya.Tool` provides for C#, running on [Bun](https://bun.sh).
+`backstage`, `datadog`) and outputs as `Haya.Tool` provides for C#, running on [Bun](https://bun.sh).
 
 F# from `Haya.Core` (a project reference in `Haya.Bun.fsproj`) is compiled to TypeScript by
 [Fable](https://fable.io) into `fable_output/`. `haya.ts` is the hand-written entry point that
 imports the generated code. `Haya.Core` must stay free of .NET-only dependencies (Roslyn lives in
 `Haya.Roslyn`); platform specifics go behind `#if FABLE_COMPILER` (see `Haya.Core/IO.fs`).
 
-Status: working. `crc`, `describe`, `diagram` and `backstage` analyse a TypeScript project and produce output
+Status: working. `crc`, `describe`, `diagram`, `backstage` and `datadog` analyse a TypeScript project and produce output
 identical to `Haya.Tool` for an equivalent codebase (`bun run parity` checks this against the examples).
 Annotations come from [`@haya/annotations`](../Haya.TypeScript) (`@Responsibility`, `@Collaborator`, `meta()`) and are
 read statically with the TypeScript compiler API; user code is never executed. See
@@ -16,7 +16,7 @@ read statically with the TypeScript compiler API; user code is never executed. S
 
 ## Usage
 
-Commands (`crc`, `describe`, `diagram`, `backstage`), flags and defaults are the same as for `Haya.Tool`: see the
+Commands (`crc`, `describe`, `diagram`, `backstage`, `datadog`), flags and defaults are the same as for `Haya.Tool`: see the
 [CLI reference](../../docs/reference/cli.md) and the [TypeScript tutorial](../../docs/tutorials/getting-started-typescript.md).
 `inputPath` is a `tsconfig.json`, a directory containing one, or a `haya describe` file. Run `haya` from the project folder so
 `ComponentSource` paths look like `src/ecomm.ts`. Errors (including non-static annotation values) are reported as

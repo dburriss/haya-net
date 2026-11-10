@@ -4,7 +4,7 @@ Why Haya is built as several projects, and how the C# and TypeScript tools stay 
 
 ```
  C# source ──▶ Haya.Roslyn ──┐
-                             ├──▶ Haya.Core (model + rendering) ──▶ crc / describe / diagram / backstage
+                             ├──▶ Haya.Core (model + rendering) ──▶ crc / describe / diagram / backstage / datadog
  TS source ──▶ TS analyser ──┘
 ```
 
