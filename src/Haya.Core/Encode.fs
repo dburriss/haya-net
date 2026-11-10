@@ -99,6 +99,48 @@ module Encode =
             "version", str version
         ]
 
+    /// Version of the graph document embedded in the interactive html diagram.
+    [<Literal>]
+    let GraphVersion = "0.1"
+
+    /// The resolved graph the html explorer reads: `{ edges: [...], nodes: [...], version }`. Empty strings and lists
+    /// are left out. `Language` and component sources are deliberately not part of it.
+    let graph (g: Graph.Graph) =
+        let optional (name: string) (value: string) = if value = "" then [] else [ name, str value ]
+        let node (n: Graph.Node) =
+            record [
+                yield "id", str n.Id
+                yield "kind", str (if n.Kind = Graph.NodeKind.System then "system" else "app")
+                yield! optional "name" n.Name
+                match n.Parent with
+                | Some p -> yield "parent", str p
+                | None -> ()
+                if n.Kind = Graph.NodeKind.System then yield "ownSystem", JsonValue.Boolean n.OwnSystem
+                else yield "hasMeta", JsonValue.Boolean n.HasMeta
+                yield! optional "appKind" (appKind n.AppKind)
+                yield "relationship", str (relationship n.Relationship)
+                yield! optional "description" n.Description
+                yield! optional "tech" n.Tech
+                yield! optional "owner" n.Owner
+                yield! optional "repository" n.Repository
+                yield! optional "tier" n.Tier
+                yield! optional "lifecycle" n.Lifecycle
+                if not n.Responsibilities.IsEmpty then yield "responsibilities", strings n.Responsibilities
+            ]
+        let edge (e: Graph.Edge) =
+            record [
+                yield "from", str e.From
+                yield "to", str e.To
+                yield "direction", str (direction e.Direction)
+                yield! optional "protocol" e.Protocol
+                yield! optional "label" e.Label
+            ]
+        record [
+            "edges", g.Edges |> List.map edge |> List.toArray |> JsonValue.Array
+            "nodes", g.Nodes |> List.map node |> List.toArray |> JsonValue.Array
+            "version", str GraphVersion
+        ]
+
     /// Backstage `Component` entity.
     let backstageComponent
         (name: string) (title: string) (description: string)

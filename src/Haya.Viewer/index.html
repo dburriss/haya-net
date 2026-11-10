@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>@@HAYA_TITLE@@</title>
+<style>
+@@HAYA_CSS@@
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="bar"><strong id="title"></strong></header>
+  <main id="main">
+    <div id="graph" role="application" aria-label="System graph"></div>
+    <aside id="panel" aria-live="polite"></aside>
+  </main>
+</div>
+<script type="application/json" id="haya-data">@@HAYA_DATA@@</script>
+<script>
+@@HAYA_JS@@
+</script>
+</body>
+</html>

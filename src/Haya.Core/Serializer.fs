@@ -9,6 +9,11 @@ module Serializer =
     /// 2-space indented JSON.
     let toJson (value: JsonValue) = value.ToString(true)
 
+    /// JSON that is safe to put inside an HTML `<script>` element: `<` (so `</script>` and `<!--` cannot
+    /// appear) and the line separators U+2028/U+2029 are written as `\u` escapes. Still valid JSON.
+    let toScriptSafeJson (value: JsonValue) =
+        (toJson value).Replace("<", "\\u003c").Replace("\u2028", "\\u2028").Replace("\u2029", "\\u2029")
+
     let rec private toYamlValue (value: JsonValue) =
         match value with
         | JsonValue.Null -> YamlValue.Null

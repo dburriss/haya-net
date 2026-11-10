@@ -36,10 +36,13 @@
         <Compile Include="Naming.fs" />
         <Compile Include="IO.fs" />
         <Compile Include="Serializer.fs" />
+        <Compile Include="Graph.fs" />
         <Compile Include="Encode.fs" />
         <Compile Include="Decode.fs" />
         <Compile Include="Merge.fs" />
         <Compile Include="Describe.fs" />
+        <Compile Include="ViewerAssets.fs" />
+        <Compile Include="Explore.fs" />
         <Compile Include="Diagram.fs" />
         <Compile Include="Markdown.fs" />
         <Compile Include="Crc.fs" />

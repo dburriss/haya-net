@@ -34,7 +34,7 @@ type DatadogCommand = {
 }
 
 type DiagramType = | C4System | C4Container
-type DiagramFormat = | Mermaid
+type DiagramFormat = | Mermaid | Html
 type DiagramCommand = {
     InputPaths: string list
     OutputPath: string

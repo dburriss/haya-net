@@ -151,3 +151,5 @@ module Diagram =
         match (cmd.DiagramType, cmd.DiagramFormat) with
         | C4System, Mermaid -> sprintMermaidC4L1 apps
         | C4Container, Mermaid -> sprintMermaidC4L2 apps
+        // the explorer shows the whole graph, so the diagram type does not apply
+        | _, Html -> Explore.sprintHtml apps

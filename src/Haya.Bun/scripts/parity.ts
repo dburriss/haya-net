@@ -25,6 +25,7 @@ const cases: { file: string; args: string[] }[] = [
   { file: "crc-cc.md", args: ["crc", "-cc", "-o", "crc-cc.md"] },
   { file: "diagram.mermaid", args: ["diagram", "-o", "diagram.mermaid"] },
   { file: "diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "diagram-l2.mermaid"] },
+  { file: "diagram.html", args: ["diagram", "-f", "html", "-o", "diagram.html"] },
   { file: "backstage.yaml", args: ["backstage", "-o", "backstage.yaml"] },
   { file: "backstage.json", args: ["backstage", "-f", "json", "-o", "backstage.json"] },
   { file: "datadog.yaml", args: ["datadog", "-o", "datadog.yaml"] },
@@ -50,6 +51,7 @@ const multiCases: { file: string; args: string[] }[] = [
   { file: "multi-crc-cc.md", args: ["crc", "-cc", "-o", "multi-crc-cc.md"] },
   { file: "multi-diagram.mermaid", args: ["diagram", "-o", "multi-diagram.mermaid"] },
   { file: "multi-diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "multi-diagram-l2.mermaid"] },
+  { file: "multi-diagram.html", args: ["diagram", "-f", "html", "-o", "multi-diagram.html"] },
   { file: "multi-backstage.yaml", args: ["backstage", "-o", "multi-backstage.yaml"] },
   { file: "multi-datadog.yaml", args: ["datadog", "-o", "multi-datadog.yaml"] },
 ];

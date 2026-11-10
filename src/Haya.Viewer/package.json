@@ -1,0 +1,18 @@
+{
+  "name": "haya-viewer",
+  "private": true,
+  "type": "module",
+  "description": "Interactive graph explorer inlined into `haya diagram -f html`. Built into src/Haya.Core/ViewerAssets.fs by gen-viewer.ts.",
+  "scripts": {
+    "gen": "bun run gen-viewer.ts",
+    "check": "bun run gen-viewer.ts --check"
+  },
+  "dependencies": {
+    "cytoscape": "3.35.0",
+    "cytoscape-expand-collapse": "4.1.1",
+    "cytoscape-fcose": "2.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4"
+  }
+}

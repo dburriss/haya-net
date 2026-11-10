@@ -1,0 +1,9 @@
+:root { --bg: #fff; --fg: #1f2933; --muted: #616e7c; --line: #cbd2d9; --accent: #2f6fdb; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161b22; --fg: #e6edf3; --muted: #9aa5b1; --line: #30363d; --accent: #5b9bff; } }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+#app { display: flex; flex-direction: column; height: 100%; }
+#bar { padding: 8px 16px; border-bottom: 1px solid var(--line); }
+#main { display: flex; flex: 1; min-height: 0; }
+#graph { flex: 1; min-width: 0; }
+#panel { width: 320px; overflow: auto; padding: 12px 16px; border-left: 1px solid var(--line); color: var(--fg); }
+@media (max-width: 700px) { #main { flex-direction: column; } #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: 40%; } }

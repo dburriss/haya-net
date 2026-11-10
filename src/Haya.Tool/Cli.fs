@@ -73,9 +73,9 @@ type DiagramArgs =
             | IncludeAssembly _ -> CliText.includeAssemblyUsage
             | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
-            | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid)"
-            | DiagramType _ -> "Diagram type. c4system (system context) or c4container (apps inside their systems) (default: c4system)"
-            | DiagramFormat _ -> "Output format. mermaid (default: mermaid)"
+            | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid, or ./diagram.html for -f html)"
+            | DiagramType _ -> "Diagram type. c4system (system context) or c4container (apps inside their systems) (default: c4system). Ignored by -f html"
+            | DiagramFormat _ -> "Output format. mermaid | html (interactive explorer, a self-contained page) (default: mermaid)"
 
 type DatadogArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
@@ -273,9 +273,10 @@ module Cli =
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Diagram)
             let sln = inputList (pr.GetResults(DiagramArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let outputPath: string = pr.TryGetResult(DiagramArgs.OutputPath) |> Option.defaultValue "./c4-system-context.mermaid"
             let diagramType = pr.GetResult(DiagramArgs.DiagramType, defaultValue = DiagramType.C4System)
             let diagramFormat = pr.GetResult(DiagramArgs.DiagramFormat, defaultValue = DiagramFormat.Mermaid)
+            let defaultOutput = match diagramFormat with | DiagramFormat.Html -> "./diagram.html" | DiagramFormat.Mermaid -> "./c4-system-context.mermaid"
+            let outputPath: string = pr.TryGetResult(DiagramArgs.OutputPath) |> Option.defaultValue defaultOutput
             let options = analysisOptions (pr.Contains DiagramArgs.IncludeReferences) (pr.GetResults DiagramArgs.IncludeAssembly) (pr.Contains DiagramArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath

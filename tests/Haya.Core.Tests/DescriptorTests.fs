@@ -462,3 +462,104 @@ let ``Datadog writes yaml documents separated by dashes, or a json array`` () =
     let json = Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Json) apps
     Assert.StartsWith("[", json.TrimStart())
     Assert.Contains("\"apiVersion\": \"v3\"", json)
+
+// --- Graph model (basis of the interactive html explorer) ---
+
+[<Fact>]
+let ``Graph makes own systems boundaries and other systems single nodes`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal; "Visa", "Visa", Relationship.External; "Shipping", "Logistics", Relationship.Internal ]
+    let api = { api with Collaborators = api.Collaborators |> List.map (fun c -> { c with Protocol = "HTTPS" }) }
+    let payments = app "Payments" "Billing" []
+    let g = Haya.Core.Graph.ofApps [ api; payments ]
+    let node id = g.Nodes |> List.find (fun n -> n.Id = id)
+    Assert.True((node "ordering").OwnSystem)
+    Assert.True((node "billing").OwnSystem)
+    Assert.False((node "visa").OwnSystem)
+    Assert.Equal(Relationship.External, (node "visa").Relationship)
+    Assert.Equal(Some "ordering", (node "ordering_api").Parent)
+    Assert.True((node "ordering_api").HasMeta)
+    Assert.Contains(g.Edges, fun e -> e.From = "ordering_api" && e.To = "billing_payments" && e.Protocol = "HTTPS")
+    Assert.Contains(g.Edges, fun e -> e.From = "ordering_api" && e.To = "logistics") // unknown app in another system: the system
+
+[<Fact>]
+let ``Graph declares a collaborator in an own system, flags it as without meta, and honours direction`` () =
+    let api = app "Api" "Ordering" [ "Cache", "", Relationship.Internal ]
+    let api = { api with Collaborators = api.Collaborators |> List.map (fun c -> { c with Direction = Direction.Upstream; Tech = "Redis"; Owner = "team-x" }) }
+    let g = Haya.Core.Graph.ofApps [ api ]
+    let cache = g.Nodes |> List.find (fun n -> n.Id = "ordering_cache")
+    Assert.False(cache.HasMeta)
+    Assert.Equal("Redis", cache.Tech)
+    Assert.Equal("team-x", cache.Owner)
+    Assert.Equal(Some "ordering", cache.Parent)
+    Assert.Contains(g.Edges, fun e -> e.From = "ordering_cache" && e.To = "ordering_api")
+
+[<Fact>]
+let ``Graph prefers an app's own meta over a collaborator declaration, drops self edges and is ordered by id`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Api", "Ordering", Relationship.Internal ]
+    let payments = app "Payments" "Ordering" [] |> withMeta (fun m -> { m with Description = "from meta"; Tech = "PostgreSQL" })
+    let g = Haya.Core.Graph.ofApps [ api; payments ]
+    let p = g.Nodes |> List.find (fun n -> n.Id = "ordering_payments")
+    Assert.True(p.HasMeta)
+    Assert.Equal("from meta", p.Description)
+    Assert.DoesNotContain(g.Edges, fun e -> e.From = e.To)
+    Assert.Equal<string list>((g.Nodes |> List.map (_.Id)), (g.Nodes |> List.map (_.Id) |> List.sort))
+
+[<Fact>]
+let ``Graph skips apps without a meta`` () =
+    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let g = Haya.Core.Graph.ofApps [ anon ]
+    Assert.Empty(g.Nodes)
+    Assert.Empty(g.Edges)
+
+[<Fact>]
+let ``Graph json lists nodes and edges, leaves out empty values and is valid json`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal ]
+    let api = { api with Collaborators = api.Collaborators |> List.map (fun c -> { c with Protocol = "HTTPS" }) }
+    let json = Haya.Core.Graph.ofApps [ api; app "Payments" "Billing" [] ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    use doc = System.Text.Json.JsonDocument.Parse json
+    let root = doc.RootElement
+    Assert.Equal(Haya.Core.Encode.GraphVersion, root.GetProperty("version").GetString())
+    let nodes = root.GetProperty("nodes").EnumerateArray() |> Seq.toList
+    let apiNode = nodes |> List.find (fun n -> n.GetProperty("id").GetString() = "ordering_api")
+    Assert.Equal("ordering", apiNode.GetProperty("parent").GetString())
+    Assert.True(apiNode.GetProperty("hasMeta").GetBoolean())
+    let mutable ignored = Unchecked.defaultof<System.Text.Json.JsonElement>
+    Assert.False(apiNode.TryGetProperty("tech", &ignored)) // empty values are omitted
+    let system = nodes |> List.find (fun n -> n.GetProperty("id").GetString() = "billing")
+    Assert.True(system.GetProperty("ownSystem").GetBoolean())
+    let edge = root.GetProperty("edges").EnumerateArray() |> Seq.head
+    Assert.Equal("HTTPS", edge.GetProperty("protocol").GetString())
+    Assert.DoesNotContain("language", json)
+
+[<Fact>]
+let ``Graph json is safe inside a script element`` () =
+    let nasty = "</script><!-- \"q\" &    "
+    let api = app "Api" "Ordering" [] |> withMeta (fun m -> { m with Description = nasty })
+    let json = Haya.Core.Graph.ofApps [ api ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    Assert.DoesNotContain("<", json)
+    Assert.DoesNotContain(" ", json)
+    Assert.DoesNotContain(" ", json)
+    use doc = System.Text.Json.JsonDocument.Parse json
+    let node = doc.RootElement.GetProperty("nodes").EnumerateArray() |> Seq.find (fun n -> n.GetProperty("id").GetString() = "ordering_api")
+    Assert.Equal(nasty, node.GetProperty("description").GetString()) // round-trips
+
+// --- Interactive html explorer ---
+
+[<Fact>]
+let ``Explore page embeds the graph once, escapes the title and keeps the viewer`` () =
+    let api = app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ] |> withMeta (fun m -> { m with Description = "</script><b>" })
+    let html = Haya.Core.Explore.render "T <&> \"x\"" (Haya.Core.Graph.ofApps [ api ])
+    Assert.StartsWith("<!doctype html>", html)
+    Assert.Contains("<title>T &lt;&amp;&gt; &quot;x&quot;</title>", html)
+    Assert.Equal(1, html.Split("id=\"haya-data\"").Length - 1)
+    Assert.DoesNotContain("@@HAYA_", html) // every token was filled in
+    Assert.Contains("\\u003c/script>\\u003cb>", html) // description is escaped inside the data block
+    // the data block is the only place the nasty description appears, and it cannot end the script element
+    let data = html.Substring(html.IndexOf "id=\"haya-data\"")
+    Assert.DoesNotContain("</script><b>", data)
+    Assert.Contains("Content-Security-Policy", html)
+
+[<Fact>]
+let ``Explore page titles itself after the own systems`` () =
+    let html = Haya.Core.Explore.sprintHtml [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
+    Assert.Contains("<title>Haya: Billing, Ordering</title>", html)

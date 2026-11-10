@@ -133,11 +133,13 @@ await yargs(hideBin(Bun.argv))
     "Generate diagram files",
     (y) =>
       inputPath(y)
-        .option("output-path", { alias: "o", type: "string", default: "./c4-system-context.mermaid", describe: "Path to output folder or file" })
+        .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./c4-system-context.mermaid, or ./diagram.html for -f html)" })
         .option("diagram-type", { alias: "t", choices: ["c4system", "c4container"] as const, default: "c4system" as const, describe: "Diagram type" })
-        .option("diagram-format", { alias: "f", choices: ["mermaid"] as const, default: "mermaid" as const, describe: "Diagram format" }),
+        .option("diagram-format", { alias: "f", choices: ["mermaid", "html"] as const, default: "mermaid" as const, describe: "Diagram format. html is an interactive explorer (a self-contained page)" }),
     (argv) => {
-      const cmd = new DiagramCommand(ofArray(argv.inputPaths), argv["output-path"], argv["diagram-type"] === "c4container" ? DiagramType.C4Container : DiagramType.C4System, DiagramFormat.Mermaid, process.cwd());
+      const html = argv["diagram-format"] === "html";
+      const out = argv["output-path"] ?? (html ? "./diagram.html" : "./c4-system-context.mermaid");
+      const cmd = new DiagramCommand(ofArray(argv.inputPaths), out, argv["diagram-type"] === "c4container" ? DiagramType.C4Container : DiagramType.C4System, html ? DiagramFormat.Html : DiagramFormat.Mermaid, process.cwd());
       exec("Diagram", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
     },
   )
