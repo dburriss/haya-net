@@ -74,11 +74,15 @@ datadog:
 | Kind | Notable spec fields |
 | --- | --- |
 | service | `lifecycle`, `tier`, `type`, `languages`, `dependsOn`, `componentOf` (exactly six, `additionalProperties: false`) |
-| datastore, queue | `dependsOn`, `dependencyOf`, `type` |
-| api | `type`, `interface` (exactly one of `fileRef` uri / `definition`), `implementedBy`, `componentOf`. **No `dependsOn`.** |
-| system | `components`, `componentOf`. **No `dependsOn`.** |
+| datastore, queue | `lifecycle`, `tier`, `type`, `componentOf`, `dependsOn`, `dependencyOf` (exactly six, `additionalProperties: false`) |
+| api | `lifecycle`, `tier`, `type`, `interface` (exactly one of `fileRef` uri / `definition`), `implementedBy`, `componentOf`. **No `dependsOn`.** |
+| system | `lifecycle`, `tier`, `type`, `components`, `componentOf` (exactly five). **No `dependsOn`.** |
 
-Emitting `dependsOn` on an `api` or `system` fails validation.
+Emitting `dependsOn` on an `api` or `system` fails validation (each per-kind `spec` has `additionalProperties: false`).
+
+Verified against the raw schemas (2026-11-10): `entity.schema.json` is the shared base (`apiVersion`, `kind`, `metadata`, free-form `spec`, `integrations`, `datadog`, `extensions`) and does **not** define `dependsOn`, so the per-kind schemas are the only source. Datastore and queue descriptions read "A list of components the datastore/queue depends on" and "...is a dependency of". `dependencyOf` is only on datastore and queue, not service. `metadata.schema.json` was not inspected (`dependsOn` is a `spec` field, so not expected there).
+
+Semantics: `dependsOn` lists what this entity relies on (outgoing edge). Only running components (service, datastore, queue, custom) can declare it. `api` is a spec of an interface and `system` is a grouping, so neither can. Dependencies of a system or API must be declared on the components that implement them.
 
 ### Value sets (all free strings, no enums, examples only)
 
@@ -100,7 +104,7 @@ Array of free strings, no enum. Schema says "See examples for a list of recogniz
 ## Relationships
 
 - `dependsOn` / `dependencyOf` / `componentOf` / `components` entries are free strings in `kind:name` form, where name is `metadata.name`. Examples: `service:myapp`, `queue:myqueue`, `datastore:mydatastore`, `library:mylibrary`. No namespace shown.
-- `dependsOn` is defined on service, datastore, queue, custom. Datastore and queue also have `dependencyOf`.
+- `dependsOn` is defined on service, datastore, queue, custom (not api, system). Datastore and queue also have `dependencyOf`; service does not.
 - v3 supports manual declarations to augment auto-detected (APM/USM) topology.
 - Components inherit system metadata implicitly when exactly one system is defined in the file, or explicitly via `inheritFrom`.
 - **Unverified:** whether the backend tolerates a `dependsOn` pointing to an entity no file defines (the schema cannot enforce existence).

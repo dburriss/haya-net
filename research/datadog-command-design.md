@@ -16,8 +16,8 @@ Companion to [datadog-entity-definition.md](datadog-entity-definition.md). Statu
 | `Meta.Kind` Worker | `kind: service` (type unverified, omit or `worker`) |
 | `Meta.Kind` Database / Queue | `kind: datastore` / `kind: queue` |
 | `Meta.Tech` | not parsed (free text, stays for diagrams) |
-| Downstream collaborator | `spec.dependsOn: [kind:name]` |
-| Upstream collaborator, or in-catalog caller | the caller's `dependsOn` pointing at this app |
+| Downstream collaborator | `spec.dependsOn: [kind:name]` (service, datastore, queue all accept it; Api is emitted as a service for this reason) |
+| Upstream collaborator, or in-catalog caller | the caller's `dependsOn` pointing at this app; alternatively `dependencyOf` on the datastore/queue (not valid on service) |
 | Collaborator not in the catalog | stub entity (as `Backstage.genCollaboratorComponents`) |
 | `lifecycle`, `tier` | not in Haya's model: omit, or CLI flags later |
 
