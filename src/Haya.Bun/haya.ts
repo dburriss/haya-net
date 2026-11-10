@@ -13,6 +13,7 @@ import {
   CrcCommand,
   DataFormat_Json,
   DataFormat_Yaml,
+  DatadogCommand,
   DescribeCommand,
   DiagramCommand,
   DiagramFormat,
@@ -25,6 +26,7 @@ import { serialize } from "./fable_output/Haya.Core/Describe.ts";
 import { sprintMarkdown } from "./fable_output/Haya.Core/Crc.ts";
 import { generateDiagram } from "./fable_output/Haya.Core/Diagram.ts";
 import { generateCatalog } from "./fable_output/Haya.Core/Backstage.ts";
+import { generateCatalog as generateDatadogCatalog } from "./fable_output/Haya.Core/Datadog.ts";
 
 type Format = "json" | "yaml";
 
@@ -111,6 +113,19 @@ await yargs(hideBin(Bun.argv))
       const out = argv["output-path"] ?? defaultFile(argv.format, "backstage");
       const cmd = new BackstageCommand(ofArray(argv.inputPaths), out, dataFormat(argv.format), process.cwd());
       exec("Backstage", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateCatalog(cmd, ds));
+    },
+  )
+  .command(
+    "datadog <inputPaths..>",
+    "Generate Datadog Software Catalog entities (entity.datadog.yaml)",
+    (y) =>
+      inputPath(y)
+        .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./entity.datadog.yaml)" })
+        .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "yaml" as const, describe: "Output format" }),
+    (argv) => {
+      const out = argv["output-path"] ?? defaultFile(argv.format, "entity.datadog");
+      const cmd = new DatadogCommand(ofArray(argv.inputPaths), out, dataFormat(argv.format), process.cwd());
+      exec("Datadog", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDatadogCatalog(cmd, ds));
     },
   )
   .command(

@@ -45,6 +45,7 @@
         <Compile Include="Crc.fs" />
         <Compile Include="Catalog.fs" />
         <Compile Include="Backstage.fs" />
+        <Compile Include="Datadog.fs" />
     </ItemGroup>
 
     <ItemGroup>

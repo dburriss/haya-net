@@ -112,3 +112,50 @@ module Encode =
             "metadata", record [ "description", str description; "name", str name; "title", str title ]
             "spec", record [ "domain", str domain; "lifecycle", str "production"; "owner", str owner ]
         ]
+
+    /// What a Datadog Software Catalog (schema v3) entity is written from. Empty strings and lists are left out.
+    type DatadogEntity =
+        { /// `service`, `datastore`, `queue` or `system`.
+          Kind: string
+          /// `metadata.name`, which other entities refer to as `kind:name`.
+          Name: string
+          DisplayName: string
+          Description: string
+          Owner: string
+          Lifecycle: string
+          Tier: string
+          /// `spec.type`, e.g. `web`. Free text in the schema.
+          Type: string
+          /// `spec.languages`, only valid on a `service`.
+          Languages: string list
+          /// `spec.dependsOn` as `kind:name`. Not valid on a `system`.
+          DependsOn: string list
+          /// `spec.components` as `kind:name`. Only valid on a `system`.
+          Components: string list
+          /// `datadog.codeLocations[].repositoryURL`.
+          RepositoryUrl: string }
+
+    /// Datadog Software Catalog `entity.datadog.yaml` entity, schema version v3. Each kind's `spec` rejects keys it
+    /// does not define, so callers only fill in what the kind has.
+    let datadogEntity (x: DatadogEntity) =
+        let optional (name: string) (value: string) = if value <> "" then [ name, str value ] else []
+        let optionalList (name: string) (values: string list) = if values.IsEmpty then [] else [ name, strings values ]
+        let spec =
+            optional "lifecycle" x.Lifecycle
+            @ optional "tier" x.Tier
+            @ optional "type" x.Type
+            @ optionalList "languages" x.Languages
+            @ optionalList "dependsOn" x.DependsOn
+            @ optionalList "components" x.Components
+        record [
+            "apiVersion", str "v3"
+            "kind", str x.Kind
+            "metadata", record (
+                [ "name", str x.Name ]
+                @ (if x.DisplayName <> x.Name then optional "displayName" x.DisplayName else [])
+                @ optional "description" x.Description
+                @ optional "owner" x.Owner)
+            if not spec.IsEmpty then "spec", record spec
+            if x.RepositoryUrl <> "" then
+                "datadog", record [ "codeLocations", [| record [ "repositoryURL", str x.RepositoryUrl ] |] |> JsonValue.Array ]
+        ]

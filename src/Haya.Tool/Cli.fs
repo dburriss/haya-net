@@ -55,7 +55,7 @@ type BackstageArgs =
             | IncludeAssembly _ -> CliText.includeAssemblyUsage
             | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
-            | OutputPath _ -> "Path to output folder or file (default: ./haya.yaml)"
+            | OutputPath _ -> "Path to output folder or file (default: ./backstage.yaml)"
             | Format _ -> "Output format. json | yaml (default: yaml)"
 
 type DiagramArgs =
@@ -77,10 +77,28 @@ type DiagramArgs =
             | DiagramType _ -> "Diagram type. c4system (system context) or c4container (apps inside their systems) (default: c4system)"
             | DiagramFormat _ -> "Output format. mermaid (default: mermaid)"
 
+type DatadogArgs =
+    | [<MainCommand; Last>] InputPath of input_path: string list
+    | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
+    | [<AltCommandLine("-f")>] Format of format: DataFormat
+    | [<CustomCommandLine("--include-references")>] IncludeReferences
+    | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
+    | [<AltCommandLine("-v")>] Verbose
+    interface IArgParserTemplate with
+        member s.Usage =
+            match s with
+            | IncludeReferences -> CliText.includeReferencesUsage
+            | IncludeAssembly _ -> CliText.includeAssemblyUsage
+            | Verbose -> CliText.verboseUsage
+            | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
+            | OutputPath _ -> "Path to output folder or file (default: ./entity.datadog.yaml)"
+            | Format _ -> "Output format. json | yaml (default: yaml)"
+
 type CliArguments =
     | [<CliPrefix(CliPrefix.None)>] Crc of ParseResults<CrcArgs>
     | [<CliPrefix(CliPrefix.None)>] Describe of ParseResults<DescribeArgs>
     | [<CliPrefix(CliPrefix.None)>] Backstage of ParseResults<BackstageArgs>
+    | [<CliPrefix(CliPrefix.None)>] Datadog of ParseResults<DatadogArgs>
     | [<CliPrefix(CliPrefix.None)>] Diagram of ParseResults<DiagramArgs>
     interface IArgParserTemplate with
         member s.Usage =
@@ -88,6 +106,7 @@ type CliArguments =
             | Crc _ -> "Generate Components, Responsibilities, and Collaborator documentation"
             | Describe _ -> "Generate Haya solution description"
             | Backstage _ -> "Generate Backstage catalog data"
+            | Datadog _ -> "Generate Datadog Software Catalog entities"
             | Diagram _ -> "Generate diagram files"
 
 module Cli =
@@ -222,6 +241,33 @@ module Cli =
                 | Error e -> Error(1, e)
     }
     
+    let (|IsDatadogCommand|_|) (parserResults: ParseResults<CliArguments>) : (DatadogCommand * AnalysisOptions) option =
+        if parserResults.Contains(CliArguments.Datadog) then
+            let currentDir = Environment.CurrentDirectory
+            let pr = parserResults.GetResult(CliArguments.Datadog)
+            let sln = inputList (pr.GetResults(DatadogArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
+            let format = pr.GetResult(DatadogArgs.Format, defaultValue = DataFormat.Yaml)
+            let outputPath: string = pr.TryGetResult(DatadogArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "entity.datadog")
+            let options = analysisOptions (pr.Contains DatadogArgs.IncludeReferences) (pr.GetResults DatadogArgs.IncludeAssembly) (pr.Contains DatadogArgs.Verbose)
+            Some ({ InputPaths = sln
+                    OutputPath = outputPath
+                    Format = format
+                    CurrentDirectory = currentDir }, options)
+        else None
+
+    let execDatadogAsync (cmd: DatadogCommand, options: AnalysisOptions) = task {
+        let pathToSln = String.concat ", " cmd.InputPaths
+        match! loadApps options cmd.CurrentDirectory cmd.InputPaths with
+        | Error e -> return Error(1, e)
+        | Ok apps ->
+            return
+                Datadog.generateCatalog cmd apps
+                |> IO.write cmd.OutputPath
+                |> function
+                | Ok _ -> Ok(0, $"Datadog successfully generated from {pathToSln}")
+                | Error e -> Error(1, e)
+    }
+
     let (|IsDiagramCommand|_|) (parserResults: ParseResults<CliArguments>) : (DiagramCommand * AnalysisOptions) option =
         if parserResults.Contains(CliArguments.Diagram) then
             let currentDir = Environment.CurrentDirectory

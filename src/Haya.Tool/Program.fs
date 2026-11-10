@@ -20,6 +20,8 @@ module Program =
                     execDescribeAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
                 | IsBackstageCommand cmd ->
                     execBackstageAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
+                | IsDatadogCommand cmd ->
+                    execDatadogAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
                 | IsDiagramCommand cmd ->
                     execDiagramAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
                 | _ when pr.IsUsageRequested -> Ok (0, parser.PrintUsage())

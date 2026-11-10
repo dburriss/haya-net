@@ -26,6 +26,13 @@ type BackstageCommand = {
     CurrentDirectory: string
 }
 
+type DatadogCommand = {
+    InputPaths: string list
+    OutputPath: string
+    Format: DataFormat
+    CurrentDirectory: string
+}
+
 type DiagramType = | C4System | C4Container
 type DiagramFormat = | Mermaid
 type DiagramCommand = {

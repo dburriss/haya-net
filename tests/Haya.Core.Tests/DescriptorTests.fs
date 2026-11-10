@@ -367,3 +367,98 @@ let ``Merge warns when lifecycle or tier conflict and keeps the first known lang
     Assert.Equal("production", (App.meta merged.Head).Lifecycle)
     Assert.Equal(2, warnings.Length)
     Assert.Equal(Language.JavaScript, merged.Head.Language)
+
+let private datadogCmd format : Haya.Core.DatadogCommand =
+    { InputPaths = []; OutputPath = ""; Format = format; CurrentDirectory = "" }
+
+let private entity (kind: string) (name: string) (entities: Haya.Core.Encode.DatadogEntity list) =
+    entities |> List.find (fun e -> e.Kind = kind && e.Name = name)
+
+[<Fact>]
+let ``Datadog maps the app kind to an entity kind and type`` () =
+    let ofKind kind = app "A" "S" [] |> withMeta (fun m -> { m with Kind = kind })
+    let kindAndType kind =
+        let e = Haya.Core.Datadog.genEntities [ ofKind kind ] |> List.find (fun e -> e.Kind <> "system")
+        e.Kind, e.Type
+    Assert.Equal(("service", ""), kindAndType AppKind.Unspecified)
+    Assert.Equal(("service", ""), kindAndType AppKind.Service)
+    Assert.Equal(("service", ""), kindAndType AppKind.Worker)
+    Assert.Equal(("service", "web"), kindAndType AppKind.WebApp)
+    // the api kind cannot depend on anything, so an API is a service of type rest
+    Assert.Equal(("service", "rest"), kindAndType AppKind.Api)
+    Assert.Equal(("datastore", ""), kindAndType AppKind.Database)
+    Assert.Equal(("queue", ""), kindAndType AppKind.Queue)
+
+[<Fact>]
+let ``Datadog writes a relation on the entity that calls, with the kind of what it calls`` () =
+    let api = app "Api" "Ordering" [ "Db", "Ordering", Relationship.Internal; "Visa", "Visa", Relationship.External ]
+    let db = app "Db" "Ordering" [] |> withMeta (fun m -> { m with Kind = AppKind.Database })
+    let entities = Haya.Core.Datadog.genEntities [ api; db ]
+    Assert.Equal<string list>([ "datastore:ordering-db"; "service:visa-visa" ], (entity "service" "ordering-api" entities).DependsOn)
+    Assert.Empty((entity "datastore" "ordering-db" entities).DependsOn)
+
+[<Fact>]
+let ``Datadog turns an upstream collaborator into a dependency of the caller`` () =
+    // Web calls Api, and only Api says so
+    let api =
+        { app "Api" "Ordering" [ "Web", "Shop", Relationship.Internal; "Mobile", "Shop", Relationship.External ] with
+            Collaborators =
+                (app "Api" "Ordering" [ "Web", "Shop", Relationship.Internal; "Mobile", "Shop", Relationship.External ]).Collaborators
+                |> List.map (fun c -> { c with Direction = Direction.Upstream }) }
+    let web = app "Web" "Shop" []
+    let entities = Haya.Core.Datadog.genEntities [ api; web ]
+    // an app of the catalog
+    Assert.Equal<string list>([ "service:ordering-api" ], (entity "service" "shop-web" entities).DependsOn)
+    // a stub
+    Assert.Equal<string list>([ "service:ordering-api" ], (entity "service" "shop-mobile" entities).DependsOn)
+    Assert.Empty((entity "service" "ordering-api" entities).DependsOn)
+
+[<Fact>]
+let ``Datadog groups the apps and the stubs of a system`` () =
+    let entities =
+        Haya.Core.Datadog.genEntities
+            [ app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ]; app "Db" "Ordering" [] ]
+    let ordering = entity "system" "ordering" entities
+    Assert.Equal<string list>([ "service:ordering-api"; "service:ordering-db" ], ordering.Components)
+    Assert.Empty(ordering.DependsOn)
+    Assert.Equal<string list>([ "service:visa-visa" ], (entity "system" "visa" entities).Components)
+
+[<Fact>]
+let ``Datadog gives languages only to a service, and only when the analyser said what it is`` () =
+    let known = app "Api" "Ordering" [] |> App.withLanguage Language.JavaScript
+    let db = app "Db" "Ordering" [] |> withMeta (fun m -> { m with Kind = AppKind.Database }) |> App.withLanguage Language.DotNet
+    let unknown = app "Other" "Ordering" []
+    let entities = Haya.Core.Datadog.genEntities [ known; db; unknown ]
+    Assert.Equal<string list>([ "js" ], (entity "service" "ordering-api" entities).Languages)
+    Assert.Empty((entity "datastore" "ordering-db" entities).Languages)
+    Assert.Empty((entity "service" "ordering-other" entities).Languages)
+    Assert.Equal<string list>([ "dotnet" ], (Haya.Core.Datadog.genEntities [ known |> App.withLanguage Language.DotNet ] |> entity "service" "ordering-api").Languages)
+
+[<Fact>]
+let ``Datadog carries owner, lifecycle and tier, and a code location only for a URL`` () =
+    let a = app "Api" "Ordering" [] |> withMeta (fun m -> { m with Lifecycle = "production"; Tier = "1"; Repository = "https://github.com/org/api" })
+    let slug = app "Slug" "Ordering" [] |> withMeta (fun m -> { m with Repository = "org/slug" })
+    let entities = Haya.Core.Datadog.genEntities [ a; slug ]
+    let e = entity "service" "ordering-api" entities
+    Assert.Equal(("Team", "production", "1"), (e.Owner, e.Lifecycle, e.Tier))
+    Assert.Equal("https://github.com/org/api", e.RepositoryUrl)
+    Assert.Equal("", (entity "service" "ordering-slug" entities).RepositoryUrl)
+
+[<Fact>]
+let ``Datadog without a meta catalogues only the collaborators, and nothing for nothing`` () =
+    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let yaml = Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Yaml) [ anon ]
+    Assert.Contains("name: visa-visa", yaml)
+    Assert.DoesNotContain("name: y-x", yaml)
+    let empty = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [] }
+    Assert.Equal("", Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Yaml) [ empty ])
+
+[<Fact>]
+let ``Datadog writes yaml documents separated by dashes, or a json array`` () =
+    let apps = [ app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ] ]
+    let yaml = Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Yaml) apps
+    Assert.StartsWith("apiVersion: v3\n", yaml)
+    Assert.Equal(1 + 2 + 1, yaml.Split("---\n").Length) // two systems, the api and the stub
+    let json = Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Json) apps
+    Assert.StartsWith("[", json.TrimStart())
+    Assert.Contains("\"apiVersion\": \"v3\"", json)

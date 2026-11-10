@@ -27,6 +27,8 @@ const cases: { file: string; args: string[] }[] = [
   { file: "diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "diagram-l2.mermaid"] },
   { file: "backstage.yaml", args: ["backstage", "-o", "backstage.yaml"] },
   { file: "backstage.json", args: ["backstage", "-f", "json", "-o", "backstage.json"] },
+  { file: "datadog.yaml", args: ["datadog", "-o", "datadog.yaml"] },
+  { file: "datadog.json", args: ["datadog", "-f", "json", "-o", "datadog.json"] },
 ];
 
 const run = (cmd: string[], cwd: string) => {
@@ -49,6 +51,7 @@ const multiCases: { file: string; args: string[] }[] = [
   { file: "multi-diagram.mermaid", args: ["diagram", "-o", "multi-diagram.mermaid"] },
   { file: "multi-diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "multi-diagram-l2.mermaid"] },
   { file: "multi-backstage.yaml", args: ["backstage", "-o", "multi-backstage.yaml"] },
+  { file: "multi-datadog.yaml", args: ["datadog", "-o", "multi-datadog.yaml"] },
 ];
 
 let failed = 0;
@@ -76,8 +79,13 @@ for (const { file, args } of multiCases) {
 }
 // The two tools name different languages by design (the .NET tool stamps `dotnet`, the Bun tool `javascript`), so the
 // language of the Bun output is mapped to the .NET one before comparing.
+// Datadog calls them `dotnet` and `js` in `spec.languages`.
 const sameLanguage = (text: string) =>
-  text.replaceAll('"language": "javascript"', '"language": "dotnet"').replaceAll("language: javascript", "language: dotnet");
+  text
+    .replaceAll('"language": "javascript"', '"language": "dotnet"')
+    .replaceAll("language: javascript", "language: dotnet")
+    .replace(/("languages": \[\s*)"js"/g, '$1"dotnet"')
+    .replace(/(languages:\n\s+- )js\n/g, "$1dotnet\n");
 // The same comparison on a pair of example projects. `tsPath` -> `netPath` and the language are the only substitutions.
 const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: string, tsPath: string, netPath: string) => {
   for (const { file, args } of cases) {
