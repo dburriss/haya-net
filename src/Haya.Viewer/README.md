@@ -30,9 +30,10 @@ relationship with it. See `sync`, `desired` and `applyFocus` in `app.js`.
 
 ## Colour
 
-`HEAT_APPS` and `HEAT_LINKS` at the top of `app.js` are the four stops of the ramp for a system's border (by apps) and for a line
-between systems (by relationships): below the first it is plain, yellow starts there, orange by the third, deepest red at the
-fourth. `HEAT_COLOURS` are the muted colours at the stops. Past the last stop the red end stretches to the largest value in the page.
+`HEAT_SYSTEMS` and `HEAT_LINKS` at the top of `app.js` are the four stops of the ramp for a system's border (by its apps plus the
+relationships touching them) and for a line between systems (by relationships): below the first it is plain, yellow starts there,
+orange by the third, deepest red at the fourth. `HEAT_COLOURS` are the muted colours at the stops. Past the last stop the red end
+stretches to the largest value in the page.
 
 ## Poking at it
 

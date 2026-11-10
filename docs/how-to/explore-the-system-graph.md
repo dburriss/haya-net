@@ -21,12 +21,13 @@ The page is self-contained: open the file in a browser, attach it to a ticket or
 - It starts with every system **collapsed** to one box with its app count. Dashed boxes are systems outside what is
   documented. Between two boxes there is **one line**: an arrowhead for each direction the relationships go, and a number
   for how many relationships it stands for.
-- **Colour shows complexity**, and only for the heavy end. A system's border is plain until it holds 7 apps, turns yellow from 7,
-  fades to orange from 9 until 13, and then fades toward red, reaching the deepest red at 20. A line between two systems follows
-  the same ramp by how many relationships there are between them: plain under 3, yellow from 3, orange by 6, deep red at 9. If a
-  system or pair is bigger than the last number, the red end stretches to it, so the most complex one always has the deepest red.
-  Outside systems and lines to or from an app are never coloured. The numbers are `HEAT_APPS` and `HEAT_LINKS` at the top of
-  `src/Haya.Viewer/app.js` (see the [viewer README](../../src/Haya.Viewer/README.md)).
+- **Colour shows complexity**, and only for the heavy end. A system's complexity is its apps plus the relationships that touch them,
+  inside the system or out (the panel shows the sum, for example "11 apps + 20 relationships = 31"). Its border is plain below 7,
+  turns yellow from 7, fades to orange from 9 until 13, and then fades toward red, reaching the deepest red at 20. A line between two
+  systems follows the same ramp by how many relationships there are between them: plain under 3, yellow from 3, orange by 6, deep red
+  at 9. If a system or pair is bigger than the last number, the red end stretches to it, so the most complex one always has the
+  deepest red. Outside systems and lines to or from an app are never coloured. The numbers are `HEAT_SYSTEMS` and `HEAT_LINKS` at the
+  top of `src/Haya.Viewer/app.js` (see the [viewer README](../../src/Haya.Viewer/README.md)).
 - **Click** a node or line to read its details in the panel on the right. Clicking a node also **mutes** everything with no
   relationship to it: the lines that do not touch it, and the systems and apps only those lines reach. Muted items stay
   clickable. Click the background to clear the selection. A node shows its name and small glyphs: the

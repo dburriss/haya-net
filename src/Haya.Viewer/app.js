@@ -26,7 +26,7 @@ for (const e of data.edges) for (const id of [e.from, e.to]) {
 // the second is full yellow (fading to orange from there), the third is orange (fading to red from there) and the fourth is the
 // deepest red, kept for the most complex. If the data goes past the last stop, the red end stretches to the largest value, so the most
 // complex system or pair always has the deepest red. Change the numbers here.
-const HEAT_APPS = [7, 9, 13, 20];   // apps in a system: the border of an own system
+const HEAT_SYSTEMS = [7, 9, 13, 20]; // apps + relationships of a system: the border of an own system
 const HEAT_LINKS = [3, 4, 6, 9];    // relationships between two systems: the line between them
 const HEAT_COLOURS = [[58, 0.42, 0.6], [48, 0.5, 0.52], [28, 0.5, 0.5], [4, 0.5, 0.44]]; // hue, saturation, lightness: muted
 const hsl = (h, s, l) => {
@@ -46,15 +46,21 @@ const heat = (stops, value) => {
 };
 const heatBar = () => h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + HEAT_COLOURS.map((c) => hsl(...c)).join(",") + ")" });
 
-// An own system's border, by how many apps it holds.
+// An own system's border, by its complexity: the apps it holds plus the relationships that touch them (inside the system or out; one
+// between two of its own apps counts once). The panel shows the sum.
+const systemOf = (id) => { const n = nodes.get(id); return n.kind === "system" ? id : n.parent || id; };
+const complexity = new Map(); // own system id -> { apps, relationships, total }
+for (const n of data.nodes) if (n.kind === "system" && n.ownSystem) {
+  const apps = (appsOf.get(n.id) || []).length;
+  const relationships = data.edges.filter((e) => systemOf(e.from) === n.id || systemOf(e.to) === n.id).length;
+  complexity.set(n.id, { apps, relationships, total: apps + relationships });
+}
 const heatOf = new Map(); // own system id -> border colour
-const counts = data.nodes.filter((n) => n.kind === "system" && n.ownSystem).map((n) => [n.id, (appsOf.get(n.id) || []).length]);
-const appStops = stretch(HEAT_APPS, Math.max(0, ...counts.map(([, c]) => c)));
-for (const [id, c] of counts) { const colour = heat(appStops, c); if (colour) heatOf.set(id, colour); }
+const appStops = stretch(HEAT_SYSTEMS, Math.max(0, ...[...complexity.values()].map((c) => c.total)));
+for (const [id, c] of complexity) { const colour = heat(appStops, c.total); if (colour) heatOf.set(id, colour); }
 
 // A line between two systems, by the total number of relationships between them in the data (not what is drawn right now, so it
 // does not shift as things are opened). Lines to or from an app stay plain.
-const systemOf = (id) => { const n = nodes.get(id); return n.kind === "system" ? id : n.parent || id; };
 const pairKey = (a, b) => (a < b ? a + "|" + b : b + "|" + a);
 const lineHeat = new Map(); // pairKey of two systems -> colour
 const pairTotal = new Map();
@@ -499,6 +505,10 @@ function nodePanel(n) {
   } else {
     // by kind, then name, both alphabetical; an app with no kind sorts as "Unspecified"
     const kindOf = (id) => nodes.get(id).appKind || "Unspecified";
+    if (n.ownSystem && complexity.has(n.id)) {
+      const c = complexity.get(n.id);
+      kids.push(h("dl", {}, field("Complexity", `${c.apps} apps + ${c.relationships} relationships = ${c.total}`)));
+    }
     const members = [...(appsOf.get(n.id) || [])].sort((x, y) => kindOf(x).localeCompare(kindOf(y)) || name(x).localeCompare(name(y)));
     if (n.description) kids.push(h("p", {}, n.description));
     if (!n.ownSystem) kids.push(h("p", { class: "muted" }, "A system outside the apps documented here, known from collaborators."));
@@ -558,7 +568,7 @@ function renderPanel() {
     [glyphImg("System", GREY), "System, with its number of apps"],
     [glyphImg("External", GREY), "Outside the documented systems"],
     [glyphImg("Undocumented", AMBER), "Undocumented: no [Meta] of its own"],
-    [heatBar(), `System border, by apps: plain under ${appStops[0]}, yellow from ${appStops[0]}, orange by ${appStops[2]}, deep red at ${appStops[3]}`],
+    [heatBar(), `System border, by apps + relationships: plain under ${appStops[0]}, yellow from ${appStops[0]}, orange by ${appStops[2]}, deep red at ${appStops[3]}`],
     [heatBar(), `Line between systems, by relationships: plain under ${linkStops[0]}, yellow from ${linkStops[0]}, orange by ${linkStops[2]}, deep red at ${linkStops[3]}`],
     [h("span", { class: "arrows" }, "→ ↔"), "One line per pair, with the number of relationships"],
   ];
