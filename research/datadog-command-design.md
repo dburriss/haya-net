@@ -42,10 +42,15 @@ Companion to [datadog-entity-definition.md](datadog-entity-definition.md). Statu
 - Tests; `bun run parity` must pass (describe output changes with `language`); CLI reference, `CHANGELOG.md`. ADR001 already covers one command per format.
 - Validate output against `DataDog/schema` `service-catalog/v3`.
 
-## Open questions
+## Decisions (2026-11-10)
 
-- Does Datadog's backend accept `dependsOn` to entities defined in no file (stubs)?
-- Is `typescript` accepted in `languages`, or only `js`?
-- Is `owner` the Datadog team handle?
-- Which `spec.type` for workers?
+- **Stubs:** emit stub entities for collaborators not in the catalog, as Backstage does.
+- **TypeScript language:** `js`.
+- **Worker:** `kind: service` with no `spec.type`.
+- **Lifecycle / tier:** add optional fields to `[Meta]` and `meta()`, carried through the describe format and both analysers, and emit `spec.lifecycle` / `spec.tier`.
+- **Owner:** `Meta.Owner` passes through unchanged to `metadata.owner`.
+
+## Still open (cannot be settled from docs)
+
+- Does Datadog's backend tolerate a `dependsOn` to an entity defined in no file? (Stubs mitigate this.)
 - Does the GitHub integration scan only the repo root or default branch?
