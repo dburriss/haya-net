@@ -1,0 +1,239 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "Go",
+          "protocol": "HTTPS",
+          "dataDescription": "Browse products",
+          "description": "Serves product data",
+          "appName": "CatalogApi",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "CatalogApiClient",
+          "componentSource": "Storefront/WebShop/WebShop.ts",
+          "repository": "shop/catalogapi",
+          "owner": "Catalog team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Elasticsearch",
+          "protocol": "HTTPS",
+          "dataDescription": "Search products",
+          "description": "Product search",
+          "appName": "SearchApi",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "SearchApiClient",
+          "componentSource": "Storefront/WebShop/WebShop.ts",
+          "repository": "shop/searchapi",
+          "owner": "Catalog team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": ".NET 10",
+          "protocol": "HTTPS",
+          "dataDescription": "Manage basket",
+          "description": "Holds a customer's basket",
+          "appName": "BasketApi",
+          "system": "Ordering",
+          "relationship": "Internal",
+          "componentName": "BasketApiClient",
+          "componentSource": "Storefront/WebShop/WebShop.ts",
+          "repository": "shop/basketapi",
+          "owner": "Ordering team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": ".NET 10",
+          "protocol": "HTTPS",
+          "dataDescription": "Place order",
+          "description": "Turns a basket into an order",
+          "appName": "CheckoutApi",
+          "system": "Ordering",
+          "relationship": "Internal",
+          "componentName": "CheckoutApiClient",
+          "componentSource": "Storefront/WebShop/WebShop.ts",
+          "repository": "shop/checkoutapi",
+          "owner": "Ordering team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Keycloak",
+          "protocol": "HTTPS",
+          "dataDescription": "Sign in",
+          "description": "Signs customers in",
+          "appName": "AuthApi",
+          "system": "Identity",
+          "relationship": "Internal",
+          "componentName": "AuthApiClient",
+          "componentSource": "Storefront/WebShop/WebShop.ts",
+          "repository": "shop/authapi",
+          "owner": "Identity team"
+        }
+      ],
+      "meta": {
+        "appName": "WebShop",
+        "description": "The customer-facing web shop",
+        "system": "Storefront",
+        "repository": "shop/webshop",
+        "owner": "Storefront team",
+        "tech": "Next.js",
+        "kind": "WebApp",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Shows the catalogue and search results",
+          "componentName": "WebShop",
+          "componentSource": "Storefront/WebShop/WebShop.ts"
+        },
+        {
+          "description": "Runs the basket and checkout journey",
+          "componentName": "WebShop",
+          "componentSource": "Storefront/WebShop/WebShop.ts"
+        }
+      ],
+      "language": "javascript"
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "Go",
+          "protocol": "HTTPS",
+          "dataDescription": "Product data",
+          "description": "Serves product data",
+          "appName": "CatalogApi",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "CatalogApiClient",
+          "componentSource": "Storefront/MobileBff/MobileBff.ts",
+          "repository": "shop/catalogapi",
+          "owner": "Catalog team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": ".NET 10",
+          "protocol": "HTTPS",
+          "dataDescription": "Place order",
+          "description": "Turns a basket into an order",
+          "appName": "CheckoutApi",
+          "system": "Ordering",
+          "relationship": "Internal",
+          "componentName": "CheckoutApiClient",
+          "componentSource": "Storefront/MobileBff/MobileBff.ts",
+          "repository": "shop/checkoutapi",
+          "owner": "Ordering team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Keycloak",
+          "protocol": "HTTPS",
+          "dataDescription": "Sign in",
+          "description": "Signs customers in",
+          "appName": "AuthApi",
+          "system": "Identity",
+          "relationship": "Internal",
+          "componentName": "AuthApiClient",
+          "componentSource": "Storefront/MobileBff/MobileBff.ts",
+          "repository": "shop/authapi",
+          "owner": "Identity team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": ".NET 10",
+          "protocol": "HTTPS",
+          "dataDescription": "Track parcel",
+          "description": "Tells customers where their parcel is",
+          "appName": "OrderTracking",
+          "system": "Shipping",
+          "relationship": "Internal",
+          "componentName": "OrderTrackingClient",
+          "componentSource": "Storefront/MobileBff/MobileBff.ts",
+          "repository": "shop/ordertracking",
+          "owner": "Shipping team"
+        }
+      ],
+      "meta": {
+        "appName": "MobileBff",
+        "description": "Backend for the mobile apps",
+        "system": "Storefront",
+        "repository": "shop/mobilebff",
+        "owner": "Storefront team",
+        "tech": "Node.js",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Shapes catalogue, order and sign-in data for the mobile apps",
+          "componentName": "MobileBff",
+          "componentSource": "Storefront/MobileBff/MobileBff.ts"
+        }
+      ],
+      "language": "javascript"
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "PostgreSQL",
+          "protocol": "PostgreSQL",
+          "dataDescription": "Read content",
+          "description": "Store for editorial content",
+          "appName": "ContentDb",
+          "system": "Storefront",
+          "relationship": "Internal",
+          "componentName": "ContentDbClient",
+          "componentSource": "Storefront/ContentCms/ContentCms.cs",
+          "repository": "shop/contentdb",
+          "owner": "Storefront team"
+        }
+      ],
+      "meta": {
+        "appName": "ContentCms",
+        "description": "Editorial content for the shop",
+        "system": "Storefront",
+        "repository": "shop/contentcms",
+        "owner": "Storefront team",
+        "tech": "Strapi",
+        "kind": "Service",
+        "lifecycle": "production",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Manages banners and landing pages",
+          "componentName": "ContentCms",
+          "componentSource": "Storefront/ContentCms/ContentCms.cs"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "ContentDb",
+        "description": "Store for editorial content",
+        "system": "Storefront",
+        "repository": "shop/contentdb",
+        "owner": "Storefront team",
+        "tech": "PostgreSQL",
+        "kind": "Database",
+        "lifecycle": "production",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Stores editorial content",
+          "componentName": "ContentDb",
+          "componentSource": "Storefront/ContentDb/ContentDb.cs"
+        }
+      ]
+    }
+  ],
+  "version": "0.3"
+}

@@ -1,0 +1,303 @@
+apps:
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Java 21
+        protocol: HTTPS
+        dataDescription: Authorise
+        description: Talks to card networks and providers
+        appName: PaymentGateway
+        system: Billing
+        relationship: Internal
+        componentName: PaymentGatewayClient
+        componentSource: Billing/PaymentsApi/PaymentsApi.cs
+        repository: shop/paymentgateway
+        owner: Billing team
+      -
+        direction: Downstream
+        tech: ''
+        protocol: HTTPS
+        dataDescription: Card network
+        description: Card network
+        appName: ''
+        system: Visa
+        relationship: External
+        componentName: VisaClient
+        componentSource: Billing/PaymentsApi/PaymentsApi.cs
+        repository: ''
+        owner: ''
+    meta:
+      appName: PaymentsApi
+      description: Entry point for taking payments
+      system: Billing
+      repository: shop/paymentsapi
+      owner: Billing team
+      tech: .NET 10
+      kind: Api
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Accepts payment requests
+        componentName: PaymentsApi
+        componentSource: Billing/PaymentsApi/PaymentsApi.cs
+    language: dotnet
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: ''
+        protocol: HTTPS
+        dataDescription: Charge card
+        description: Card payment provider
+        appName: ''
+        system: Stripe
+        relationship: External
+        componentName: StripeClient
+        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        repository: ''
+        owner: ''
+      -
+        direction: Downstream
+        tech: ''
+        protocol: HTTPS
+        dataDescription: Card network
+        description: Card network
+        appName: ''
+        system: Visa
+        relationship: External
+        componentName: VisaClient
+        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        repository: ''
+        owner: ''
+      -
+        direction: Downstream
+        tech: Java 21
+        protocol: gRPC
+        dataDescription: Post entry
+        description: Double-entry ledger
+        appName: LedgerService
+        system: Billing
+        relationship: Internal
+        componentName: LedgerServiceClient
+        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        repository: shop/ledgerservice
+        owner: Billing team
+    meta:
+      appName: PaymentGateway
+      description: Talks to card networks and providers
+      system: Billing
+      repository: shop/paymentgateway
+      owner: Billing team
+      tech: Java 21
+      kind: Service
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Authorises and captures card payments
+        componentName: PaymentGateway
+        componentSource: Billing/PaymentGateway/PaymentGateway.java
+      -
+        description: Refunds charges
+        componentName: PaymentGateway
+        componentSource: Billing/PaymentGateway/PaymentGateway.java
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Persist entries
+        description: Store for the ledger
+        appName: LedgerDb
+        system: Billing
+        relationship: Internal
+        componentName: LedgerDbClient
+        componentSource: Billing/LedgerService/LedgerService.java
+        repository: shop/ledgerdb
+        owner: Billing team
+    meta:
+      appName: LedgerService
+      description: Double-entry ledger
+      system: Billing
+      repository: shop/ledgerservice
+      owner: Billing team
+      tech: Java 21
+      kind: Service
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Posts ledger entries
+        componentName: LedgerService
+        componentSource: Billing/LedgerService/LedgerService.java
+  -
+    collaborators: []
+    meta:
+      appName: LedgerDb
+      description: Store for the ledger
+      system: Billing
+      repository: shop/ledgerdb
+      owner: Billing team
+      tech: PostgreSQL
+      kind: Database
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Stores ledger entries
+        componentName: LedgerDb
+        componentSource: Billing/LedgerDb/LedgerDb.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Java 21
+        protocol: HTTPS
+        dataDescription: Refund charge
+        description: Talks to card networks and providers
+        appName: PaymentGateway
+        system: Billing
+        relationship: Internal
+        componentName: PaymentGatewayClient
+        componentSource: Billing/RefundService/RefundService.java
+        repository: shop/paymentgateway
+        owner: Billing team
+      -
+        direction: Downstream
+        tech: Java 21
+        protocol: gRPC
+        dataDescription: Post reversal
+        description: Double-entry ledger
+        appName: LedgerService
+        system: Billing
+        relationship: Internal
+        componentName: LedgerServiceClient
+        componentSource: Billing/RefundService/RefundService.java
+        repository: shop/ledgerservice
+        owner: Billing team
+    meta:
+      appName: RefundService
+      description: Coordinates refunds
+      system: Billing
+      repository: shop/refundservice
+      owner: Billing team
+      tech: Java 21
+      kind: Service
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Refunds a charge and reverses its ledger entries
+        componentName: RefundService
+        componentSource: Billing/RefundService/RefundService.java
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Python 3.12
+        protocol: gRPC
+        dataDescription: Score
+        description: Machine learning model behind the fraud score
+        appName: FraudModel
+        system: Billing
+        relationship: Internal
+        componentName: FraudModelClient
+        componentSource: Billing/FraudCheck/FraudCheck.py
+        repository: shop/fraudmodel
+        owner: Billing team
+    meta:
+      appName: FraudCheck
+      description: Scores orders for fraud risk
+      system: Billing
+      repository: shop/fraudcheck
+      owner: Billing team
+      tech: Python 3.12
+      kind: Api
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Returns a fraud score for an order
+        componentName: FraudCheck
+        componentSource: Billing/FraudCheck/FraudCheck.py
+  -
+    collaborators: []
+    meta:
+      appName: FraudModel
+      description: Machine learning model behind the fraud score
+      system: Billing
+      repository: shop/fraudmodel
+      owner: Billing team
+      tech: Python 3.12
+      kind: Service
+      lifecycle: experimental
+      tier: '2'
+    responsibilities:
+      -
+        description: Predicts fraud risk
+        componentName: FraudModel
+        componentSource: Billing/FraudModel/FraudModel.py
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Kafka
+        protocol: Kafka
+        dataDescription: Consume orders
+        description: Stream of order lifecycle events
+        appName: OrderEvents
+        system: Ordering
+        relationship: Internal
+        componentName: OrderEventsClient
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        repository: shop/orderevents
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: Java 21
+        protocol: gRPC
+        dataDescription: Read entries
+        description: Double-entry ledger
+        appName: LedgerService
+        system: Billing
+        relationship: Internal
+        componentName: LedgerServiceClient
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        repository: shop/ledgerservice
+        owner: Billing team
+      -
+        direction: Downstream
+        tech: Node.js
+        protocol: HTTPS
+        dataDescription: Send invoice
+        description: Sends email to customers
+        appName: EmailGateway
+        system: Notifications
+        relationship: Internal
+        componentName: EmailGatewayClient
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        repository: shop/emailgateway
+        owner: Notifications team
+    meta:
+      appName: InvoiceWorker
+      description: Produces and sends invoices
+      system: Billing
+      repository: shop/invoiceworker
+      owner: Billing team
+      tech: Java 21
+      kind: Worker
+      lifecycle: production
+      tier: '3'
+    responsibilities:
+      -
+        description: Creates an invoice for each order
+        componentName: InvoiceWorker
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+      -
+        description: Emails invoices
+        componentName: InvoiceWorker
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+version: '0.3'

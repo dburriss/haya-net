@@ -1,0 +1,425 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "MongoDB",
+          "protocol": "MongoDB",
+          "dataDescription": "Read products",
+          "description": "Store for products",
+          "appName": "CatalogDb",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "CatalogDbClient",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.go",
+          "repository": "shop/catalogdb",
+          "owner": "Catalog team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Go",
+          "protocol": "gRPC",
+          "dataDescription": "Prices",
+          "description": "Works out the price of a product or basket",
+          "appName": "PricingService",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "PricingServiceClient",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.go",
+          "repository": "shop/pricingservice",
+          "owner": "Catalog team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Kotlin",
+          "protocol": "HTTPS",
+          "dataDescription": "Availability",
+          "description": "Reports what is in stock",
+          "appName": "StockLevels",
+          "system": "Warehouse",
+          "relationship": "Internal",
+          "componentName": "StockLevelsClient",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.go",
+          "repository": "shop/stocklevels",
+          "owner": "Warehouse team"
+        }
+      ],
+      "meta": {
+        "appName": "CatalogApi",
+        "description": "Serves product data",
+        "system": "Catalog",
+        "repository": "shop/catalogapi",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Serves products and categories",
+          "componentName": "CatalogApi",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "CatalogDb",
+        "description": "Store for products",
+        "system": "Catalog",
+        "repository": "shop/catalogdb",
+        "owner": "Catalog team",
+        "tech": "MongoDB",
+        "kind": "Database",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Stores products",
+          "componentName": "CatalogDb",
+          "componentSource": "Catalog/CatalogDb/CatalogDb.cs"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "Go",
+          "protocol": "HTTPS",
+          "dataDescription": "Load rules",
+          "description": "Holds the pricing rules",
+          "appName": "PricingRules",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "PricingRulesClient",
+          "componentSource": "Catalog/PricingService/PricingService.go",
+          "repository": "shop/pricingrules",
+          "owner": "Catalog team"
+        }
+      ],
+      "meta": {
+        "appName": "PricingService",
+        "description": "Works out the price of a product or basket",
+        "system": "Catalog",
+        "repository": "shop/pricingservice",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Service",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Applies pricing rules to prices",
+          "componentName": "PricingService",
+          "componentSource": "Catalog/PricingService/PricingService.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "PricingRules",
+        "description": "Holds the pricing rules",
+        "system": "Catalog",
+        "repository": "shop/pricingrules",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Service",
+        "lifecycle": "production",
+        "tier": "2"
+      },
+      "responsibilities": [
+        {
+          "description": "Stores and serves pricing rules",
+          "componentName": "PricingRules",
+          "componentSource": "Catalog/PricingRules/PricingRules.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "Go",
+          "protocol": "HTTPS",
+          "dataDescription": "Query index",
+          "description": "Keeps the search index up to date",
+          "appName": "SearchIndexer",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "SearchIndexerClient",
+          "componentSource": "Catalog/SearchApi/SearchApi.cs",
+          "repository": "shop/searchindexer",
+          "owner": "Catalog team"
+        }
+      ],
+      "meta": {
+        "appName": "SearchApi",
+        "description": "Product search",
+        "system": "Catalog",
+        "repository": "shop/searchapi",
+        "owner": "Catalog team",
+        "tech": "Elasticsearch",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Answers product searches",
+          "componentName": "SearchApi",
+          "componentSource": "Catalog/SearchApi/SearchApi.cs"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "Kafka",
+          "protocol": "Kafka",
+          "dataDescription": "Consume changes",
+          "description": "Stream of product changes",
+          "appName": "CatalogEvents",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "CatalogEventsClient",
+          "componentSource": "Catalog/SearchIndexer/SearchIndexer.go",
+          "repository": "shop/catalogevents",
+          "owner": "Catalog team"
+        }
+      ],
+      "meta": {
+        "appName": "SearchIndexer",
+        "description": "Keeps the search index up to date",
+        "system": "Catalog",
+        "repository": "shop/searchindexer",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Worker",
+        "lifecycle": "production",
+        "tier": "2"
+      },
+      "responsibilities": [
+        {
+          "description": "Updates the index when products change",
+          "componentName": "SearchIndexer",
+          "componentSource": "Catalog/SearchIndexer/SearchIndexer.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "CatalogEvents",
+        "description": "Stream of product changes",
+        "system": "Catalog",
+        "repository": "shop/catalogevents",
+        "owner": "Catalog team",
+        "tech": "Kafka",
+        "kind": "Queue",
+        "lifecycle": "production",
+        "tier": "2"
+      },
+      "responsibilities": [
+        {
+          "description": "Carries product change events",
+          "componentName": "CatalogEvents",
+          "componentSource": "Catalog/CatalogEvents/CatalogEvents.cs"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "S3",
+          "protocol": "S3",
+          "dataDescription": "Store images",
+          "description": "Store for product images",
+          "appName": "ImageStore",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "ImageStoreClient",
+          "componentSource": "Catalog/ImageService/ImageService.go",
+          "repository": "shop/imagestore",
+          "owner": "Catalog team"
+        }
+      ],
+      "meta": {
+        "appName": "ImageService",
+        "description": "Resizes and serves product images",
+        "system": "Catalog",
+        "repository": "shop/imageservice",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Service",
+        "lifecycle": "production",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Serves product images in the requested size",
+          "componentName": "ImageService",
+          "componentSource": "Catalog/ImageService/ImageService.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "ImageStore",
+        "description": "Store for product images",
+        "system": "Catalog",
+        "repository": "shop/imagestore",
+        "owner": "Catalog team",
+        "tech": "S3",
+        "kind": "Database",
+        "lifecycle": "production",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Stores original images",
+          "componentName": "ImageStore",
+          "componentSource": "Catalog/ImageStore/ImageStore.cs"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "MongoDB",
+          "protocol": "MongoDB",
+          "dataDescription": "Upsert products",
+          "description": "Store for products",
+          "appName": "CatalogDb",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "CatalogDbClient",
+          "componentSource": "Catalog/ProductImporter/ProductImporter.go",
+          "repository": "shop/catalogdb",
+          "owner": "Catalog team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Go",
+          "protocol": "SFTP",
+          "dataDescription": "Read feed",
+          "description": "Receives the nightly supplier file",
+          "appName": "SupplierFeed",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "SupplierFeedClient",
+          "componentSource": "Catalog/ProductImporter/ProductImporter.go",
+          "repository": "shop/supplierfeed",
+          "owner": "Catalog team"
+        }
+      ],
+      "meta": {
+        "appName": "ProductImporter",
+        "description": "Loads products from supplier feeds",
+        "system": "Catalog",
+        "repository": "shop/productimporter",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Worker",
+        "lifecycle": "deprecated",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Imports supplier product data",
+          "componentName": "ProductImporter",
+          "componentSource": "Catalog/ProductImporter/ProductImporter.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "SupplierFeed",
+        "description": "Receives the nightly supplier file",
+        "system": "Catalog",
+        "repository": "shop/supplierfeed",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Service",
+        "lifecycle": "deprecated",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Receives supplier files",
+          "componentName": "SupplierFeed",
+          "componentSource": "Catalog/SupplierFeed/SupplierFeed.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "MongoDB",
+          "protocol": "MongoDB",
+          "dataDescription": "Persist reviews",
+          "description": "Store for reviews",
+          "appName": "ReviewsDb",
+          "system": "Catalog",
+          "relationship": "Internal",
+          "componentName": "ReviewsDbClient",
+          "componentSource": "Catalog/ReviewsApi/ReviewsApi.go",
+          "repository": "shop/reviewsdb",
+          "owner": "Catalog team"
+        }
+      ],
+      "meta": {
+        "appName": "ReviewsApi",
+        "description": "Customer product reviews",
+        "system": "Catalog",
+        "repository": "shop/reviewsapi",
+        "owner": "Catalog team",
+        "tech": "Go",
+        "kind": "Api",
+        "lifecycle": "experimental",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Accepts and lists reviews",
+          "componentName": "ReviewsApi",
+          "componentSource": "Catalog/ReviewsApi/ReviewsApi.go"
+        }
+      ]
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "ReviewsDb",
+        "description": "Store for reviews",
+        "system": "Catalog",
+        "repository": "shop/reviewsdb",
+        "owner": "Catalog team",
+        "tech": "MongoDB",
+        "kind": "Database",
+        "lifecycle": "experimental",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Stores reviews",
+          "componentName": "ReviewsDb",
+          "componentSource": "Catalog/ReviewsDb/ReviewsDb.cs"
+        }
+      ]
+    }
+  ],
+  "version": "0.3"
+}

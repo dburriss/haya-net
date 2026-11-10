@@ -1,0 +1,80 @@
+apps:
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Read users
+        description: Store for customer accounts
+        appName: UserDb
+        system: Identity
+        relationship: Internal
+        componentName: UserDbClient
+        componentSource: Identity/AuthApi/AuthApi.cs
+        repository: shop/userdb
+        owner: Identity team
+    meta:
+      appName: AuthApi
+      description: Signs customers in
+      system: Identity
+      repository: shop/authapi
+      owner: Identity team
+      tech: Keycloak
+      kind: Api
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Authenticates customers
+        componentName: AuthApi
+        componentSource: Identity/AuthApi/AuthApi.cs
+  -
+    collaborators: []
+    meta:
+      appName: UserDb
+      description: Store for customer accounts
+      system: Identity
+      repository: shop/userdb
+      owner: Identity team
+      tech: PostgreSQL
+      kind: Database
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Stores accounts
+        componentName: UserDb
+        componentSource: Identity/UserDb/UserDb.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Read profiles
+        description: Store for customer accounts
+        appName: UserDb
+        system: Identity
+        relationship: Internal
+        componentName: UserDbClient
+        componentSource: Identity/ProfileApi/ProfileApi.cs
+        repository: shop/userdb
+        owner: Identity team
+    meta:
+      appName: ProfileApi
+      description: Customer profiles and preferences
+      system: Identity
+      repository: shop/profileapi
+      owner: Identity team
+      tech: .NET 10
+      kind: Api
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Serves and updates profiles
+        componentName: ProfileApi
+        componentSource: Identity/ProfileApi/ProfileApi.cs
+    language: dotnet
+version: '0.3'

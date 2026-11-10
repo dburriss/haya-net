@@ -1,0 +1,358 @@
+apps:
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Go
+        protocol: gRPC
+        dataDescription: Price basket
+        description: Works out the price of a product or basket
+        appName: PricingService
+        system: Catalog
+        relationship: Internal
+        componentName: PricingServiceClient
+        componentSource: Ordering/BasketApi/BasketApi.cs
+        repository: shop/pricingservice
+        owner: Catalog team
+      -
+        direction: Downstream
+        tech: Redis
+        protocol: Redis
+        dataDescription: Cache baskets
+        description: Fast storage for active baskets
+        appName: BasketCache
+        system: Ordering
+        relationship: Internal
+        componentName: BasketCacheClient
+        componentSource: Ordering/BasketApi/BasketApi.cs
+        repository: shop/basketcache
+        owner: Ordering team
+    meta:
+      appName: BasketApi
+      description: Holds a customer's basket
+      system: Ordering
+      repository: shop/basketapi
+      owner: Ordering team
+      tech: .NET 10
+      kind: Api
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Adds, changes and prices basket lines
+        componentName: BasketApi
+        componentSource: Ordering/BasketApi/BasketApi.cs
+    language: dotnet
+  -
+    collaborators: []
+    meta:
+      appName: BasketCache
+      description: Fast storage for active baskets
+      system: Ordering
+      repository: shop/basketcache
+      owner: Ordering team
+      tech: Redis
+      kind: Database
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Caches active baskets
+        componentName: BasketCache
+        componentSource: Ordering/BasketCache/BasketCache.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: .NET 10
+        protocol: HTTPS
+        dataDescription: Create order
+        description: Owns the lifecycle of an order
+        appName: OrderService
+        system: Ordering
+        relationship: Internal
+        componentName: OrderServiceClient
+        componentSource: Ordering/CheckoutApi/CheckoutApi.cs
+        repository: shop/orderservice
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: .NET 10
+        protocol: HTTPS
+        dataDescription: Request payment
+        description: Entry point for taking payments
+        appName: PaymentsApi
+        system: Billing
+        relationship: Internal
+        componentName: PaymentsApiClient
+        componentSource: Ordering/CheckoutApi/CheckoutApi.cs
+        repository: shop/paymentsapi
+        owner: Billing team
+      -
+        direction: Downstream
+        tech: Python 3.12
+        protocol: HTTPS
+        dataDescription: Score order
+        description: Scores orders for fraud risk
+        appName: FraudCheck
+        system: Billing
+        relationship: Internal
+        componentName: FraudCheckClient
+        componentSource: Ordering/CheckoutApi/CheckoutApi.cs
+        repository: shop/fraudcheck
+        owner: Billing team
+    meta:
+      appName: CheckoutApi
+      description: Turns a basket into an order
+      system: Ordering
+      repository: shop/checkoutapi
+      owner: Ordering team
+      tech: .NET 10
+      kind: Api
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Validates a checkout
+        componentName: CheckoutApi
+        componentSource: Ordering/CheckoutApi/CheckoutApi.cs
+      -
+        description: Coordinates payment and the fraud check
+        componentName: CheckoutApi
+        componentSource: Ordering/CheckoutApi/CheckoutApi.cs
+    language: dotnet
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Persist orders
+        description: Store for orders
+        appName: OrdersDb
+        system: Ordering
+        relationship: Internal
+        componentName: OrdersDbClient
+        componentSource: Ordering/OrderService/OrderService.cs
+        repository: shop/ordersdb
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: Kafka
+        protocol: Kafka
+        dataDescription: Publish OrderPlaced
+        description: Stream of order lifecycle events
+        appName: OrderEvents
+        system: Ordering
+        relationship: Internal
+        componentName: OrderEventsClient
+        componentSource: Ordering/OrderService/OrderService.cs
+        repository: shop/orderevents
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: Kotlin
+        protocol: gRPC
+        dataDescription: Reserve stock
+        description: Holds stock for orders
+        appName: StockReservation
+        system: Warehouse
+        relationship: Internal
+        componentName: StockReservationClient
+        componentSource: Ordering/OrderService/OrderService.cs
+        repository: shop/stockreservation
+        owner: Warehouse team
+      -
+        direction: Downstream
+        tech: Java
+        protocol: HTTPS
+        dataDescription: Calculate tax
+        description: Third-party tax calculation wrapper
+        appName: TaxEngine
+        system: Ordering
+        relationship: Internal
+        componentName: TaxEngineClient
+        componentSource: Ordering/OrderService/OrderService.cs
+        repository: ''
+        owner: ''
+    meta:
+      appName: OrderService
+      description: Owns the lifecycle of an order
+      system: Ordering
+      repository: shop/orderservice
+      owner: Ordering team
+      tech: .NET 10
+      kind: Service
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Creates and updates orders
+        componentName: OrderService
+        componentSource: Ordering/OrderService/OrderService.cs
+      -
+        description: Announces order events
+        componentName: OrderService
+        componentSource: Ordering/OrderService/OrderService.cs
+      -
+        description: Reserves stock for an order
+        componentName: OrderService
+        componentSource: Ordering/OrderService/OrderService.cs
+    language: dotnet
+  -
+    collaborators: []
+    meta:
+      appName: OrdersDb
+      description: Store for orders
+      system: Ordering
+      repository: shop/ordersdb
+      owner: Ordering team
+      tech: PostgreSQL
+      kind: Database
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Stores orders
+        componentName: OrdersDb
+        componentSource: Ordering/OrdersDb/OrdersDb.cs
+  -
+    collaborators: []
+    meta:
+      appName: OrderEvents
+      description: Stream of order lifecycle events
+      system: Ordering
+      repository: shop/orderevents
+      owner: Ordering team
+      tech: Kafka
+      kind: Queue
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Carries order lifecycle events
+        componentName: OrderEvents
+        componentSource: Ordering/OrderEvents/OrderEvents.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Kafka
+        protocol: Kafka
+        dataDescription: Consume orders
+        description: Stream of order lifecycle events
+        appName: OrderEvents
+        system: Ordering
+        relationship: Internal
+        componentName: OrderEventsClient
+        componentSource: Ordering/OrderReadModel/OrderReadModel.cs
+        repository: shop/orderevents
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Project orders
+        description: Store for the order read model
+        appName: OrdersViewDb
+        system: Ordering
+        relationship: Internal
+        componentName: OrdersViewDbClient
+        componentSource: Ordering/OrderReadModel/OrderReadModel.cs
+        repository: shop/ordersviewdb
+        owner: Ordering team
+    meta:
+      appName: OrderReadModel
+      description: Query-friendly view of orders
+      system: Ordering
+      repository: shop/orderreadmodel
+      owner: Ordering team
+      tech: .NET 10
+      kind: Worker
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Projects order events into the read model
+        componentName: OrderReadModel
+        componentSource: Ordering/OrderReadModel/OrderReadModel.cs
+    language: dotnet
+  -
+    collaborators: []
+    meta:
+      appName: OrdersViewDb
+      description: Store for the order read model
+      system: Ordering
+      repository: shop/ordersviewdb
+      owner: Ordering team
+      tech: PostgreSQL
+      kind: Database
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Stores the order read model
+        componentName: OrdersViewDb
+        componentSource: Ordering/OrdersViewDb/OrdersViewDb.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: .NET 10
+        protocol: HTTPS
+        dataDescription: Look up order
+        description: Owns the lifecycle of an order
+        appName: OrderService
+        system: Ordering
+        relationship: Internal
+        componentName: OrderServiceClient
+        componentSource: Ordering/ReturnsApi/ReturnsApi.cs
+        repository: shop/orderservice
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: Java 21
+        protocol: HTTPS
+        dataDescription: Refund
+        description: Coordinates refunds
+        appName: RefundService
+        system: Billing
+        relationship: Internal
+        componentName: RefundServiceClient
+        componentSource: Ordering/ReturnsApi/ReturnsApi.cs
+        repository: shop/refundservice
+        owner: Billing team
+      -
+        direction: Downstream
+        tech: SAP
+        protocol: SOAP
+        dataDescription: Sync returns
+        description: The old ERP, owned by finance
+        appName: LegacyErp
+        system: Ordering
+        relationship: Internal
+        componentName: LegacyErpClient
+        componentSource: Ordering/ReturnsApi/ReturnsApi.cs
+        repository: ''
+        owner: ''
+    meta:
+      appName: ReturnsApi
+      description: Handles customer returns
+      system: Ordering
+      repository: shop/returnsapi
+      owner: Ordering team
+      tech: .NET 8
+      kind: Api
+      lifecycle: experimental
+      tier: '3'
+    responsibilities:
+      -
+        description: Accepts return requests
+        componentName: ReturnsApi
+        componentSource: Ordering/ReturnsApi/ReturnsApi.cs
+      -
+        description: Triggers refunds
+        componentName: ReturnsApi
+        componentSource: Ordering/ReturnsApi/ReturnsApi.cs
+    language: dotnet
+version: '0.3'

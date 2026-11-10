@@ -1,0 +1,79 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "",
+          "protocol": "HTTPS",
+          "dataDescription": "Deliver email",
+          "description": "Email delivery provider",
+          "appName": "",
+          "system": "SendGrid",
+          "relationship": "External",
+          "componentName": "SendGridClient",
+          "componentSource": "Notifications/EmailGateway/EmailGateway.ts",
+          "repository": "",
+          "owner": ""
+        }
+      ],
+      "meta": {
+        "appName": "EmailGateway",
+        "description": "Sends email to customers",
+        "system": "Notifications",
+        "repository": "shop/emailgateway",
+        "owner": "Notifications team",
+        "tech": "Node.js",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "2"
+      },
+      "responsibilities": [
+        {
+          "description": "Sends transactional email",
+          "componentName": "EmailGateway",
+          "componentSource": "Notifications/EmailGateway/EmailGateway.ts"
+        }
+      ],
+      "language": "javascript"
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "",
+          "protocol": "HTTPS",
+          "dataDescription": "Deliver sms",
+          "description": "SMS delivery provider",
+          "appName": "",
+          "system": "Twilio",
+          "relationship": "External",
+          "componentName": "TwilioClient",
+          "componentSource": "Notifications/SmsGateway/SmsGateway.ts",
+          "repository": "",
+          "owner": ""
+        }
+      ],
+      "meta": {
+        "appName": "SmsGateway",
+        "description": "Sends text messages to customers",
+        "system": "Notifications",
+        "repository": "shop/smsgateway",
+        "owner": "Notifications team",
+        "tech": "Node.js",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "3"
+      },
+      "responsibilities": [
+        {
+          "description": "Sends text messages",
+          "componentName": "SmsGateway",
+          "componentSource": "Notifications/SmsGateway/SmsGateway.ts"
+        }
+      ],
+      "language": "javascript"
+    }
+  ],
+  "version": "0.3"
+}

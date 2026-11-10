@@ -1,0 +1,193 @@
+{
+  "apps": [
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "PostgreSQL",
+          "protocol": "PostgreSQL",
+          "dataDescription": "Persist shipments",
+          "description": "Store for shipments",
+          "appName": "ShipmentDb",
+          "system": "Shipping",
+          "relationship": "Internal",
+          "componentName": "ShipmentDbClient",
+          "componentSource": "Shipping/ShipmentApi/ShipmentApi.cs",
+          "repository": "shop/shipmentdb",
+          "owner": "Shipping team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": ".NET 10",
+          "protocol": "HTTPS",
+          "dataDescription": "Book carrier",
+          "description": "Books parcels with carriers",
+          "appName": "CarrierGateway",
+          "system": "Shipping",
+          "relationship": "Internal",
+          "componentName": "CarrierGatewayClient",
+          "componentSource": "Shipping/ShipmentApi/ShipmentApi.cs",
+          "repository": "shop/carriergateway",
+          "owner": "Shipping team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": "Kafka",
+          "protocol": "Kafka",
+          "dataDescription": "Consume orders",
+          "description": "Stream of order lifecycle events",
+          "appName": "OrderEvents",
+          "system": "Ordering",
+          "relationship": "Internal",
+          "componentName": "OrderEventsClient",
+          "componentSource": "Shipping/ShipmentApi/ShipmentApi.cs",
+          "repository": "shop/orderevents",
+          "owner": "Ordering team"
+        }
+      ],
+      "meta": {
+        "appName": "ShipmentApi",
+        "description": "Creates and tracks shipments",
+        "system": "Shipping",
+        "repository": "shop/shipmentapi",
+        "owner": "Shipping team",
+        "tech": ".NET 10",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Creates a shipment for each order",
+          "componentName": "ShipmentApi",
+          "componentSource": "Shipping/ShipmentApi/ShipmentApi.cs"
+        }
+      ],
+      "language": "dotnet"
+    },
+    {
+      "collaborators": [],
+      "meta": {
+        "appName": "ShipmentDb",
+        "description": "Store for shipments",
+        "system": "Shipping",
+        "repository": "shop/shipmentdb",
+        "owner": "Shipping team",
+        "tech": "PostgreSQL",
+        "kind": "Database",
+        "lifecycle": "production",
+        "tier": "1"
+      },
+      "responsibilities": [
+        {
+          "description": "Stores shipments",
+          "componentName": "ShipmentDb",
+          "componentSource": "Shipping/ShipmentDb/ShipmentDb.cs"
+        }
+      ]
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "",
+          "protocol": "HTTPS",
+          "dataDescription": "Book parcel",
+          "description": "Parcel carrier",
+          "appName": "",
+          "system": "DHL",
+          "relationship": "External",
+          "componentName": "DHLClient",
+          "componentSource": "Shipping/CarrierGateway/CarrierGateway.cs",
+          "repository": "",
+          "owner": ""
+        },
+        {
+          "direction": "Downstream",
+          "tech": "",
+          "protocol": "HTTPS",
+          "dataDescription": "Book parcel",
+          "description": "Parcel carrier",
+          "appName": "",
+          "system": "PostNL",
+          "relationship": "External",
+          "componentName": "PostNLClient",
+          "componentSource": "Shipping/CarrierGateway/CarrierGateway.cs",
+          "repository": "",
+          "owner": ""
+        }
+      ],
+      "meta": {
+        "appName": "CarrierGateway",
+        "description": "Books parcels with carriers",
+        "system": "Shipping",
+        "repository": "shop/carriergateway",
+        "owner": "Shipping team",
+        "tech": ".NET 10",
+        "kind": "Service",
+        "lifecycle": "production",
+        "tier": "2"
+      },
+      "responsibilities": [
+        {
+          "description": "Books parcels with DHL and PostNL",
+          "componentName": "CarrierGateway",
+          "componentSource": "Shipping/CarrierGateway/CarrierGateway.cs"
+        }
+      ],
+      "language": "dotnet"
+    },
+    {
+      "collaborators": [
+        {
+          "direction": "Downstream",
+          "tech": "PostgreSQL",
+          "protocol": "PostgreSQL",
+          "dataDescription": "Read status",
+          "description": "Store for shipments",
+          "appName": "ShipmentDb",
+          "system": "Shipping",
+          "relationship": "Internal",
+          "componentName": "ShipmentDbClient",
+          "componentSource": "Shipping/OrderTracking/OrderTracking.cs",
+          "repository": "shop/shipmentdb",
+          "owner": "Shipping team"
+        },
+        {
+          "direction": "Downstream",
+          "tech": ".NET 10",
+          "protocol": "HTTPS",
+          "dataDescription": "Poll tracking",
+          "description": "Books parcels with carriers",
+          "appName": "CarrierGateway",
+          "system": "Shipping",
+          "relationship": "Internal",
+          "componentName": "CarrierGatewayClient",
+          "componentSource": "Shipping/OrderTracking/OrderTracking.cs",
+          "repository": "shop/carriergateway",
+          "owner": "Shipping team"
+        }
+      ],
+      "meta": {
+        "appName": "OrderTracking",
+        "description": "Tells customers where their parcel is",
+        "system": "Shipping",
+        "repository": "shop/ordertracking",
+        "owner": "Shipping team",
+        "tech": ".NET 10",
+        "kind": "Api",
+        "lifecycle": "production",
+        "tier": "2"
+      },
+      "responsibilities": [
+        {
+          "description": "Answers tracking requests",
+          "componentName": "OrderTracking",
+          "componentSource": "Shipping/OrderTracking/OrderTracking.cs"
+        }
+      ],
+      "language": "dotnet"
+    }
+  ],
+  "version": "0.3"
+}

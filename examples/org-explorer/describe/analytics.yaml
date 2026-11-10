@@ -1,0 +1,105 @@
+apps:
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Kafka
+        protocol: Kafka
+        dataDescription: Consume orders
+        description: Stream of order lifecycle events
+        appName: OrderEvents
+        system: Ordering
+        relationship: Internal
+        componentName: OrderEventsClient
+        componentSource: Analytics/EventCollector/EventCollector.py
+        repository: shop/orderevents
+        owner: Ordering team
+      -
+        direction: Downstream
+        tech: Kafka
+        protocol: Kafka
+        dataDescription: Consume changes
+        description: Stream of product changes
+        appName: CatalogEvents
+        system: Catalog
+        relationship: Internal
+        componentName: CatalogEventsClient
+        componentSource: Analytics/EventCollector/EventCollector.py
+        repository: shop/catalogevents
+        owner: Catalog team
+      -
+        direction: Downstream
+        tech: BigQuery
+        protocol: Parquet
+        dataDescription: Write events
+        description: Store for analytics data
+        appName: DataWarehouse
+        system: Analytics
+        relationship: Internal
+        componentName: DataWarehouseClient
+        componentSource: Analytics/EventCollector/EventCollector.py
+        repository: shop/datawarehouse
+        owner: Analytics team
+    meta:
+      appName: EventCollector
+      description: Collects business events for analysis
+      system: Analytics
+      repository: shop/eventcollector
+      owner: Analytics team
+      tech: Python 3.12
+      kind: Worker
+      lifecycle: production
+      tier: '3'
+    responsibilities:
+      -
+        description: Writes order and catalogue events to the warehouse
+        componentName: EventCollector
+        componentSource: Analytics/EventCollector/EventCollector.py
+  -
+    collaborators: []
+    meta:
+      appName: DataWarehouse
+      description: Store for analytics data
+      system: Analytics
+      repository: shop/datawarehouse
+      owner: Analytics team
+      tech: BigQuery
+      kind: Database
+      lifecycle: production
+      tier: '3'
+    responsibilities:
+      -
+        description: Stores events for reporting
+        componentName: DataWarehouse
+        componentSource: Analytics/DataWarehouse/DataWarehouse.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: BigQuery
+        protocol: SQL
+        dataDescription: Query
+        description: Store for analytics data
+        appName: DataWarehouse
+        system: Analytics
+        relationship: Internal
+        componentName: DataWarehouseClient
+        componentSource: Analytics/ReportingUi/ReportingUi.cs
+        repository: shop/datawarehouse
+        owner: Analytics team
+    meta:
+      appName: ReportingUi
+      description: Dashboards for the business
+      system: Analytics
+      repository: shop/reportingui
+      owner: Analytics team
+      tech: Metabase
+      kind: WebApp
+      lifecycle: production
+      tier: '3'
+    responsibilities:
+      -
+        description: Shows dashboards and reports
+        componentName: ReportingUi
+        componentSource: Analytics/ReportingUi/ReportingUi.cs
+version: '0.3'

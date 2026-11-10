@@ -1,0 +1,123 @@
+apps:
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Hold stock
+        description: Store for stock
+        appName: StockDb
+        system: Warehouse
+        relationship: Internal
+        componentName: StockDbClient
+        componentSource: Warehouse/StockReservation/StockReservation.kt
+        repository: shop/stockdb
+        owner: Warehouse team
+    meta:
+      appName: StockReservation
+      description: Holds stock for orders
+      system: Warehouse
+      repository: shop/stockreservation
+      owner: Warehouse team
+      tech: Kotlin
+      kind: Service
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Reserves and releases stock
+        componentName: StockReservation
+        componentSource: Warehouse/StockReservation/StockReservation.kt
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: PostgreSQL
+        protocol: PostgreSQL
+        dataDescription: Read stock
+        description: Store for stock
+        appName: StockDb
+        system: Warehouse
+        relationship: Internal
+        componentName: StockDbClient
+        componentSource: Warehouse/StockLevels/StockLevels.kt
+        repository: shop/stockdb
+        owner: Warehouse team
+    meta:
+      appName: StockLevels
+      description: Reports what is in stock
+      system: Warehouse
+      repository: shop/stocklevels
+      owner: Warehouse team
+      tech: Kotlin
+      kind: Api
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Reports stock levels
+        componentName: StockLevels
+        componentSource: Warehouse/StockLevels/StockLevels.kt
+  -
+    collaborators: []
+    meta:
+      appName: StockDb
+      description: Store for stock
+      system: Warehouse
+      repository: shop/stockdb
+      owner: Warehouse team
+      tech: PostgreSQL
+      kind: Database
+      lifecycle: production
+      tier: '1'
+    responsibilities:
+      -
+        description: Stores stock levels and reservations
+        componentName: StockDb
+        componentSource: Warehouse/StockDb/StockDb.cs
+  -
+    collaborators:
+      -
+        direction: Downstream
+        tech: Kotlin
+        protocol: HTTPS
+        dataDescription: Find stock
+        description: Reports what is in stock
+        appName: StockLevels
+        system: Warehouse
+        relationship: Internal
+        componentName: StockLevelsClient
+        componentSource: Warehouse/PickingApp/PickingApp.ts
+        repository: shop/stocklevels
+        owner: Warehouse team
+      -
+        direction: Downstream
+        tech: .NET 10
+        protocol: HTTPS
+        dataDescription: Confirm picked
+        description: Creates and tracks shipments
+        appName: ShipmentApi
+        system: Shipping
+        relationship: Internal
+        componentName: ShipmentApiClient
+        componentSource: Warehouse/PickingApp/PickingApp.ts
+        repository: shop/shipmentapi
+        owner: Shipping team
+    meta:
+      appName: PickingApp
+      description: Used by pickers on the warehouse floor
+      system: Warehouse
+      repository: shop/pickingapp
+      owner: Warehouse team
+      tech: React
+      kind: WebApp
+      lifecycle: production
+      tier: '2'
+    responsibilities:
+      -
+        description: Guides pickers through an order
+        componentName: PickingApp
+        componentSource: Warehouse/PickingApp/PickingApp.ts
+    language: javascript
+version: '0.3'

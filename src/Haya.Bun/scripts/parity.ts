@@ -4,7 +4,7 @@
 // Each tool runs from its own example directory, because ComponentSource is relative to the current directory.
 //
 //   bun run parity            # needs the .NET SDK (the baseline) and `bun install` in examples/typescript/example and examples/typescript/custom-annotations
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -56,8 +56,21 @@ const multiCases: { file: string; args: string[] }[] = [
   { file: "multi-datadog.yaml", args: ["datadog", "-o", "multi-datadog.yaml"] },
 ];
 
+// A bigger set: one describe file per system, JSON and YAML mixed (examples/org-explorer).
+const orgDir = join(repo, "examples/org-explorer/describe");
+const orgFiles = readdirSync(orgDir).sort().map((f) => join(orgDir, f));
+const orgCases: { file: string; args: string[] }[] = [
+  { file: "org-describe.json", args: ["describe", "-o", "org-describe.json"] },
+  { file: "org-crc-cc.md", args: ["crc", "-cc", "-o", "org-crc-cc.md"] },
+  { file: "org-diagram.mermaid", args: ["diagram", "-o", "org-diagram.mermaid"] },
+  { file: "org-diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "org-diagram-l2.mermaid"] },
+  { file: "org-diagram.html", args: ["diagram", "-f", "html", "-o", "org-diagram.html"] },
+  { file: "org-backstage.yaml", args: ["backstage", "-o", "org-backstage.yaml"] },
+  { file: "org-datadog.yaml", args: ["datadog", "-o", "org-datadog.yaml"] },
+];
+
 let failed = 0;
-const total = cases.length * 2 + multiCases.length;
+const total = cases.length * 2 + multiCases.length + orgCases.length;
 const check = (file: string, net: string, actual: string) => {
   const expected = readFileSync(net, "utf8");
   if (expected === actual) {
@@ -71,14 +84,19 @@ const check = (file: string, net: string, actual: string) => {
     console.log(d.stdout.toString());
   }
 };
-for (const { file, args } of multiCases) {
-  const net = join(out, "net-" + file);
-  const bun = join(out, "bun-" + file);
-  const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
-  run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), ...fixtures], dotnetCwd);
-  run(["bun", "run", hayaTs, ...withOut(args, bun), ...fixtures], tsCwd);
-  check(file, net, readFileSync(bun, "utf8"));
-}
+// The same describe files fed to both tools, so nothing is mapped.
+const compareFiles = (list: { file: string; args: string[] }[], files: string[]) => {
+  for (const { file, args } of list) {
+    const net = join(out, "net-" + file);
+    const bun = join(out, "bun-" + file);
+    const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
+    run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), ...files], dotnetCwd);
+    run(["bun", "run", hayaTs, ...withOut(args, bun), ...files], tsCwd);
+    check(file, net, readFileSync(bun, "utf8"));
+  }
+};
+compareFiles(multiCases, fixtures);
+compareFiles(orgCases, orgFiles);
 // The two tools name different languages by design (the .NET tool stamps `dotnet`, the Bun tool `javascript`), so the
 // language of the Bun output is mapped to the .NET one before comparing.
 // Datadog calls them `dotnet` and `js` in `spec.languages`.
