@@ -366,7 +366,7 @@ const searchFor = (q) => {
   };
   return data.nodes.map((n) => [score(n), n]).filter(([s]) => s < 9).sort((a, b) => a[0] - b[0] || name(a[1].id).localeCompare(name(b[1].id))).slice(0, 12).map(([, n]) => n);
 };
-const pick = (id) => { closeResults(); searchBox.value = ""; reveal(id); };
+const pick = (id) => { closeResults(); searchBox.value = ""; searchBox.blur(); reveal(id); };
 searchBox.addEventListener("input", () => {
   const found = searchFor(searchBox.value);
   resultsEl.replaceChildren(...found.map((n) => h("li", {}, h("button", { type: "button", onclick: () => pick(n.id), onkeydown: (e) => {
@@ -379,7 +379,16 @@ searchBox.addEventListener("input", () => {
 searchBox.addEventListener("keydown", (e) => {
   if (e.key === "ArrowDown") { e.preventDefault(); resultsEl.querySelector("button")?.focus(); }
   if (e.key === "Enter") { const f = searchFor(searchBox.value)[0]; if (f) pick(f.id); }
-  if (e.key === "Escape") { closeResults(); searchBox.value = ""; }
+  if (e.key === "Escape") { closeResults(); searchBox.value = ""; searchBox.blur(); }
+});
+// "/" jumps to the search box, as in vim and most web apps. Not while typing somewhere, and not with a modifier held.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target;
+  if (t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+  e.preventDefault();
+  searchBox.focus();
+  searchBox.select();
 });
 document.getElementById("fit").addEventListener("click", () => cy.animate({ fit: { eles: cy.elements(), padding: 40 }, duration: 250 }));
 document.getElementById("reset").addEventListener("click", reset);
@@ -451,7 +460,7 @@ function overviewPanel() {
   return [
     h("h2", {}, "Overview"),
     h("p", {}, `${systems.length} systems, ${apps.length} apps, ${data.edges.length} relationships.`),
-    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Search finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
+    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
     section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),
   ];
