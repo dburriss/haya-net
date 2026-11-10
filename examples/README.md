@@ -51,4 +51,10 @@ Run `generate.sh` in either folder. The two sets of describe files hold the same
 identical. Orders also depends on a Shipping service that has no describe file, so it appears as a stub in the Backstage
 catalog and as an extra system in the diagram. Describe files and solutions or projects can be mixed in one call.
 
+## Org-wide example
+
+[org-explorer](org-explorer) has nine systems, described by separate teams in a mix of JSON and YAML, merged in one
+`diagram -f html` run. Run `generate.sh` there, or open the [live explorer](https://dburriss.github.io/haya-net/) that CI builds from it on every
+push to `main`. See [Document several systems together](../docs/how-to/document-multiple-systems.md) for the how-to.
+
 `dotnet-multi` is a three-project solution used as a test fixture by `tests/Haya.Core.Tests`; it has no generated output.

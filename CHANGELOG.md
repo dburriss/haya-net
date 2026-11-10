@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `main` tried to publish. `Haya.Core` and `Haya.Roslyn` are no longer packable; `Haya.Tool` bundles them.
 
 ### Added
+- The interactive explorer is published to GitHub Pages at <https://dburriss.github.io/haya-net/>, built in CI from `examples/org-explorer` (nine systems, JSON and YAML describe files); no HTML is committed.
 - `haya diagram -f html` writes an interactive graph explorer: one self-contained page (no network, works from a file)
   for systems too big for a Mermaid diagram. It starts with every system collapsed to a box with its app count; double-click
   opens a system into a boundary around its apps (or shows the apps an app connects to), and selecting a node mutes what has

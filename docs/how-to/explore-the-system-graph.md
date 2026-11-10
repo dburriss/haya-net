@@ -16,6 +16,8 @@ inputs (solutions or describe files) are drawn as one graph: see
 The page is self-contained: open the file in a browser, attach it to a ticket or serve it from anywhere. It makes no network requests.
 `-t` (the diagram type) does not apply; the page always covers everything.
 
+To see one first, open the [live example](https://dburriss.github.io/haya-net/), built in CI from [examples/org-explorer](../../examples/org-explorer).
+
 ## Read the page
 
 - It starts with every system **collapsed** to one box with its app count. Dashed boxes are systems outside what is

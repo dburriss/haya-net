@@ -1,0 +1,71 @@
+name: Publish explorer to GitHub Pages
+
+# Builds the interactive explorer from examples/org-explorer and publishes it at
+# https://dburriss.github.io/haya-net/. No HTML is committed. One-time setup: Settings, Pages, Source: GitHub Actions.
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'examples/org-explorer/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Tool Restore
+        run: dotnet tool restore
+
+      - name: Build
+        run: dotnet build src/Haya.Tool --configuration Release
+
+      # The input paths go last. ViewerAssets.fs is committed, so Bun is not needed.
+      - name: Generate explorer
+        run: |
+          mkdir -p _site
+          dotnet run --no-build --configuration Release --project src/Haya.Tool -- diagram -f html -o _site/index.html examples/org-explorer/describe/*
+
+      - name: Smoke test
+        run: |
+          test -f _site/index.html || { echo "_site/index.html is missing"; exit 1; }
+          size=$(wc -c < _site/index.html)
+          [ "$size" -ge 100000 ] || { echo "_site/index.html is only $size bytes"; exit 1; }
+          grep -q 'id="haya-data"' _site/index.html || { echo 'no id="haya-data" in _site/index.html'; exit 1; }
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

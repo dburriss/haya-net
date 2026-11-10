@@ -53,7 +53,7 @@ See the annotated [C# example](examples/dotnet/Example/HayaEcomm.cs) and its [ge
 
 - **CRC documents.** Components, Responsibilities and Collaborators as Markdown, optionally with embedded diagrams. See the [CLI reference](docs/reference/cli.md).
 - **C4 diagrams.** Level 1 (system context) and level 2 (containers) as Mermaid. See [Generate C4 diagrams](docs/how-to/generate-diagrams.md).
-- **Interactive explorer.** `diagram -f html` writes one self-contained page that starts with every system collapsed and lets you open systems, follow relationships, search and filter, for systems too big for a static diagram. See [Explore the system graph](docs/how-to/explore-the-system-graph.md).
+- **Interactive explorer.** `diagram -f html` writes one self-contained page that starts with every system collapsed and lets you open systems, follow relationships, search and filter, for systems too big for a static diagram. See [Explore the system graph](docs/how-to/explore-the-system-graph.md), or try the [live example](https://dburriss.github.io/haya-net/) (built in CI from [examples/org-explorer](examples/org-explorer)).
 - **Backstage catalog.** One component per application with dependencies. See [Publish to Backstage](docs/how-to/publish-to-backstage.md).
 - **Datadog Software Catalog.** `entity.datadog.yaml` with services, datastores, queues, systems and their dependencies. See [Publish to Datadog](docs/how-to/publish-to-datadog.md).
 - **Describe files.** A JSON/YAML description of an application that every other command accepts as input. See the [describe format](docs/reference/describe-format.md).
