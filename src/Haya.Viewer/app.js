@@ -27,7 +27,16 @@ for (const e of data.edges) for (const id of [e.from, e.to]) {
 // without is a single box. Systems are always drawn; edges between hidden apps roll up to their systems.
 let shown = new Set();
 let selected = null; // { kind: "node" | "edge", id }
-const filters = { appKind: new Set(), tier: new Set(), lifecycle: new Set() };
+// every filter value starts enabled; switching one off fades the apps that have it
+const valuesOf = (key, of) => [...new Set(data.nodes.filter((n) => n.kind === "app").map(of))].sort();
+const FILTERS = [
+  { key: "appKind", title: "Kind", of: (n) => n.appKind || "Unspecified" },
+  { key: "tier", title: "Tier", of: (n) => n.tier || "none" },
+  { key: "lifecycle", title: "Lifecycle", of: (n) => n.lifecycle || "none" },
+];
+const enabled = {};
+const enableAll = () => { for (const f of FILTERS) enabled[f.key] = new Set(valuesOf(f.key, f.of)); };
+enableAll();
 const resetShown = () => { shown = new Set(data.nodes.filter((n) => n.kind === "app" && !n.parent).map((n) => n.id)); };
 const isOpen = (systemId) => (appsOf.get(systemId) || []).some((a) => shown.has(a));
 const rep = (id) => {
@@ -49,45 +58,72 @@ const h = (tag, attrs, ...kids) => {
 };
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-// ---------------------------------------------------------------- badges
+// ---------------------------------------------------------------- glyphs
+// A node is a label with small glyphs (kind, tier, lifecycle) instead of text badges, so the boxes stay small.
+// The filter chips and the legend show the same glyphs next to their names.
 const KIND_FILL = { Api: "#2f6fdb", Service: "#6f42c1", WebApp: "#0a8f6a", Worker: "#b7791f", Database: "#c05621", Queue: "#b83280" };
 const LIFE_FILL = { production: "#2f855a", experimental: "#b7791f", deprecated: "#c53030" };
-const GREY = "#667085", AMBER = "#b7791f";
+const GREY = "#8b949e", AMBER = "#d69e2e";
 const xml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
-const tierText = (t) => (/^t/i.test(t) ? t : "T" + t);
+const tierText = (t) => (/^t/i.test(t) ? t : "T" + t).slice(0, 4);
+const kindColor = (k) => KIND_FILL[k] || GREY;
+const lifeColor = (l) => LIFE_FILL[(l || "").toLowerCase()] || GREY;
 
-const W = 176, HEIGHT = 60;
-const imageCache = new Map();
-const badgeImage = (pills) => {
-  const key = JSON.stringify(pills);
-  if (imageCache.has(key)) return imageCache.get(key);
-  let x = 8;
-  const parts = [];
-  for (const [text, fill] of pills) {
-    const w = Math.round(text.length * 6 + 12);
-    if (x + w > W - 4) break;
-    parts.push(`<rect x="${x}" y="${HEIGHT - 22}" rx="8" ry="8" width="${w}" height="16" fill="${fill}"/>` +
-      `<text x="${x + w / 2}" y="${HEIGHT - 10.5}" font-size="10" font-family="system-ui,sans-serif" fill="#fff" text-anchor="middle">${xml(text)}</text>`);
-    x += w + 4;
-  }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${HEIGHT}">${parts.join("")}</svg>`;
-  const uri = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-  imageCache.set(key, uri);
-  return uri;
+// 12x12 drawings, in one colour
+const GLYPH = {
+  Api: (c) => `<text x="6" y="9.6" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle" fill="${c}">{}</text>`,
+  Service: (c) => `<path d="M6 .5 11.5 6 6 11.5.5 6z" fill="${c}"/>`,
+  WebApp: (c) => `<rect x=".7" y="1.5" width="10.6" height="9" rx="1.5" fill="none" stroke="${c}" stroke-width="1.3"/><rect x=".7" y="1.5" width="10.6" height="3" fill="${c}"/>`,
+  Worker: (c) => `<circle cx="6" cy="6" r="3" fill="none" stroke="${c}" stroke-width="1.8"/><circle cx="6" cy="6" r="5.4" fill="none" stroke="${c}" stroke-width="1.2" stroke-dasharray="2 1.4"/>`,
+  Database: (c) => `<ellipse cx="6" cy="2.6" rx="5" ry="2" fill="${c}"/><path d="M1 2.6V9.4A5 2 0 0 0 11 9.4V2.6" fill="none" stroke="${c}" stroke-width="1.3"/>`,
+  Queue: (c) => [1, 4.8, 8.6].map((y) => `<rect x=".5" y="${y}" width="11" height="2.4" rx="1" fill="${c}"/>`).join(""),
+  Unspecified: (c) => `<rect x="1.5" y="1.5" width="9" height="9" rx="2" fill="none" stroke="${c}" stroke-width="1.3"/>`,
+  System: (c) => `<rect x=".7" y=".7" width="10.6" height="10.6" rx="2" fill="none" stroke="${c}" stroke-width="1.2" stroke-dasharray="2.4 1.4"/><rect x="3.5" y="3.5" width="5" height="5" rx="1" fill="${c}"/>`,
+  External: (c) => `<path d="M5 2H1.5V10.5H10V7M6 6 11 1M7.5 1H11V4.5" fill="none" stroke="${c}" stroke-width="1.3"/>`,
+  Undocumented: (c) => `<text x="6" y="10" font-size="12" font-weight="bold" font-family="sans-serif" text-anchor="middle" fill="${c}">?</text>`,
+  Lifecycle: (c) => `<circle cx="6" cy="6" r="4" fill="${c}"/>`,
 };
-const pillsOf = (n) => {
+const glyphG = (kind, color, x, y) => `<g transform="translate(${x} ${y})">${GLYPH[kind](color)}</g>`;
+const dataUri = (svg) => "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+const glyphImg = (kind, color, size = 14) => h("img", { src: dataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">${GLYPH[kind](color)}</svg>`), width: size, height: size, alt: "" });
+
+const W = 184, HEIGHT = 30;
+const imageCache = new Map();
+const nodeImage = (n) => {
+  const parts = [];
   if (n.kind === "system") {
     const count = (appsOf.get(n.id) || []).length;
-    return n.ownSystem ? (count ? [[count + (count === 1 ? " app" : " apps"), GREY]] : []) : [[n.relationship === "External" ? "external" : "other system", GREY]];
+    parts.push(glyphG(n.ownSystem ? "System" : "External", GREY, 9, (HEIGHT - 12) / 2));
+    if (n.ownSystem && count) {
+      const t = String(count), w = Math.max(18, t.length * 7 + 10);
+      parts.push(`<rect x="${W - w - 7}" y="${(HEIGHT - 16) / 2}" width="${w}" height="16" rx="8" fill="${GREY}"/><text x="${W - 7 - w / 2}" y="${HEIGHT / 2 + 3.7}" font-size="10.5" font-family="system-ui,sans-serif" font-weight="600" fill="#fff" text-anchor="middle">${t}</text>`);
+    }
+  } else {
+    parts.push(glyphG(n.appKind || "Unspecified", kindColor(n.appKind), 9, (HEIGHT - 12) / 2));
+    if (!n.hasMeta) parts.push(glyphG("Undocumented", AMBER, W - 19, (HEIGHT - 12) / 2));
+    else {
+      if (n.lifecycle) parts.push(glyphG("Lifecycle", lifeColor(n.lifecycle), W - 19, (HEIGHT - 12) / 2));
+      if (n.tier) parts.push(`<text x="${W - (n.lifecycle ? 25 : 9)}" y="${HEIGHT / 2 + 3.7}" font-size="10" font-family="system-ui,sans-serif" font-weight="600" fill="${GREY}" text-anchor="end">${xml(tierText(n.tier))}</text>`);
+    }
   }
-  const pills = [];
-  if (n.appKind) pills.push([n.appKind, KIND_FILL[n.appKind] || GREY]);
-  if (n.tier) pills.push([tierText(n.tier), GREY]);
-  if (n.lifecycle) pills.push([n.lifecycle, LIFE_FILL[n.lifecycle.toLowerCase()] || GREY]);
-  if (!n.hasMeta) pills.push(["undocumented", AMBER]);
-  return pills;
+  const key = parts.join("");
+  if (!imageCache.has(key)) imageCache.set(key, dataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${HEIGHT}">${key}</svg>`));
+  return imageCache.get(key);
 };
-const pillEls = (n) => pillsOf(n).map(([t, f]) => h("span", { class: "pill", style: "background:" + f }, t));
+// the same facts as words, for the panel
+const factPills = (n) => {
+  const out = [];
+  const pill = (text, color, glyph) => h("span", { class: "pill" }, glyph, text);
+  if (n.kind === "system") {
+    out.push(pill(n.ownSystem ? `${(appsOf.get(n.id) || []).length} apps` : n.relationship === "External" ? "external" : "other system", GREY, glyphImg(n.ownSystem ? "System" : "External", GREY, 12)));
+  } else {
+    out.push(pill(n.appKind || "Unspecified", kindColor(n.appKind), glyphImg(n.appKind || "Unspecified", kindColor(n.appKind), 12)));
+    if (n.tier) out.push(pill(tierText(n.tier), GREY, null));
+    if (n.lifecycle) out.push(pill(n.lifecycle, lifeColor(n.lifecycle), glyphImg("Lifecycle", lifeColor(n.lifecycle), 12)));
+    if (!n.hasMeta) out.push(pill("undocumented", AMBER, glyphImg("Undocumented", AMBER, 12)));
+  }
+  return out;
+};
 
 // ---------------------------------------------------------------- graph
 const styleFor = () => {
@@ -95,37 +131,44 @@ const styleFor = () => {
   return [
     { selector: "node", style: {
       label: "data(label)", color: fg, "font-size": 12, "text-valign": "center", "text-halign": "center", "text-wrap": "ellipsis",
-      "text-max-width": 150, "text-margin-y": -9, shape: "round-rectangle", width: W, height: HEIGHT, "background-color": card,
+      "text-max-width": 112, "text-margin-x": -9, shape: "round-rectangle", width: W, height: HEIGHT, "background-color": card,
       "border-width": 1, "border-color": line, "background-image": "data(img)", "background-fit": "contain", "background-clip": "node" } },
     { selector: "node.system", style: { "border-width": 2, "border-color": muted } },
     { selector: "node.external", style: { "border-style": "dashed" } },
+    { selector: "node.undoc", style: { "border-style": "dashed", "border-color": "#d69e2e" } },
     { selector: ":parent", style: {
       shape: "rectangle", "text-valign": "top", "text-margin-y": -4, "font-size": 13, "font-weight": "bold", "background-image": "none",
       "background-color": muted, "background-opacity": 0.08, "border-style": "dashed", "border-width": 1.5, "border-color": muted, padding: 24 } },
     { selector: "edge", style: {
-      "curve-style": "bezier", width: 1.5, "line-color": muted, "target-arrow-color": muted, "target-arrow-shape": "triangle", label: "data(label)",
-      "font-size": 10, color: fg, "text-background-color": bg, "text-background-opacity": 1, "text-background-padding": 2,
-      "text-rotation": "autorotate", "text-wrap": "ellipsis", "text-max-width": 130 } },
-    { selector: "edge[n > 1]", style: { width: 3 } },
-    { selector: ".sel", style: { "border-color": accent, "border-width": 3, "line-color": accent, "target-arrow-color": accent } },
-    { selector: ".dim", style: { opacity: 0.2 } },
+      "curve-style": "bezier", width: "mapData(n, 1, 12, 1.5, 5)", "line-color": muted, "target-arrow-color": muted, "target-arrow-shape": "triangle",
+      "source-arrow-color": muted, label: "data(label)", "font-size": 10, "font-weight": "bold", color: fg, "text-background-color": bg,
+      "text-background-opacity": 1, "text-background-padding": 2, "text-background-shape": "roundrectangle", "overlay-padding": 6 } },
+    { selector: "edge[?both]", style: { "source-arrow-shape": "triangle" } },
+    { selector: ".sel", style: { "border-color": accent, "border-width": 3, "line-color": accent, "target-arrow-color": accent, "source-arrow-color": accent } },
+    { selector: ".dim", style: { opacity: 0.18, events: "no" } },
   ];
 };
 
 const cy = cytoscape({ container: document.getElementById("graph"), elements: [], style: styleFor(), wheelSensitivity: 0.3, autounselectify: true, boxSelectionEnabled: false });
 window.__haya = cy; // test hook
-const edgeItems = new Map(); // drawn edge id -> model edges it stands for
+const edgeItems = new Map(); // drawn edge id -> { source, target, fwd: model edges that way, back: the other way }
+// node images load asynchronously and the canvas can be sized before the window settles, so redraw and re-measure
+let redrawTimer;
+const redrawSoon = () => { clearTimeout(redrawTimer); redrawTimer = setTimeout(() => { cy.resize(); cy.forceRender(); }, 150); };
+new ResizeObserver(redrawSoon).observe(document.getElementById("graph"));
 
 const desired = () => {
   const want = { nodes: new Map(), edges: new Map() };
   for (const n of data.nodes) if (n.kind === "system" || shown.has(n.id)) want.nodes.set(n.id, n);
+  // one line per pair of drawn nodes, whichever way the relationships go
   for (const e of data.edges) {
     const f = rep(e.from), t = rep(e.to);
     // inside one box, or between a boundary and an app in it: nothing to draw
     if (f === t || nodes.get(f).parent === t || nodes.get(t).parent === f) continue;
-    const key = f + ">" + t;
-    if (!want.edges.has(key)) want.edges.set(key, { source: f, target: t, items: [] });
-    want.edges.get(key).items.push(e);
+    const key = f < t ? f + "|" + t : t + "|" + f;
+    if (!want.edges.has(key)) want.edges.set(key, { source: f, target: t, fwd: [], back: [] });
+    const g = want.edges.get(key);
+    (f === g.source ? g.fwd : g.back).push(e);
   }
   return want;
 };
@@ -137,11 +180,11 @@ const nodeData = (n, includeParent) => {
     const total = appsOf.get(n.id).length, now = appsOf.get(n.id).filter((a) => shown.has(a)).length;
     if (now < total) label += ` (${now} of ${total} apps)`;
   }
-  const d = { id: n.id, label, img: n.kind === "system" && open ? "none" : badgeImage(pillsOf(n)) };
+  const d = { id: n.id, label, img: n.kind === "system" && open ? "none" : nodeImage(n) };
   if (includeParent && n.kind === "app" && n.parent) d.parent = n.parent; // a parent key on an existing node would move it
   return d;
 };
-const classOf = (n) => (n.kind === "system" ? "system" + (n.ownSystem ? "" : " external") : "app");
+const classOf = (n) => (n.kind === "system" ? "system" + (n.ownSystem ? "" : " external") : "app" + (n.hasMeta ? "" : " undoc"));
 
 /** Bring the drawn graph in line with the state. `seeds` maps a node id to where to start it (else beside its system). */
 const sync = (seeds = new Map()) => {
@@ -161,15 +204,16 @@ const sync = (seeds = new Map()) => {
     }
     edgeItems.clear();
     for (const [key, g] of want.edges) {
-      edgeItems.set(key, g.items);
-      const label = g.items.length === 1 ? g.items[0].label || "" : g.items.length + " relationships";
+      edgeItems.set(key, g);
+      const n = g.fwd.length + g.back.length, both = g.fwd.length > 0 && g.back.length > 0;
       const cur = cy.getElementById(key);
-      if (cur.nonempty()) cur.data({ label, n: g.items.length });
-      else cy.add({ group: "edges", data: { id: key, source: g.source, target: g.target, label, n: g.items.length } });
+      if (cur.nonempty()) cur.data({ label: String(n), n, both });
+      else cy.add({ group: "edges", data: { id: key, source: g.source, target: g.target, label: String(n), n, both } });
     }
   });
   applyFilters();
   applySelection();
+  redrawSoon();
   return fresh;
 };
 
@@ -178,7 +222,7 @@ const layout = (first, fresh = []) => {
     name: "fcose", animate: !first, animationDuration: 300, randomize: first, fit: first, padding: 40, nodeDimensionsIncludeLabels: true,
     idealEdgeLength: 150, nodeRepulsion: 9000, packComponents: true,
   });
-  run.one("layoutstop", () => { if (!first) ensureVisible(); });
+  run.one("layoutstop", () => { if (!first) ensureVisible(); redrawSoon(); });
   run.run();
 };
 // after growing the graph, pan/zoom only when something ended up outside the view
@@ -232,7 +276,7 @@ const applySelection = () => {
   if (selected) cy.getElementById(selected.id).addClass("sel");
 };
 const reset = () => {
-  resetShown(); selected = null; for (const s of Object.values(filters)) s.clear();
+  resetShown(); selected = null; enableAll();
   document.getElementById("search").value = ""; closeResults(); renderFilters();
   cy.elements().remove(); sync(); layout(true); renderPanel();
 };
@@ -247,32 +291,29 @@ cy.on("dbltap", "node", (e) => {
 });
 
 // ---------------------------------------------------------------- filters
-const matches = (n) =>
-  (!filters.appKind.size || filters.appKind.has(n.appKind || "Unspecified")) &&
-  (!filters.tier.size || filters.tier.has(n.tier || "none")) &&
-  (!filters.lifecycle.size || filters.lifecycle.has(n.lifecycle || "none"));
+const matches = (n) => FILTERS.every((f) => enabled[f.key].has(f.of(n)));
 function applyFilters() {
   cy.elements().removeClass("dim");
   cy.nodes().forEach((el) => { const n = nodes.get(el.id()); if (n.kind === "app" && !matches(n)) el.addClass("dim"); });
   cy.edges().forEach((el) => { if (el.source().hasClass("dim") || el.target().hasClass("dim")) el.addClass("dim"); });
 }
+// the chips are the legend for kind, tier and lifecycle: glyph and name, pressed = shown
 function renderFilters() {
   const box = document.getElementById("filters");
   box.replaceChildren();
-  const apps = data.nodes.filter((n) => n.kind === "app");
-  const groups = [
-    ["Kind", "appKind", [...new Set(apps.map((n) => n.appKind || "Unspecified"))]],
-    ["Tier", "tier", [...new Set(apps.map((n) => n.tier || "none"))]],
-    ["Lifecycle", "lifecycle", [...new Set(apps.map((n) => n.lifecycle || "none"))]],
-  ];
-  for (const [title, key, values] of groups) {
+  for (const f of FILTERS) {
+    const values = valuesOf(f.key, f.of);
     if (values.length < 2) continue;
-    box.append(h("span", { class: "fgroup", role: "group", "aria-label": title }, h("span", {}, title),
-      values.sort().map((v) => h("button", { type: "button", class: "chip", "aria-pressed": String(filters[key].has(v)), onclick: (e) => {
-        filters[key].has(v) ? filters[key].delete(v) : filters[key].add(v);
-        e.currentTarget.setAttribute("aria-pressed", String(filters[key].has(v)));
+    const glyph = (v) =>
+      f.key === "appKind" ? glyphImg(v, kindColor(v === "Unspecified" ? "" : v), 13) :
+      f.key === "lifecycle" ? glyphImg("Lifecycle", v === "none" ? GREY : lifeColor(v), 13) : null;
+    box.append(h("span", { class: "fgroup", role: "group", "aria-label": f.title }, h("span", {}, f.title),
+      values.map((v) => h("button", { type: "button", class: "chip", title: (enabled[f.key].has(v) ? "Hide " : "Show ") + v, "aria-pressed": String(enabled[f.key].has(v)), onclick: (e) => {
+        enabled[f.key].has(v) ? enabled[f.key].delete(v) : enabled[f.key].add(v);
+        e.currentTarget.setAttribute("aria-pressed", String(enabled[f.key].has(v)));
+        e.currentTarget.title = (enabled[f.key].has(v) ? "Hide " : "Show ") + v;
         applyFilters();
-      } }, v))));
+      } }, glyph(v), v))));
   }
 }
 
@@ -313,14 +354,14 @@ const panel = document.getElementById("panel");
 const act = (text, fn) => h("button", { type: "button", onclick: fn }, text);
 const goto = (id) => h("button", { type: "button", class: "link", onclick: () => reveal(id) }, name(id));
 const field = (term, value) => (value ? [h("dt", {}, term), h("dd", {}, value)] : []);
-const relRow = (e, id) => {
-  const out = e.from === id, other = out ? e.to : e.from;
-  return h("li", {}, out ? "→ " : "← ", goto(other), [e.label && " · " + e.label, e.protocol && " · " + e.protocol].filter(Boolean).join(""));
-};
+const note = (e) => [e.label || "(no description)", e.protocol && ` [${e.protocol}]`].filter(Boolean).join("");
+/** A relationship seen from `id`: who is at the other end, then what it carries. */
+const relRow = (e, id) => h("li", {}, goto(e.from === id || inside(id, e.from) ? e.to : e.from), " · " + note(e));
+const inside = (id, other) => nodes.get(id).kind === "system" && (appsOf.get(id) || []).includes(other);
 const section = (title, items) => (items.length ? [h("h3", {}, title), h("ul", {}, items)] : []);
 
 function nodePanel(n) {
-  const kids = [h("h2", {}, name(n.id)), h("div", {}, pillEls(n))];
+  const kids = [h("h2", {}, name(n.id)), h("div", {}, factPills(n))];
   if (n.kind === "app") {
     if (!n.hasMeta) kids.push(h("p", { class: "note" }, "Known only from a collaborator declaration. The app has no [Meta] of its own, so these details come from the app that uses it."));
     if (n.description) kids.push(h("p", {}, n.description));
@@ -331,7 +372,9 @@ function nodePanel(n) {
       n.parent && act("Hide", () => hideApp(n.id)),
       act("Centre", () => cy.animate({ center: { eles: cy.getElementById(n.id) }, duration: 250 }))));
     kids.push(section("Responsibilities", (n.responsibilities || []).map((r) => h("li", {}, r))));
-    kids.push(section("Relationships", (touching.get(n.id) || []).map((e) => relRow(e, n.id))));
+    const mine = touching.get(n.id) || [];
+    kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
+    kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
   } else {
     const members = appsOf.get(n.id) || [];
     if (n.description) kids.push(h("p", {}, n.description));
@@ -346,8 +389,13 @@ function nodePanel(n) {
         if (inside.has(e.from) && inside.has(e.to)) continue;
         links.set(`${e.from}|${e.to}|${e.label}`, e);
       }
-      kids.push(section("Connections", [...links.values()].map((e) => relRow(e, inside.has(e.from) ? e.from : e.to))));
-    } else kids.push(section("Relationships", (touching.get(n.id) || []).map((e) => relRow(e, n.id))));
+      kids.push(section("Inbound", [...links.values()].filter((e) => inside.has(e.to)).map((e) => h("li", {}, goto(e.from), " → ", goto(e.to), " · " + note(e)))));
+      kids.push(section("Outbound", [...links.values()].filter((e) => inside.has(e.from)).map((e) => h("li", {}, goto(e.from), " → ", goto(e.to), " · " + note(e)))));
+    } else {
+      const mine = touching.get(n.id) || [];
+      kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
+      kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
+    }
   }
   return kids;
 }
@@ -358,8 +406,8 @@ function overviewPanel() {
   return [
     h("h2", {}, "Overview"),
     h("p", {}, `${systems.length} systems, ${apps.length} apps, ${data.edges.length} relationships.`),
-    h("p", { class: "muted" }, "Select a node to see its details. Double-click a system to open it, or an app to show the apps it connects to. Search finds anything, hidden or not."),
-    section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", pillEls(n)))),
+    h("p", { class: "muted" }, "Select a node or line for details. Double-click a system to open it, or an app to show the apps it connects to. Search finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
+    section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),
   ];
 }
@@ -368,12 +416,29 @@ function renderPanel() {
   let kids;
   if (selected && selected.kind === "node" && nodes.has(selected.id)) kids = nodePanel(nodes.get(selected.id));
   else if (selected && selected.kind === "edge" && edgeItems.has(selected.id)) {
-    const items = edgeItems.get(selected.id), [f, t] = selected.id.split(">");
-    kids = [h("h2", {}, `${name(f)} → ${name(t)}`), h("p", { class: "muted" }, items.length === 1 ? "1 relationship" : items.length + " relationships"),
-      h("ul", {}, items.map((e) => h("li", {}, goto(e.from), " → ", goto(e.to), [e.label && " · " + e.label, e.protocol && " · " + e.protocol].filter(Boolean).join(""))))];
+    const g = edgeItems.get(selected.id), a = name(g.source), b = name(g.target);
+    // between boxes that stand for several apps, say which apps; between two apps the header says it
+    const wide = nodes.get(g.source).kind === "system" || nodes.get(g.target).kind === "system";
+    const bullet = (e) => h("li", {}, wide ? [goto(e.from), " → ", goto(e.to), ": "] : "", note(e));
+    const both = g.fwd.length > 0 && g.back.length > 0;
+    kids = [h("h2", {}, both ? `${a} ↔ ${b}` : g.fwd.length ? `${a} → ${b}` : `${b} → ${a}`)];
+    if (both) kids.push(h("h3", {}, `${a} → ${b}`), h("ul", {}, g.fwd.map(bullet)), h("h3", {}, `${b} → ${a}`), h("ul", {}, g.back.map(bullet)));
+    else kids.push(h("ul", {}, (g.fwd.length ? g.fwd : g.back).map(bullet)));
   } else kids = overviewPanel();
   panel.replaceChildren(...kids.flat(Infinity).filter(Boolean));
 }
+
+// ---------------------------------------------------------------- legend
+// what the chips do not explain: the box types and the lines
+(() => {
+  const items = [
+    [glyphImg("System", GREY), "System, with its number of apps"],
+    [glyphImg("External", GREY), "Outside the documented systems"],
+    [glyphImg("Undocumented", AMBER), "Undocumented: no [Meta] of its own"],
+    [h("span", { class: "arrows" }, "→ ↔"), "One line per pair, with the number of relationships"],
+  ];
+  document.getElementById("legend-list").append(...items.map(([g, t]) => h("li", {}, g, h("span", {}, t))));
+})();
 
 // ---------------------------------------------------------------- start
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => cy.style(styleFor()));

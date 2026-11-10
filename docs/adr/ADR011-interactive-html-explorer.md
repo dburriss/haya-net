@@ -28,9 +28,12 @@ draws as one unreadable picture. We want to explore a large system by starting s
   weight, or a layout that moves everything on each change). The cost is ~0.5 MB per page and a canvas, which is why all
   node detail lives in a DOM side panel, which is also what screen readers use. fcose is unmaintained, so versions are pinned.
 - **The page starts collapsed**: every own system is one box with an app count, plus the other systems. Double-click (or
-  the panel) opens a system, double-click on an app shows the apps it connects to, search reveals any node, and filters dim
-  by kind, tier and lifecycle. What is drawn follows from a set of shown apps; edges between hidden apps roll up into one
-  edge between their systems. Nodes carry a label and badges only.
+  the panel) opens a system, double-click on an app shows the apps it connects to, search reveals any node, and filters (all on
+  at the start) fade the apps of a value that is switched off. What is drawn follows from a set of shown apps. There is one
+  line per pair of drawn nodes, with an arrowhead per direction and the number of relationships it stands for; edges
+  between hidden apps roll up into the line between their systems, and the text lives in the panel (`A → B` with a bullet per
+  relationship). Nodes are small: a name and glyphs for kind, tier and lifecycle. The filter buttons, glyph plus name, are
+  the legend for those; a small legend covers system, external, undocumented and the lines.
 - **How both stacks emit identical pages:** `gen-viewer.ts` bundles the app and writes `src/Haya.Core/ViewerAssets.fs`, which
   is committed, so `dotnet build` and Fable need no Node. Embedded resources do not work under Fable, and a template file
   read at runtime would need a second mechanism on the Bun side. The generated file is a list of ~1.5 KB string chunks
