@@ -42,7 +42,7 @@ Releases are driven by a `v*` tag. CI never bumps versions or commits; it reacts
    it is a prerelease), updates `<Version>` and `<PackageReleaseNotes>` in `Directory.Build.props`, rolls the changelog
    for a stable release, commits, tags `vX.Y.Z`, and offers to push `main` and the tag.
 3. Pushing the tag runs [`publish-nuget.yml`](../.github/workflows/publish-nuget.yml), which builds, tests, packs and
-   pushes `Haya`, `Haya.Core`, `Haya.Roslyn` and `Haya.Tool` at the tag's version. All four packages share one version.
+   pushes `Haya` and `Haya.Tool` at the tag's version. Both packages share one version.
 
 Publishing uses NuGet [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): there is no
 API key. The workflow gets a short-lived key through OIDC, using the `NUGET_USER` repository secret (the nuget.org

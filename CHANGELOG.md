@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Releases are tag-driven: pushing a `v*` tag publishes `Haya`, `Haya.Core`, `Haya.Roslyn` and `Haya.Tool` to NuGet with
-  Trusted Publishing (no API key), all at one version. Use `./publish.sh` to bump, tag and push. Previously every push to
-  `main` tried to publish.
+- Releases are tag-driven: pushing a `v*` tag publishes `Haya` and `Haya.Tool` to NuGet with
+  Trusted Publishing (no API key), both at one version. Use `./publish.sh` to bump, tag and push. Previously every push to
+  `main` tried to publish. `Haya.Core` and `Haya.Roslyn` are no longer packable; `Haya.Tool` bundles them.
 
 ### Added
 - `--include-references` and `--include-assembly <glob>` (with `--verbose`) read Haya attributes from public types in

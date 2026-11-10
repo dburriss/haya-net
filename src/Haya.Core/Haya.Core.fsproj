@@ -18,7 +18,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryUrl>https://github.com/dburriss/haya-net</RepositoryUrl>
 
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IsPackable>false</IsPackable>
         <PackageOutputPath>./nupkg</PackageOutputPath>
 
         <PublishAot>false</PublishAot>

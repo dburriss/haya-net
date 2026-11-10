@@ -43,7 +43,7 @@ jobs:
       # The tag is the version of record: it overrides <Version> in the project files.
       - name: Pack
         run: |
-          for project in src/Haya/Haya.fsproj src/Haya.Core/Haya.Core.fsproj src/Haya.Roslyn/Haya.Roslyn.fsproj src/Haya.Tool/Haya.Tool.fsproj; do
+          for project in src/Haya/Haya.fsproj src/Haya.Tool/Haya.Tool.fsproj; do
             dotnet pack "$project" \
               --configuration Release \
               --no-restore \
