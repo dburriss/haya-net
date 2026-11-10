@@ -37,6 +37,21 @@ const heatOf = new Map(); // own system id -> border colour
   if (counts.length && hi > lo) for (const [id, c] of counts) heatOf.set(id, heatColor((c - lo) / (hi - lo)));
 }
 
+// Coupling: a line between two systems takes the same green-to-red colour by how many relationships there are between the
+// systems in total (not what is drawn right now, so it does not shift as things are opened). Lines to or from an app stay plain.
+const systemOf = (id) => { const n = nodes.get(id); return n.kind === "system" ? id : n.parent || id; };
+const pairKey = (a, b) => (a < b ? a + "|" + b : b + "|" + a);
+const lineHeat = new Map(); // pairKey of two systems -> colour
+{
+  const total = new Map();
+  for (const e of data.edges) {
+    const a = systemOf(e.from), b = systemOf(e.to);
+    if (a !== b) total.set(pairKey(a, b), (total.get(pairKey(a, b)) || 0) + 1);
+  }
+  const counts = [...total.values()], lo = Math.min(...counts), hi = Math.max(...counts);
+  if (counts.length && hi > lo) for (const [k, c] of total) lineHeat.set(k, heatColor((c - lo) / (hi - lo)));
+}
+
 // ---------------------------------------------------------------- state
 // What is visible follows from `shown` (the apps drawn): a system with shown apps is a boundary around them, one
 // without is a single box. Systems are always drawn; edges between hidden apps roll up to their systems.
@@ -177,6 +192,7 @@ const styleFor = () => {
       "curve-style": "bezier", width: "mapData(n, 1, 12, 1.5, 5)", "line-color": muted, "target-arrow-color": muted, "target-arrow-shape": "triangle",
       "source-arrow-color": muted, label: "data(label)", "font-size": 10, "font-weight": "bold", color: fg, "text-background-color": bg,
       "text-background-opacity": 1, "text-background-padding": 2, "text-background-shape": "roundrectangle", "overlay-padding": 6 } },
+    { selector: "edge[heat]", style: { "line-color": "data(heat)", "target-arrow-color": "data(heat)", "source-arrow-color": "data(heat)" } },
     { selector: "edge[?both]", style: { "source-arrow-shape": "triangle" } },
     { selector: ".sel", style: { "border-color": accent, "border-width": 3, "line-color": accent, "target-arrow-color": accent, "source-arrow-color": accent } },
     { selector: ".muted", style: { opacity: 0.22 } },
@@ -242,9 +258,11 @@ const sync = (seeds = new Map()) => {
     for (const [key, g] of want.edges) {
       edgeItems.set(key, g);
       const n = g.fwd.length + g.back.length, both = g.fwd.length > 0 && g.back.length > 0;
+      const d = { label: String(n), n, both };
+      if (nodes.get(g.source).kind === "system" && nodes.get(g.target).kind === "system" && lineHeat.has(key)) d.heat = lineHeat.get(key);
       const cur = cy.getElementById(key);
-      if (cur.nonempty()) cur.data({ label: String(n), n, both });
-      else cy.add({ group: "edges", data: { id: key, source: g.source, target: g.target, label: String(n), n, both } });
+      if (cur.nonempty()) cur.data(d);
+      else cy.add({ group: "edges", data: { id: key, source: g.source, target: g.target, ...d } });
     }
   });
   applyFilters();
@@ -527,6 +545,7 @@ function renderPanel() {
     [glyphImg("System", GREY), "System, with its number of apps"],
     [glyphImg("External", GREY), "Outside the documented systems"],
     [glyphImg("Undocumented", AMBER), "Undocumented: no [Meta] of its own"],
+    ...(lineHeat.size ? [[h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + [0, 0.25, 0.5, 0.75, 1].map(heatColor).join(",") + ")" }), "Line between systems: fewest relationships (green) to most (red)"]] : []),
     ...(heatOf.size ? [[h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + [0, 0.25, 0.5, 0.75, 1].map(heatColor).join(",") + ")" }), "System border: fewest apps (green) to most (red)"]] : []),
     [h("span", { class: "arrows" }, "→ ↔"), "One line per pair, with the number of relationships"],
   ];
