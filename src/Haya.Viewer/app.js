@@ -221,7 +221,7 @@ const sync = (seeds = new Map()) => {
 const layout = (first, fresh = []) => {
   const run = cy.layout({
     name: "fcose", animate: !first, animationDuration: 300, randomize: first, fit: first, padding: 40, nodeDimensionsIncludeLabels: true,
-    idealEdgeLength: 150, nodeRepulsion: 9000, packComponents: true,
+    idealEdgeLength: 90, nodeRepulsion: 4500, gravity: 0.7, gravityRange: 2.5, packComponents: true,
   });
   run.one("layoutstop", () => { if (!first) ensureVisible(); redrawSoon(); });
   run.run();
