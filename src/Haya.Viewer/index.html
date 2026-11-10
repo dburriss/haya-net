@@ -12,14 +12,19 @@
 <body>
 <div id="app">
   <header id="bar">
-    <strong id="title"></strong>
-    <div id="search-wrap">
-      <input id="search" type="search" placeholder="Search apps and systems" aria-label="Search apps and systems" autocomplete="off">
-      <ul id="results" hidden></ul>
+    <div id="bar-main">
+      <strong id="title"></strong>
+      <div id="search-wrap">
+        <input id="search" type="search" placeholder="Search apps and systems" aria-label="Search apps and systems" autocomplete="off">
+        <ul id="results" hidden></ul>
+      </div>
+      <div id="bar-actions">
+        <button id="fit" type="button">Fit</button>
+        <button id="reset" type="button">Reset</button>
+        <button id="theme" type="button" title="Switch between automatic, light and dark"></button>
+      </div>
     </div>
     <div id="filters" role="group" aria-label="Filters"></div>
-    <button id="fit" type="button">Fit</button>
-    <button id="reset" type="button">Reset</button>
   </header>
   <main id="main">
     <div id="graph" role="application" aria-label="System graph"></div>

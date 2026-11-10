@@ -82,6 +82,8 @@ const GLYPH = {
   External: (c) => `<path d="M5 2H1.5V10.5H10V7M6 6 11 1M7.5 1H11V4.5" fill="none" stroke="${c}" stroke-width="1.3"/>`,
   Undocumented: (c) => `<text x="6" y="10" font-size="12" font-weight="bold" font-family="sans-serif" text-anchor="middle" fill="${c}">?</text>`,
   Lifecycle: (c) => `<circle cx="6" cy="6" r="4" fill="${c}"/>`,
+  // a closed eye: the lid and three lashes
+  EyeClosed: (c) => `<path d="M1 4.5C3 8 9 8 11 4.5M2.6 7 1.6 9M6 8v2.3M9.4 7l1 2" fill="none" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
 };
 const glyphG = (kind, color, x, y) => `<g transform="translate(${x} ${y})">${GLYPH[kind](color)}</g>`;
 const dataUri = (svg) => "data:image/svg+xml;utf8," + encodeURIComponent(svg);
@@ -125,6 +127,21 @@ const factPills = (n) => {
   return out;
 };
 
+// ---------------------------------------------------------------- theme
+// auto follows the system; light and dark override it. The choice is kept in localStorage when the browser allows it.
+const THEMES = ["auto", "light", "dark"];
+let theme = "auto";
+try { const saved = localStorage.getItem("haya-theme"); if (THEMES.includes(saved)) theme = saved; } catch { /* storage can be blocked, e.g. in a private window */ }
+const themeButton = document.getElementById("theme");
+const applyTheme = () => {
+  if (theme === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", theme);
+  const label = "Theme: " + theme[0].toUpperCase() + theme.slice(1);
+  themeButton.textContent = label;
+  themeButton.setAttribute("aria-label", label + ". Switch between automatic, light and dark");
+};
+applyTheme();
+
 // ---------------------------------------------------------------- graph
 const styleFor = () => {
   const fg = css("--fg"), muted = css("--muted"), line = css("--line"), accent = css("--accent"), card = css("--card"), bg = css("--bg");
@@ -137,7 +154,7 @@ const styleFor = () => {
     { selector: "node.external", style: { "border-style": "dashed" } },
     { selector: "node.undoc", style: { "border-style": "dashed", "border-color": "#d69e2e" } },
     { selector: ":parent", style: {
-      shape: "rectangle", "text-valign": "top", "text-margin-y": -4, "font-size": 13, "font-weight": "bold", "background-image": "none",
+      shape: "rectangle", "text-valign": "top", "text-margin-x": 0, "text-margin-y": -4, "text-max-width": 600, "font-size": 13, "font-weight": "bold", "background-image": "none",
       "background-color": muted, "background-opacity": 0.08, "border-style": "dashed", "border-width": 1.5, "border-color": muted, padding: 24 } },
     { selector: "edge", style: {
       "curve-style": "bezier", width: "mapData(n, 1, 12, 1.5, 5)", "line-color": muted, "target-arrow-color": muted, "target-arrow-shape": "triangle",
@@ -371,6 +388,14 @@ document.getElementById("reset").addEventListener("click", reset);
 const panel = document.getElementById("panel");
 const act = (text, fn) => h("button", { type: "button", onclick: fn }, text);
 const goto = (id) => h("button", { type: "button", class: "link", onclick: () => reveal(id) }, name(id));
+// The glyph before an app in a system's list: its kind once it is drawn, a closed eye while it is not. Screen readers get words.
+const appMark = (id) => {
+  const n = nodes.get(id), drawn = shown.has(id);
+  const [glyph, color, word, tip] = !drawn ? ["EyeClosed", GREY, "Hidden:", "Not shown on the graph. Click its name to add it."]
+    : !n.hasMeta ? ["Undocumented", AMBER, "Undocumented:", "Undocumented"]
+    : [n.appKind || "Unspecified", kindColor(n.appKind), (n.appKind || "App") + ":", n.appKind || "App"];
+  return h("span", { class: "mark", title: tip }, h("span", { "aria-hidden": "true" }, glyphImg(glyph, color, 14)), h("span", { class: "sr-only" }, word));
+};
 const field = (term, value) => (value ? [h("dt", {}, term), h("dd", {}, value)] : []);
 const note = (e) => [e.label || "(no description)", e.protocol && ` [${e.protocol}]`].filter(Boolean).join("");
 /** A relationship seen from `id`: who is at the other end, then what it carries. */
@@ -394,13 +419,15 @@ function nodePanel(n) {
     kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
     kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
   } else {
-    const members = appsOf.get(n.id) || [];
+    // by kind, then name, both alphabetical; an app with no kind sorts as "Unspecified"
+    const kindOf = (id) => nodes.get(id).appKind || "Unspecified";
+    const members = [...(appsOf.get(n.id) || [])].sort((x, y) => kindOf(x).localeCompare(kindOf(y)) || name(x).localeCompare(name(y)));
     if (n.description) kids.push(h("p", {}, n.description));
     if (!n.ownSystem) kids.push(h("p", { class: "muted" }, "A system outside the apps documented here, known from collaborators."));
     if (members.length) {
       const open = isOpen(n.id), all = members.every((a) => shown.has(a));
       kids.push(h("div", { class: "actions" }, !all && act(open ? "Show all apps" : "Open", () => openSystem(n.id)), open && act("Collapse", () => collapseSystem(n.id))));
-      kids.push(section("Apps", members.map((a) => h("li", {}, goto(a), shown.has(a) ? "" : " (hidden)"))));
+      kids.push(section("Apps", members.map((a) => h("li", { class: "app-row" }, appMark(a), goto(a)))));
       const inside = new Set(members);
       const links = new Map();
       for (const a of members) for (const e of touching.get(a) || []) {
@@ -459,7 +486,14 @@ function renderPanel() {
 })();
 
 // ---------------------------------------------------------------- start
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => cy.style(styleFor()));
+const restyle = () => { cy.style(styleFor()); redrawSoon(); };
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
+themeButton.addEventListener("click", () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+  try { localStorage.setItem("haya-theme", theme); } catch { /* not remembered */ }
+  applyTheme();
+  restyle();
+});
 resetShown();
 renderFilters();
 sync();

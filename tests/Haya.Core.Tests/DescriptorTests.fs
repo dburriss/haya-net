@@ -560,6 +560,7 @@ let ``Explore page embeds the graph once, escapes the title and keeps the viewer
     Assert.Contains("Content-Security-Policy", html)
 
 [<Fact>]
-let ``Explore page titles itself after the own systems`` () =
+let ``Explore page has a short fixed title however many systems there are`` () =
     let html = Haya.Core.Explore.sprintHtml [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
-    Assert.Contains("<title>Haya: Billing, Ordering</title>", html)
+    Assert.Contains("<title>Haya Explorer</title>", html)
+    Assert.DoesNotContain("Billing", html.Substring(0, html.IndexOf "</title>"))

@@ -21,9 +21,5 @@ module Explore =
         let after = template.Substring(at + dataToken.Length)
         before + json + after
 
-    /// The page for the apps, titled after their systems.
-    let sprintHtml (apps: App list) =
-        let graph = Graph.ofApps apps
-        let systems = graph.Nodes |> List.filter (fun n -> n.Kind = Graph.NodeKind.System && n.OwnSystem) |> List.map (_.Name)
-        let title = if systems.IsEmpty then "Haya" else "Haya: " + String.concat ", " systems
-        render title graph
+    /// The page for the apps. The title is short on purpose: the systems are in the graph itself.
+    let sprintHtml (apps: App list) = render "Haya Explorer" (Graph.ofApps apps)
