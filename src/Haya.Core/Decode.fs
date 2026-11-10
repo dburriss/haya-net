@@ -60,6 +60,12 @@ module Decode =
         | "Queue" -> AppKind.Queue
         | _ -> AppKind.Unspecified
 
+    let private language (s: string) =
+        match s with
+        | "dotnet" -> Language.DotNet
+        | "javascript" -> Language.JavaScript
+        | _ -> Language.Unknown
+
     let private responsibility (v: JsonValue) =
         Responsibility { Description = str "description" v
                          ComponentName = str "componentName" v
@@ -86,7 +92,9 @@ module Decode =
                Repository = str "repository" v
                Owner = str "owner" v
                Tech = str "tech" v
-               Kind = appKind (str "kind" v) }
+               Kind = appKind (str "kind" v)
+               Lifecycle = str "lifecycle" v
+               Tier = str "tier" v }
 
     let private isApp (doc: JsonValue) =
         match doc with
@@ -100,6 +108,7 @@ module Decode =
               | None -> ()
               yield! items "responsibilities" doc |> List.map responsibility
               yield! items "collaborators" doc |> List.map collaborator ]
+        |> App.withLanguage (language (str "language" doc))
 
     /// Version 0.1 documents hold an `apps` array; version 0.0 documents are a single app.
     let private ofDocument (doc: JsonValue) : Result<App list, string> =

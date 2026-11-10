@@ -37,6 +37,12 @@ module Encode =
         | AppKind.Queue -> "Queue"
         | _ -> ""
 
+    let language (l: Language) =
+        match l with
+        | Language.DotNet -> "dotnet"
+        | Language.JavaScript -> "javascript"
+        | _ -> ""
+
     let responsibility (x: ResponsibilityDescriptor) =
         record [
             "description", str x.Description
@@ -70,6 +76,8 @@ module Encode =
             // optional: left out when unset so documents without them stay unchanged
             if x.Tech <> "" then "tech", str x.Tech
             if x.Kind <> AppKind.Unspecified then "kind", str (appKind x.Kind)
+            if x.Lifecycle <> "" then "lifecycle", str x.Lifecycle
+            if x.Tier <> "" then "tier", str x.Tier
         ]
 
     /// One app of the document written by `describe`. `meta` is omitted when there is none.
@@ -80,6 +88,8 @@ module Encode =
             | Some m -> "meta", meta m
             | None -> ()
             "responsibilities", x.Responsibilities |> List.map responsibility |> List.toArray |> JsonValue.Array
+            // optional: left out when unknown so documents without it stay unchanged
+            if x.Language <> Language.Unknown then "language", str (language x.Language)
         ]
 
     /// The document written by `describe`: `{ apps: [...], version }`.

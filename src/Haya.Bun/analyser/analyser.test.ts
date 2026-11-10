@@ -58,7 +58,12 @@ export class Plain {}`,
     expect(other).toMatchObject({ appName: "Other", direction: "Upstream", relationship: "External", tech: "Go", description: "tpl", protocol: "", owner: "" });
     // unset properties default like Haya.Roslyn: "", Downstream, Internal
     expect(ds[2]).toMatchObject({ appName: "Plain", direction: "Downstream", relationship: "Internal", tech: "", protocol: "" });
-    expect(ds[3]).toEqual({ kind: "meta", appName: "App", description: "", system: "Sys", repository: "", owner: "", tech: "", appKind: "Unspecified" });
+    expect(ds[3]).toEqual({ kind: "meta", appName: "App", description: "", system: "Sys", repository: "", owner: "", tech: "", appKind: "Unspecified", lifecycle: "", tier: "" });
+  });
+
+  test("reads lifecycle and tier of meta", () => {
+    const root = project({ "src/a.ts": imports + `meta({ appName: "App", lifecycle: "production", tier: "1" });` });
+    expect(analyse(root, root)[0]).toMatchObject({ kind: "meta", lifecycle: "production", tier: "1" });
   });
 
   test("reads technology and kind of meta", () => {
@@ -296,7 +301,7 @@ export class RefundService {}`,
 acmeMeta({ appName: "Shop" });`,
     });
     expect(analyse(root, root)).toEqual([
-      { kind: "meta", appName: "Shop", description: "", system: "Acme", repository: "", owner: "Acme Team", tech: "Bun", appKind: "Api" },
+      { kind: "meta", appName: "Shop", description: "", system: "Acme", repository: "", owner: "Acme Team", tech: "Bun", appKind: "Api", lifecycle: "", tier: "" },
     ]);
     const two = project({
       "src/a.ts": definers + `export const acmeMeta = defineMeta({ owner: "Acme Team" });\nacmeMeta({ appName: "one" });\nmeta({ appName: "two" });`,

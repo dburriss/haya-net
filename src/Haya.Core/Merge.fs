@@ -19,6 +19,8 @@ module Merge =
         @ conflict "repository" x x.Repository y.Repository
         @ conflict "tech" x x.Tech y.Tech
         @ conflict "kind" x (Encode.appKind x.Kind) (Encode.appKind y.Kind)
+        @ conflict "lifecycle" x x.Lifecycle y.Lifecycle
+        @ conflict "tier" x x.Tier y.Tier
 
     /// Apps with the same system and app name (case-insensitive) become one: responsibilities and
     /// collaborators are concatenated without duplicates and the first meta wins (conflicting fields are
@@ -36,6 +38,7 @@ module Merge =
                 let merged =
                     { Meta = existing.Meta
                       Responsibilities = existing.Responsibilities @ app.Responsibilities |> List.distinct
-                      Collaborators = existing.Collaborators @ app.Collaborators |> List.distinct }
+                      Collaborators = existing.Collaborators @ app.Collaborators |> List.distinct
+                      Language = if existing.Language <> Language.Unknown then existing.Language else app.Language }
                 acc |> List.mapi (fun j x -> if j = i then merged else x), warnings @ extra
         input |> List.fold step ([], [])

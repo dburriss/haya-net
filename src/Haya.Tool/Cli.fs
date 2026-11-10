@@ -118,7 +118,7 @@ module Cli =
             if options.Verbose then
                 for (assembly, typeName) in analysis.Referenced do
                     printfn "Including %s: %s" assembly typeName
-            return Ok [ App.ofDescriptors analysis.Descriptors ]
+            return Ok [ App.ofDescriptors analysis.Descriptors |> App.withLanguage Language.DotNet ]
     }
 
     /// Loads every input and merges them into one system (warnings about conflicts go to stderr).

@@ -101,7 +101,8 @@ let private cmd format : Haya.Core.DescribeCommand =
     { InputPaths = []; OutputPath = ""; Format = format; CurrentDirectory = "" }
 
 let private app name system (collaborators: (string * string * Relationship) list) : App =
-    { Meta = Some { AppName = name; Description = $"{name} description"; System = system; Repository = ""; Owner = "Team"; Tech = ""; Kind = AppKind.Unspecified }
+    { Meta = Some { AppName = name; Description = $"{name} description"; System = system; Repository = ""; Owner = "Team"; Tech = ""; Kind = AppKind.Unspecified; Lifecycle = ""; Tier = "" }
+      Language = Language.Unknown
       Responsibilities = []
       Collaborators =
         collaborators
@@ -152,7 +153,7 @@ let ``Merge combines apps with the same system and name and warns on conflicts``
 
 [<Fact>]
 let ``Merge never merges apps without a meta`` () =
-    let anon = { Meta = None; Responsibilities = []; Collaborators = [] }
+    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [] }
     let merged, _ = Haya.Core.Merge.apps [ anon; anon ]
     Assert.Equal(2, merged.Length)
 
@@ -188,7 +189,7 @@ let ``A class with both Responsibility and Collaborator yields one of each`` () 
 
 [<Fact>]
 let ``Backstage without a meta catalogues only the collaborators`` () =
-    let anon = { Meta = None; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
     let yaml = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ anon ]
     Assert.Contains("visa-visa", yaml)
 
@@ -284,7 +285,7 @@ let ``Container diagram declares a collaborator in an own system without a meta,
 
 [<Fact>]
 let ``Container diagram skips apps without a meta`` () =
-    let anon = { Meta = None; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
     let text = Haya.Core.Diagram.sprintMermaidC4L2 [ anon ]
     Assert.DoesNotContain("Rel(", text)
     Assert.DoesNotContain("Container(", text)
@@ -309,7 +310,7 @@ let ``Describe round-trips tech and kind, leaves them out when unset, and reads 
     Assert.Contains("\"tech\": \"Bun\"", text)
     Assert.Contains("\"kind\": \"WebApp\"", text)
     Assert.Equal(1, text.Split("\"kind\"").Length - 1)
-    Assert.Contains("\"version\": \"0.2\"", text)
+    Assert.Contains("\"version\": \"0.3\"", text)
     match Haya.Core.Decode.apps "x.json" text with
     | Ok decoded -> Assert.True(([ set; unset ] = decoded))
     | Error e -> failwith e
@@ -327,3 +328,42 @@ let ``Merge warns when tech or kind conflict`` () =
     let merged, warnings = Haya.Core.Merge.apps [ a; b ]
     Assert.Equal("Bun", (App.meta merged.Head).Tech)
     Assert.Equal(2, warnings.Length)
+
+[<Fact>]
+let ``Describe round-trips lifecycle, tier and language, and leaves them out when unset`` () =
+    let set =
+        app "Api" "Ordering" []
+        |> withMeta (fun m -> { m with Lifecycle = "production"; Tier = "1" })
+        |> App.withLanguage Language.DotNet
+    let unset = app "Plain" "Ordering" []
+    let text = Haya.Core.Describe.serialize (cmd Haya.Core.DataFormat.Json) [ set; unset ]
+    Assert.Contains("\"lifecycle\": \"production\"", text)
+    Assert.Contains("\"tier\": \"1\"", text)
+    Assert.Contains("\"language\": \"dotnet\"", text)
+    Assert.Equal(1, text.Split("\"lifecycle\"").Length - 1)
+    Assert.Equal(1, text.Split("\"language\"").Length - 1)
+    for format, name in [ Haya.Core.DataFormat.Json, "x.json"; Haya.Core.DataFormat.Yaml, "x.yaml" ] do
+        let text = Haya.Core.Describe.serialize (cmd format) [ set; unset ]
+        match Haya.Core.Decode.apps name text with
+        | Ok decoded -> Assert.True(([ set; unset ] = decoded))
+        | Error e -> failwith e
+    // documents written before 0.3 have none of them
+    let legacy = """{"apps":[{"collaborators":[],"meta":{"appName":"A","description":"","system":"S","repository":"","owner":""},"responsibilities":[]}],"version":"0.2"}"""
+    match Haya.Core.Decode.apps "x.json" legacy with
+    | Ok [ a ] ->
+        Assert.Equal("", (App.meta a).Lifecycle)
+        Assert.Equal("", (App.meta a).Tier)
+        Assert.Equal(Language.Unknown, a.Language)
+    | _ -> failwith "expected one app"
+
+[<Fact>]
+let ``Merge warns when lifecycle or tier conflict and keeps the first known language`` () =
+    let a = app "Api" "Ordering" [] |> withMeta (fun m -> { m with Lifecycle = "production"; Tier = "1" })
+    let b =
+        app "Api" "Ordering" []
+        |> withMeta (fun m -> { m with Lifecycle = "deprecated"; Tier = "2" })
+        |> App.withLanguage Language.JavaScript
+    let merged, warnings = Haya.Core.Merge.apps [ a; b ]
+    Assert.Equal("production", (App.meta merged.Head).Lifecycle)
+    Assert.Equal(2, warnings.Length)
+    Assert.Equal(Language.JavaScript, merged.Head.Language)

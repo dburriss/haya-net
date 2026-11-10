@@ -6,7 +6,9 @@
     Owner = "Ordering Team",
     Repository = "org/payment-api",
     Technology = ".NET 10 / ASP.NET Core",
-    Kind = AppKind.Api)]
+    Kind = AppKind.Api,
+    Lifecycle = "production",
+    Tier = "1")]
 
 namespace Example;
 

@@ -11,6 +11,10 @@ type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4 | Inter
 /// What kind of application this is. Used to pick the shape of the app in diagrams. Mirrors `Haya.AppKind`.
 type AppKind = Unspecified = 0 | Service = 1 | WebApp = 2 | Api = 3 | Worker = 4 | Database = 5 | Queue = 6
 
+/// The language/runtime of the analysed codebase. Set by the analyser that produced the app. Mirrors nothing in `Haya`:
+/// users never declare it.
+type Language = Unknown = 0 | DotNet = 1 | JavaScript = 2
+
 type ResponsibilityDescriptor = {
     Description: string
     ComponentName: string
@@ -41,6 +45,10 @@ type MetaDescriptor = {
     /// The technology the application is built with, e.g. ".NET 10 / ASP.NET Core".
     Tech: string
     Kind: AppKind
+    /// Lifecycle stage of the application, e.g. "production" or "experimental". Empty when not given.
+    Lifecycle: string
+    /// Criticality tier of the application, e.g. "1". Empty when not given.
+    Tier: string
 }
 
 type Descriptor =
@@ -65,15 +73,21 @@ type App = {
     Meta: MetaDescriptor option
     Responsibilities: ResponsibilityDescriptor list
     Collaborators: CollaboratorDescriptor list
+    /// What the app is written in, as known by the analyser. `Unknown` when the source did not say.
+    Language: Language
 }
 
 module App =
-    let private emptyMeta = { AppName = ""; Description = ""; Owner = ""; System = ""; Repository = ""; Tech = ""; Kind = AppKind.Unspecified }
+    let private emptyMeta = { AppName = ""; Description = ""; Owner = ""; System = ""; Repository = ""; Tech = ""; Kind = AppKind.Unspecified; Lifecycle = ""; Tier = "" }
 
     let ofDescriptors (descriptors: Descriptor list) =
         { Meta = descriptors |> Descriptor.metas |> List.tryHead
           Responsibilities = descriptors |> Descriptor.responsibilities
-          Collaborators = descriptors |> Descriptor.collaborators }
+          Collaborators = descriptors |> Descriptor.collaborators
+          Language = Language.Unknown }
+
+    /// The same app, marked as written in `language`.
+    let withLanguage (language: Language) (app: App) = { app with Language = language }
 
     /// The app's meta, or an empty one when it has none.
     let meta (app: App) = app.Meta |> Option.defaultValue emptyMeta

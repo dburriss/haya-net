@@ -8,6 +8,8 @@ meta({
   repository: "org/payment-api",
   technology: ".NET 10 / ASP.NET Core",
   kind: AppKind.Api,
+  lifecycle: "production",
+  tier: "1",
 });
 
 @Responsibility({ description: "Handles order processing" })

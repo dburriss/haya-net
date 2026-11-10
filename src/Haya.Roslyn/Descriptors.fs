@@ -92,6 +92,8 @@ module Descriptors =
                     let repository = map |> Map.tryFind "Repository" |> Option.defaultValue ""
                     let tech = map |> Map.tryFind "Technology" |> Option.defaultValue ""
                     let kind = map |> Map.tryFind "Kind" |> Option.map parseEnum<AppKind> |> Option.defaultValue AppKind.Unspecified
+                    let lifecycle = map |> Map.tryFind "Lifecycle" |> Option.defaultValue ""
+                    let tier = map |> Map.tryFind "Tier" |> Option.defaultValue ""
                     Meta {
                         AppName = appName
                         Description = description
@@ -100,6 +102,8 @@ module Descriptors =
                         Owner = owner
                         Tech = tech
                         Kind = kind
+                        Lifecycle = lifecycle
+                        Tier = tier
                     }
                 ) |> Some
             else None // no attributes

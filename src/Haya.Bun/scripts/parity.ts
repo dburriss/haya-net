@@ -1,6 +1,6 @@
 // Parity check: runs the .NET tool (Haya.Tool) on examples/dotnet and the Bun CLI on examples/typescript/example (and the
 // custom attribute examples next to them),
-// then diffs every output. The source path is the only substitution (`HayaEcomm.cs` -> `src/ecomm.ts`).
+// then diffs every output. The source path and the language the tools stamp are the only substitutions.
 // Each tool runs from its own example directory, because ComponentSource is relative to the current directory.
 //
 //   bun run parity            # needs the .NET SDK (the baseline) and `bun install` in examples/typescript/example and examples/typescript/custom-annotations
@@ -74,7 +74,11 @@ for (const { file, args } of multiCases) {
   run(["bun", "run", hayaTs, ...withOut(args, bun), ...fixtures], tsCwd);
   check(file, net, readFileSync(bun, "utf8"));
 }
-// The same comparison on a pair of example projects. `tsPath` -> `netPath` is the only substitution.
+// The two tools name different languages by design (the .NET tool stamps `dotnet`, the Bun tool `javascript`), so the
+// language of the Bun output is mapped to the .NET one before comparing.
+const sameLanguage = (text: string) =>
+  text.replaceAll('"language": "javascript"', '"language": "dotnet"').replaceAll("language: javascript", "language: dotnet");
+// The same comparison on a pair of example projects. `tsPath` -> `netPath` and the language are the only substitutions.
 const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: string, tsPath: string, netPath: string) => {
   for (const { file, args } of cases) {
     const label = prefix + file;
@@ -83,7 +87,7 @@ const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: 
     const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
     run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), sln], dotnetDir);
     run(["bun", "run", hayaTs, ...withOut(args, bun), "."], tsDir);
-    check(label, net, readFileSync(bun, "utf8").replaceAll(tsPath, netPath));
+    check(label, net, sameLanguage(readFileSync(bun, "utf8").replaceAll(tsPath, netPath)));
   }
 };
 compareExamples("", dotnetCwd, dotnetSln, tsCwd, "src/ecomm.ts", "HayaEcomm.cs");

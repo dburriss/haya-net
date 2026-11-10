@@ -2,6 +2,7 @@
 // Enums are ints in Fable output (see Haya.Core/Model.fs) and lists are fable-library lists.
 import {
   AppModule_ofDescriptors,
+  AppModule_withLanguage,
   type App,
   CollaboratorDescriptor,
   Descriptor_Collaborator,
@@ -23,6 +24,9 @@ const RELATIONSHIP: Record<Relationship, number> = {
   InternalUser: 5,
   ExternalUser: 6,
 };
+
+/** `Language.JavaScript` of `Haya.Core.Analysis` (an F# enum, so a number under Fable). */
+const LANGUAGE_JAVASCRIPT = 2;
 
 const APP_KIND: Record<AppKind | "Unspecified", number> = {
   Unspecified: 0,
@@ -56,11 +60,12 @@ export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
         ),
       );
     case "meta":
-      return Descriptor_Meta(new MetaDescriptor(d.appName, d.description, d.system, d.repository, d.owner, d.tech, APP_KIND[d.appKind]));
+      return Descriptor_Meta(new MetaDescriptor(d.appName, d.description, d.system, d.repository, d.owner, d.tech, APP_KIND[d.appKind], d.lifecycle, d.tier));
   }
 };
 
 export const toFableDescriptors = (ds: DescriptorInfo[]): FSharpList<Descriptor_$union> => ofArray(ds.map(toFableDescriptor));
 
 /** One analysed project becomes one app (the counterpart of `App.ofDescriptors` on the .NET side). */
-export const toFableApp = (ds: DescriptorInfo[]): App => AppModule_ofDescriptors(toFableDescriptors(ds));
+export const toFableApp = (ds: DescriptorInfo[]): App =>
+  AppModule_withLanguage(LANGUAGE_JAVASCRIPT, AppModule_ofDescriptors(toFableDescriptors(ds)));

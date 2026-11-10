@@ -51,6 +51,8 @@ export interface MetaInfo {
   tech: string;
   /** Unset is reported as "Unspecified". (Not `kind`: that is the discriminator of the union.) */
   appKind: AppKind | "Unspecified";
+  lifecycle: string;
+  tier: string;
 }
 
 export type DescriptorInfo = ResponsibilityInfo | CollaboratorInfo | MetaInfo;
@@ -97,6 +99,8 @@ const META_OPTIONS: OptionSpec = {
   repository: { type: "string" },
   technology: { type: "string" },
   kind: { type: "AppKind" },
+  lifecycle: { type: "string" },
+  tier: { type: "string" },
 };
 
 type AnnotationName = "Responsibility" | "Collaborator" | "meta";
@@ -355,6 +359,8 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
             owner: o.owner ?? "",
             tech: o.technology ?? "",
             appKind: (o.kind as AppKind | undefined) ?? "Unspecified",
+            lifecycle: o.lifecycle ?? "",
+            tier: o.tier ?? "",
           },
         });
       }

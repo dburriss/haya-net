@@ -84,6 +84,10 @@ export interface MetaOptions {
   technology?: string;
   /** What kind of application this is. Picks the shape in diagrams (unset: a generic application). */
   kind?: AppKind;
+  /** The lifecycle stage of this application, e.g. "production" or "experimental". */
+  lifecycle?: string;
+  /** The criticality tier of this application, e.g. "1". */
+  tier?: string;
 }
 
 type ClassDecorator = (target: abstract new (...args: any[]) => unknown, context: ClassDecoratorContext) => void;

@@ -79,6 +79,10 @@ type MetaAttribute() =
     member val Technology = "" with get,set
     /// What kind of application this is. Picks the shape in diagrams.
     member val Kind = AppKind.Unspecified with get,set
+    /// The lifecycle stage of this application, e.g. "production" or "experimental"
+    member val Lifecycle = "" with get,set
+    /// The criticality tier of this application, e.g. "1"
+    member val Tier = "" with get,set
 
 // ---------------------------------------------------------------------------------------------------------------
 // Defaults for custom attributes.
@@ -144,3 +148,7 @@ type MetaDefaultsAttribute() =
     member val Technology = "" with get,set
     /// What kind of application this is. Picks the shape in diagrams.
     member val Kind = AppKind.Unspecified with get,set
+    /// The lifecycle stage of this application, e.g. "production" or "experimental"
+    member val Lifecycle = "" with get,set
+    /// The criticality tier of this application, e.g. "1"
+    member val Tier = "" with get,set
