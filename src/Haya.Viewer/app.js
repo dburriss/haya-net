@@ -145,6 +145,7 @@ const styleFor = () => {
       "text-background-opacity": 1, "text-background-padding": 2, "text-background-shape": "roundrectangle", "overlay-padding": 6 } },
     { selector: "edge[?both]", style: { "source-arrow-shape": "triangle" } },
     { selector: ".sel", style: { "border-color": accent, "border-width": 3, "line-color": accent, "target-arrow-color": accent, "source-arrow-color": accent } },
+    { selector: ".muted", style: { opacity: 0.22 } },
     { selector: ".dim", style: { opacity: 0.18, events: "no" } },
   ];
 };
@@ -212,6 +213,7 @@ const sync = (seeds = new Map()) => {
     }
   });
   applyFilters();
+  applyFocus();
   applySelection();
   redrawSoon();
   return fresh;
@@ -296,6 +298,16 @@ function applyFilters() {
   cy.elements().removeClass("dim");
   cy.nodes().forEach((el) => { const n = nodes.get(el.id()); if (n.kind === "app" && !matches(n)) el.addClass("dim"); });
   cy.edges().forEach((el) => { if (el.source().hasClass("dim") || el.target().hasClass("dim")) el.addClass("dim"); });
+}
+// While a system is open (its apps drawn in a boundary), mute whatever has no relationship with it: the lines that do not
+// touch it and the systems or apps only those lines reach. Muted things stay clickable, unlike filtered-out ones.
+function applyFocus() {
+  cy.elements().removeClass("muted");
+  const open = data.nodes.filter((n) => n.kind === "system" && isOpen(n.id)).map((n) => n.id);
+  if (!open.length) return;
+  const inFocus = (id) => { const n = nodes.get(id); return n.kind === "system" ? open.includes(id) : open.includes(n.parent); };
+  cy.edges().forEach((e) => { if (!inFocus(e.source().id()) && !inFocus(e.target().id())) e.addClass("muted"); });
+  cy.nodes().forEach((el) => { if (!inFocus(el.id()) && !el.connectedEdges().some((e) => !e.hasClass("muted"))) el.addClass("muted"); });
 }
 // the chips are the legend for kind, tier and lifecycle: glyph and name, pressed = shown
 function renderFilters() {
@@ -406,7 +418,7 @@ function overviewPanel() {
   return [
     h("h2", {}, "Overview"),
     h("p", {}, `${systems.length} systems, ${apps.length} apps, ${data.edges.length} relationships.`),
-    h("p", { class: "muted" }, "Select a node or line for details. Double-click a system to open it, or an app to show the apps it connects to. Search finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
+    h("p", { class: "muted" }, "Select a node or line for details. Double-click a system to open it (what has no relationship with it is muted), or an app to show the apps it connects to. Search finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
     section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),
   ];

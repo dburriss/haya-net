@@ -29,7 +29,7 @@ draws as one unreadable picture. We want to explore a large system by starting s
   node detail lives in a DOM side panel, which is also what screen readers use. fcose is unmaintained, so versions are pinned.
 - **The page starts collapsed**: every own system is one box with an app count, plus the other systems. Double-click (or
   the panel) opens a system, double-click on an app shows the apps it connects to, search reveals any node, and filters (all on
-  at the start) fade the apps of a value that is switched off. What is drawn follows from a set of shown apps. There is one
+  at the start) fade the apps of a value that is switched off. What is drawn follows from a set of shown apps. While a system is open, lines that do not touch it and systems or apps only those lines reach are muted (faded but still clickable), so its neighbourhood stands out. There is one
   line per pair of drawn nodes, with an arrowhead per direction and the number of relationships it stands for; edges
   between hidden apps roll up into the line between their systems, and the text lives in the panel (`A → B` with a bullet per
   relationship). Nodes are small: a name and glyphs for kind, tier and lifecycle. The filter buttons, glyph plus name, are

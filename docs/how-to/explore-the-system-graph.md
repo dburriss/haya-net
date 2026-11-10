@@ -27,7 +27,9 @@ The page is self-contained: open the file in a browser, attach it to a ticket or
 - A system or app lists its **Inbound** and **Outbound** relationships. A line lists what it carries as bullets,
   `Publish events [AMQP]`, under a header such as `Ordering → Billing`, or `Ordering ↔ Billing` with a list for each
   direction.
-- **Double-click a system** to open it: a dashed boundary appears around its apps. Double-click again to collapse it.
+- **Double-click a system** to open it: a dashed boundary appears around its apps, and everything that has no relationship
+  with it is **muted**: the lines that do not touch it, and the systems that only those lines reach. Muted items stay
+  clickable. Double-click again to collapse it and the rest comes back (when several systems are open, what relates to any of them stays).
 - **Double-click an app** to show the apps it connects to. The panel buttons do the same, and **Hide** removes one app.
 - **Search** finds an app or system by name, description, technology or owner, even if it is hidden, and shows just that app.
 - The **Kind, Tier and Lifecycle** buttons all start on. Switch one off to fade the apps that have that value (and the lines
