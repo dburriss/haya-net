@@ -18,7 +18,9 @@ bun run gen      # write src/Haya.Core/ViewerAssets.fs
 bun run check    # fail if it is out of date
 ```
 
-After `gen`, rebuild and run `bun run parity` in `src/Haya.Bun`; commit the regenerated file with the change.
+After `gen`, rebuild and run `bun run parity` in `src/Haya.Bun`; commit the regenerated file with the change. CI runs `check`
+with a pinned Bun (the `viewer` job in `.github/workflows/build.yml`); the minified output can differ between Bun versions, so
+regenerate with that version when you bump it.
 
 ## How it works
 
