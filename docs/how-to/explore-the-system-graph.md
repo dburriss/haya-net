@@ -44,7 +44,19 @@ The page is self-contained: open the file in a browser, attach it to a ticket or
 The address can open systems or select a node: `system.html#open=ordering,billing&select=ordering_payments_api`. The ids are
 the lower-case names with `_` between words, as in the Mermaid output.
 
+## Know the limits
+
+- It needs JavaScript, so a wiki or ticket system that strips scripts will show nothing. Open the file in a browser instead.
+- The page is about 0.6 MB before your data, because the graph library is inside it.
+- The graph is drawn on a canvas, so a screen reader cannot read it. The side panel, the search box and the lists in the
+  overview are ordinary page content and work with a keyboard; use those.
+- Very dense systems are still hard to read when many boxes are open at once. Open one system at a time and select a node: the
+  rest is muted.
+- Positions are not saved and change a little when the graph grows. There is no export; use `-f mermaid` for a static picture.
+
 ## See also
+
+- [Graph format](../reference/graph-format.md) for the data the page embeds.
 
 - [Generate C4 diagrams](generate-diagrams.md) for the static Mermaid output.
 - [ADR011](../adr/ADR011-interactive-html-explorer.md) for why it is built this way.

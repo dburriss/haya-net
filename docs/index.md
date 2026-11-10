@@ -12,6 +12,7 @@ Pick the page that matches what you are doing right now.
 ## How-to guides: get a specific job done
 
 - [Generate C4 diagrams](how-to/generate-diagrams.md)
+- [Explore the system graph](how-to/explore-the-system-graph.md): an interactive page for systems too big for a diagram
 - [Publish to a Backstage catalog](how-to/publish-to-backstage.md)
 - [Publish to the Datadog Software Catalog](how-to/publish-to-datadog.md)
 - [Document several systems together](how-to/document-multiple-systems.md)
@@ -24,6 +25,7 @@ Pick the page that matches what you are doing right now.
 - [CLI](reference/cli.md): commands, flags and defaults for `haya` (C#) and the TypeScript CLI.
 - [Attributes and annotations](reference/attributes.md): `Meta`, `Responsibility`, `Collaborator` and their enums.
 - [Describe file format](reference/describe-format.md)
+- [Graph format](reference/graph-format.md): the data embedded in the interactive html diagram.
 
 ## Explanation: understand the why
 

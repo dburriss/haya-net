@@ -10,6 +10,9 @@ Why Haya is built as several projects, and how the C# and TypeScript tools stay 
 
 - **Haya.Core** is language-neutral F#: the descriptor model, merging, and all renderers (Markdown, Mermaid, JSON/YAML,
   Backstage). It has no Roslyn dependency ([ADR003](../adr/ADR003-split-roslyn-from-core.md)).
+- The interactive html diagram is also rendered in Core: `Graph.fs` resolves apps into systems, apps and edges, and
+  `Explore.fs` embeds that graph in a page whose viewer (a Cytoscape.js app in **Haya.Viewer**) is bundled into the committed,
+  generated `ViewerAssets.fs`, so both stacks emit the same page ([ADR011](../adr/ADR011-interactive-html-explorer.md)).
 - **Haya.Roslyn** analyses C# with Roslyn and turns attributes into Core descriptors. **Haya.Tool** is its Argu CLI.
 - **Haya.Bun** is the TypeScript CLI. Its analyser reads decorators and `meta()` with the TypeScript compiler API without
   running your code ([ADR005](../adr/ADR005-typescript-annotations-and-analyser.md)). Core is compiled to TypeScript with
