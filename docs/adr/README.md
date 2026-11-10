@@ -14,3 +14,4 @@ Why Haya is built the way it is. Each record is one decision; newer records can 
 | [ADR008](ADR008-custom-attribute-defaults.md) | Defaults for custom attributes and annotations | |
 | [ADR009](ADR009-referenced-assembly-analysis.md) | Opt-in analysis of referenced assemblies (C#) | |
 | [ADR010](ADR010-datadog-command-and-language.md) | Datadog command, analyser-stamped language, lifecycle and tier, describe format 0.3 | |
+| [ADR011](ADR011-interactive-html-explorer.md) | Interactive html graph explorer (`diagram -f html`) | |

@@ -51,9 +51,9 @@ A [describe file](describe-format.md) of the analysed code.
 
 | Flag | Meaning | Default |
 | --- | --- | --- |
-| `-o`, `--output-path` | Output file | `./c4-system-context.mermaid` |
-| `-t`, `--diagram-type` | `c4system` (level 1) or `c4container` (level 2) | `c4system` |
-| `-f`, `--diagram-format` | `mermaid` | `mermaid` |
+| `-o`, `--output-path` | Output file | `./c4-system-context.mermaid`, or `./diagram.html` for `-f html` |
+| `-t`, `--diagram-type` | `c4system` (level 1) or `c4container` (level 2). Ignored by `-f html` | `c4system` |
+| `-f`, `--diagram-format` | `mermaid`, or `html` (an interactive explorer, one self-contained page) | `mermaid` |
 
 ## `backstage`
 

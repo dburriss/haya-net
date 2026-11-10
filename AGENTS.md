@@ -21,7 +21,8 @@ the model and rendering are shared F# in `Haya.Core`, compiled to TS with Fable.
 | Path | What |
 | --- | --- |
 | `src/Haya` | Attribute definitions. **netstandard2.0** on purpose (consumed by user projects). NuGet `Haya`. |
-| `src/Haya.Core` | Language-neutral model + rendering (no Roslyn, see ADR003): `Model.fs` (descriptors), `Types.fs`, `IO.fs`, `Serializer.fs` + `Encode.fs` (Flexi.Json/Flexi.Yaml, no reflection), `Markdown.fs` (internal markdown builder, no deps), `Describe/Diagram/Crc/Catalog/Backstage/Datadog.fs`. |
+| `src/Haya.Core` | Language-neutral model + rendering (no Roslyn, see ADR003): `Model.fs` (descriptors), `Types.fs`, `IO.fs`, `Serializer.fs` + `Encode.fs` (Flexi.Json/Flexi.Yaml, no reflection), `Markdown.fs` (internal markdown builder, no deps), `Graph.fs` (resolved systems/apps/edges), `Explore.fs` + generated `ViewerAssets.fs` (html explorer), `Describe/Diagram/Crc/Catalog/Backstage/Datadog.fs`. |
+| `src/Haya.Viewer` | Source of the interactive html explorer (`diagram -f html`): Cytoscape.js app bundled by `gen-viewer.ts` into the committed `src/Haya.Core/ViewerAssets.fs`. Run `bun run gen` there after changing it (`bun run check` verifies). See ADR011. |
 | `src/Haya.Roslyn` | C# analysis: `Roslyn.fs` and `Descriptors.fs` (attributes → `Haya.Core` descriptors). .NET only. |
 | `src/Haya.Tool` | Argu CLI (`haya` dotnet tool, wires `Haya.Roslyn` to `Haya.Core`): `crc`, `describe`, `diagram`, `backstage`, `datadog`. |
 | `src/Haya.Bun` | Haya for TypeScript codebases. Bun CLI in TS with a static analyser (TypeScript compiler API); compiles `Haya.Core` (model + rendering) with Fable via a project reference. See its README. |

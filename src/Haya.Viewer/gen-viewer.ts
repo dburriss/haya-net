@@ -1,11 +1,11 @@
-// Bundles the viewer (app.js + app.css + Cytoscape and its layout/expand-collapse extensions) into one HTML
+// Bundles the viewer (app.js + app.css + Cytoscape and its fcose layout) into one HTML
 // template and writes it as an F# module, src/Haya.Core/ViewerAssets.fs. The generated file is committed so
 // that `dotnet build` and Fable need no Node, and both stacks emit byte-identical html.
 //
 //   bun run gen-viewer.ts           write ViewerAssets.fs
 //   bun run gen-viewer.ts --check   fail if the committed ViewerAssets.fs is out of date (CI)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 
 const here = import.meta.dir;
 const target = join(here, "..", "Haya.Core", "ViewerAssets.fs");
@@ -15,7 +15,7 @@ const read = (p: string) => readFileSync(join(here, p), "utf8");
 const TOKENS = ["@@HAYA_TITLE@@", "@@HAYA_DATA@@", "@@HAYA_CSS@@", "@@HAYA_JS@@"];
 
 // licence banner: MIT notices must survive minification
-const packages = ["cytoscape", "cytoscape-fcose", "cytoscape-expand-collapse", "cose-base", "layout-base"];
+const packages = ["cytoscape", "cytoscape-fcose", "cose-base", "layout-base"];
 const notice = packages.map((name) => {
   const dir = join(here, "node_modules", name);
   const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));

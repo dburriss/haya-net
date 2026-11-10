@@ -11,7 +11,16 @@
 </head>
 <body>
 <div id="app">
-  <header id="bar"><strong id="title"></strong></header>
+  <header id="bar">
+    <strong id="title"></strong>
+    <div id="search-wrap">
+      <input id="search" type="search" placeholder="Search apps and systems" aria-label="Search apps and systems" autocomplete="off">
+      <ul id="results" hidden></ul>
+    </div>
+    <div id="filters" role="group" aria-label="Filters"></div>
+    <button id="fit" type="button">Fit</button>
+    <button id="reset" type="button">Reset</button>
+  </header>
   <main id="main">
     <div id="graph" role="application" aria-label="System graph"></div>
     <aside id="panel" aria-live="polite"></aside>

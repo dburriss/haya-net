@@ -6,7 +6,6 @@
       "name": "haya-viewer",
       "dependencies": {
         "cytoscape": "3.35.0",
-        "cytoscape-expand-collapse": "4.1.1",
         "cytoscape-fcose": "2.2.0",
       },
       "devDependencies": {
@@ -24,8 +23,6 @@
     "cose-base": ["cose-base@2.2.0", "", { "dependencies": { "layout-base": "^2.0.0" } }, "sha512-AzlgcsCbUMymkADOJtQm3wO9S3ltPfYOFD5033keQn9NJzIbtnZj+UdBJe7DYml/8TdbtHJW3j58SOnKhWY/5g=="],
 
     "cytoscape": ["cytoscape@3.35.0", "", {}, "sha512-sMvBIXiGMnhkCaWz2R06FwF/27MNlS+Tqvi17foO9UhnUg3XGZccKjxsvEqQFAQYMSSZmN5SxYzUYlQ0DOJJ3g=="],
-
-    "cytoscape-expand-collapse": ["cytoscape-expand-collapse@4.1.1", "", { "peerDependencies": { "cytoscape": "^3.3.0" } }, "sha512-MI4/GsA6Rf6RRzNR1aCitBLSnxiIKLxvZyCzF+oti/zn/ui1jmf769VcEFAEbjjsAtwteGsTmczI+niCMWJNvA=="],
 
     "cytoscape-fcose": ["cytoscape-fcose@2.2.0", "", { "dependencies": { "cose-base": "^2.2.0" }, "peerDependencies": { "cytoscape": "^3.2.0" } }, "sha512-ki1/VuRIHFCzxWNrsshHYPs6L7TvLu3DL+TyIGEsRcvVERmxokbf5Gdk7mFxZnTdiGtnA4cfSmjZJMviqSuZrQ=="],
 

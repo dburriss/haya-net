@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `main` tried to publish. `Haya.Core` and `Haya.Roslyn` are no longer packable; `Haya.Tool` bundles them.
 
 ### Added
+- `haya diagram -f html` writes an interactive graph explorer: one self-contained page (no network, works from a file) that
+  starts with every system collapsed and lets you open a system, show the apps an app connects to, search, filter by kind,
+  tier and lifecycle, and read details in a side panel. Both stacks emit identical pages. See
+  [the how-to](docs/how-to/explore-the-system-graph.md) and ADR011.
 - `haya datadog` writes Datadog Software Catalog entities (`entity.datadog.yaml`, schema v3) on both the .NET tool and
   the Bun CLI: a `service`, `datastore` or `queue` per application with `dependsOn`, a `system` per system, and stubs for
   collaborators that are not in the catalog. Checked against Datadog's JSON Schemas in the tests. See

@@ -26,6 +26,11 @@ Level 2 draws each application inside its system, labelled with the `Technology`
 `Kind` (`Service`, `WebApp`, `Api`, `Worker`, `Database`, `Queue`). Set both on `Meta`; see the
 [attribute reference](../reference/attributes.md). Collaborator `Technology` and `Protocol` label the relationships.
 
+## Explore a large system interactively
+
+Level 2 stops being readable once a system has many applications. `-f html` writes one self-contained page instead:
+see [Explore the system graph](explore-the-system-graph.md).
+
 ## Render the output
 
 The `.mermaid` file is plain Mermaid. Paste it into the [Mermaid live editor](https://mermaid.live), or use the
