@@ -31,6 +31,7 @@ Pick the page that matches what you are doing right now.
 
 - [Concepts](explanation/concepts.md): CRC, systems, applications and how they map to diagrams.
 - [Architecture](explanation/architecture.md): how the C# and TypeScript tools share one core.
+- [Complexity colours](explanation/complexity-colours.md): what the colours in the interactive explorer mean, and what they do not.
 - [Architecture decision records](adr/README.md)
 
 ## Contributing
