@@ -21,6 +21,10 @@ The page is self-contained: open the file in a browser, attach it to a ticket or
 - It starts with every system **collapsed** to one box with its app count. Dashed boxes are systems outside what is
   documented. Between two boxes there is **one line**: an arrowhead for each direction the relationships go, and a number
   for how many relationships it stands for.
+- A system's **border colour shows its size**: the system with the most apps is red and the one with the fewest is green, fading
+  through orange and yellow in between. It is scaled to the systems in the page, so the biggest is always red, and it stays
+  when you open the system. When every system has the same number of apps, or there is only one, nothing is coloured.
+  Outside systems are never coloured.
 - **Click** a node or line to read its details in the panel on the right. Clicking a node also **mutes** everything with no
   relationship to it: the lines that do not touch it, and the systems and apps only those lines reach. Muted items stay
   clickable. Click the background to clear the selection. A node shows its name and small glyphs: the

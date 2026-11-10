@@ -57,3 +57,4 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .app-row { display: flex; align-items: center; gap: 6px; }
 .mark { flex: none; display: inline-flex; width: 16px; justify-content: center; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+#legend .heat-bar { flex: none; width: 28px; height: 8px; margin: 5px 0 0 -7px; border-radius: 4px; }

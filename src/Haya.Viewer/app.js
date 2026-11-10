@@ -22,6 +22,21 @@ for (const e of data.edges) for (const id of [e.from, e.to]) {
   touching.get(id).push(e);
 }
 
+// Complexity: an own system's border runs from green (the fewest apps) through yellow and orange to red (the most), scaled
+// to the systems in this graph, so the biggest is always red. Equal counts, or a single system, say nothing and stay plain.
+const hsl = (h, s, l) => {
+  const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+  return "#" + [f(0), f(8), f(4)].map((x) => x.toString(16).padStart(2, "0")).join("");
+};
+const heatColor = (t) => hsl(115 * (1 - t), 0.42, 0.5); // 0 is green, 1 is red; kept muted so it informs without shouting
+const heatOf = new Map(); // own system id -> border colour
+{
+  const counts = data.nodes.filter((n) => n.kind === "system" && n.ownSystem && (appsOf.get(n.id) || []).length).map((n) => [n.id, appsOf.get(n.id).length]);
+  const lo = Math.min(...counts.map(([, c]) => c)), hi = Math.max(...counts.map(([, c]) => c));
+  if (counts.length && hi > lo) for (const [id, c] of counts) heatOf.set(id, heatColor((c - lo) / (hi - lo)));
+}
+
 // ---------------------------------------------------------------- state
 // What is visible follows from `shown` (the apps drawn): a system with shown apps is a boundary around them, one
 // without is a single box. Systems are always drawn; edges between hidden apps roll up to their systems.
@@ -156,6 +171,8 @@ const styleFor = () => {
     { selector: ":parent", style: {
       shape: "rectangle", "text-valign": "top", "text-margin-x": 0, "text-margin-y": -4, "text-max-width": 600, "font-size": 13, "font-weight": "bold", "background-image": "none",
       "background-color": muted, "background-opacity": 0.08, "border-style": "dashed", "border-width": 1.5, "border-color": muted, padding: 24 } },
+    { selector: "node[heat]", style: { "border-color": "data(heat)", "border-width": 3 } },
+    { selector: ":parent[heat]", style: { "border-width": 2.5 } },
     { selector: "edge", style: {
       "curve-style": "bezier", width: "mapData(n, 1, 12, 1.5, 5)", "line-color": muted, "target-arrow-color": muted, "target-arrow-shape": "triangle",
       "source-arrow-color": muted, label: "data(label)", "font-size": 10, "font-weight": "bold", color: fg, "text-background-color": bg,
@@ -200,6 +217,7 @@ const nodeData = (n, includeParent) => {
   }
   const d = { id: n.id, label, img: n.kind === "system" && open ? "none" : nodeImage(n) };
   if (includeParent && n.kind === "app" && n.parent) d.parent = n.parent; // a parent key on an existing node would move it
+  if (heatOf.has(n.id)) d.heat = heatOf.get(n.id);
   return d;
 };
 const classOf = (n) => (n.kind === "system" ? "system" + (n.ownSystem ? "" : " external") : "app" + (n.hasMeta ? "" : " undoc"));
@@ -500,6 +518,7 @@ function renderPanel() {
     [glyphImg("System", GREY), "System, with its number of apps"],
     [glyphImg("External", GREY), "Outside the documented systems"],
     [glyphImg("Undocumented", AMBER), "Undocumented: no [Meta] of its own"],
+    ...(heatOf.size ? [[h("span", { class: "heat-bar", style: "background:linear-gradient(90deg," + [0, 0.25, 0.5, 0.75, 1].map(heatColor).join(",") + ")" }), "System border: fewest apps (green) to most (red)"]] : []),
     [h("span", { class: "arrows" }, "→ ↔"), "One line per pair, with the number of relationships"],
   ];
   document.getElementById("legend-list").append(...items.map(([g, t]) => h("li", {}, g, h("span", {}, t))));
