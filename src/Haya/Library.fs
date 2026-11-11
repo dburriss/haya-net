@@ -10,9 +10,10 @@ type Direction =
     | Downstream = 2
 
 /// The type of relationship between the team and the application or system
-type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4 | InternalUser = 5 | ExternalUser = 6
+type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4
 
 /// What kind of application this is. Used to pick the shape of the application in diagrams.
+/// On a collaborator it says what the collaborator is: `Person` for a user rather than an application.
 type AppKind =
     /// Not specified: shown as a generic application
     Unspecified = 0
@@ -28,6 +29,9 @@ type AppKind =
     | Database = 5
     /// A message queue or broker
     | Queue = 6
+    /// A person who uses, or is used by, the application. Only meaningful on a collaborator: a person has no application,
+    /// so it is named with `AppName` and does not belong to a system.
+    | Person = 7
 
 /// The responsibility, usecase, or feature of the component
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = true)>]
@@ -60,6 +64,8 @@ type CollaboratorAttribute() =
     member val Repository = "" with get,set
     /// The owner of the system or application
     member val Owner = "" with get,set
+    /// What the collaborator is. Use `AppKind.Person` for a user: name it with `AppName`; `System` is ignored.
+    member val Kind = AppKind.Unspecified with get,set
 
 /// Information about this application or system
 [<AttributeUsage(AttributeTargets.Assembly)>]
@@ -129,6 +135,8 @@ type CollaboratorDefaultsAttribute() =
     member val Repository = "" with get,set
     /// The owner of the system or application
     member val Owner = "" with get,set
+    /// What the collaborator is. Use `AppKind.Person` for a user: name it with `AppName`; `System` is ignored.
+    member val Kind = AppKind.Unspecified with get,set
 
 /// Default values for a custom attribute derived from <see cref="MetaAttribute"/>.
 [<AttributeUsage(AttributeTargets.Class, Inherited = false)>]

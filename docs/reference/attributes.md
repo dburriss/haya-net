@@ -38,6 +38,7 @@ The application represented by the codebase.
 | `Worker` | A background worker or job that does not serve requests |
 | `Database` | A data store |
 | `Queue` | A message queue or broker |
+| `Person` | A person who uses, or is used by, the application. Only meaningful on a [collaborator](#collaborator). |
 
 ```csharp
 [assembly: Meta(AppName = "CheckoutApi", Description = "Handles payment for a cart", System = "HayaEcomm",
@@ -74,6 +75,7 @@ Another application or system this application interacts with.
 | `Description` | | | What the collaborator does. |
 | `Direction` | | `Downstream` | See below. |
 | `Relationship` | | `Internal` | See below. |
+| `Kind` | | unspecified | An `AppKind` saying what the collaborator is. Use `Person` for a user: see [People](#people). |
 | `Technology` | | | Technology of the **collaborator** (contrast `Meta.Technology`, which is this application's). |
 | `Protocol` | | C#: `"HTTPS"` attribute default, but an unset value is analysed as `""` | How the two communicate, e.g. `HTTPS`, `MQTT`. |
 | `DataDescription` | | | The data exchanged. |
@@ -101,8 +103,33 @@ public class ShippingService { }
 | `Shared` | The team shares the collaborator with other teams. |
 | `Internal` | The collaborator is part of the same system. |
 | `External` | The collaborator is part of a different system or organisation. |
-| `InternalUser` | A user or person inside the organisation who uses or is used by the application. |
-| `ExternalUser` | A user or person outside the organisation. |
+
+`Relationship` says where the collaborator sits. What it is, an application or a person, is its `Kind`.
+
+### People
+
+A collaborator with `Kind = AppKind.Person` is a person, not an application. A person has no application of its own, so
+it has no `Meta`: it exists only as a collaborator.
+
+```csharp
+[Collaborator(AppName = "Customer", Kind = AppKind.Person, Relationship = Relationship.External,
+    Direction = Direction.Upstream, Description = "Pays for the items in their cart", DataDescription = "Pays for an order")]
+public class CustomerPayment { }
+```
+
+```ts
+@Collaborator({ appName: "Customer", kind: AppKind.Person, relationship: Relationship.External,
+  direction: Direction.Upstream, description: "Pays for the items in their cart", dataDescription: "Pays for an order" })
+export class CustomerPayment {}
+```
+
+- Name the person with `AppName`. `System` is ignored: a person does not belong to a system.
+- `Relationship` is `External` for a person outside the organisation (a customer) and `Internal` for one inside it (a support agent).
+- `Direction` is `Upstream` when the person uses the application, `Downstream` when the application notifies them.
+- Persons are matched by name, ignoring case, so several applications naming `Customer` share one person.
+- A collaborator without an `AppName` is ignored.
+- Persons are drawn in the diagrams and the explorer. They are left out of the Backstage and Datadog output, which have no
+  matching entity.
 
 ## Custom attributes with defaults (C#)
 

@@ -11,8 +11,18 @@ module Diagram =
         let apps = apps |> List.map App.withDefaultSystems
         let metas = apps |> List.map App.meta
         let ownSystems = metas |> List.map (_.System) |> List.distinct
-        let isOther (x: CollaboratorDescriptor) = x.System <> "" && not (List.contains x.System ownSystems)
+        let isOther (x: CollaboratorDescriptor) = x.Kind <> AppKind.Person && x.System <> "" && not (List.contains x.System ownSystems)
         let collaborators = apps |> List.collect (_.Collaborators)
+        // a person is known by name alone; one without a name cannot be drawn
+        let persons = collaborators
+                      |> List.filter (fun x -> x.Kind = AppKind.Person && x.AppName <> "")
+                      |> List.distinctBy (fun x -> String.toLower x.AppName)
+        let externalPersons = persons
+                              |> List.filter (fun x -> x.Relationship = Relationship.External)
+                              |> List.map (fun x -> $"Person_Ext({Naming.personId x.AppName}, {x.AppName}, \"{x.Description}\")")
+        let internalPersons = persons
+                              |> List.filter (fun x -> x.Relationship <> Relationship.External)
+                              |> List.map (fun x -> $"  Person({Naming.personId x.AppName}, {x.AppName}, \"{x.Description}\")")
 
         let externalSystems = collaborators
                               |> List.filter (fun x -> x.Relationship = Relationship.External && isOther x)
@@ -34,12 +44,22 @@ module Diagram =
         let relationships = apps
                             |> List.collect (fun app ->
                                 let meta = App.meta app
-                                app.Collaborators
-                                |> List.filter (fun x -> x.System <> meta.System && x.System <> "")
-                                |> List.map (fun x ->
-                                    if x.Direction = Direction.Upstream then
-                                        $"Rel({String.toLower x.System}, {String.toLower meta.System}, \"{x.DataDescription}\")"
-                                    else $"Rel({String.toLower meta.System}, {String.toLower x.System}, \"{x.DataDescription}\")"))
+                                let toSystems =
+                                    app.Collaborators
+                                    |> List.filter (fun x -> x.Kind <> AppKind.Person && x.System <> meta.System && x.System <> "")
+                                    |> List.map (fun x ->
+                                        if x.Direction = Direction.Upstream then
+                                            $"Rel({String.toLower x.System}, {String.toLower meta.System}, \"{x.DataDescription}\")"
+                                        else $"Rel({String.toLower meta.System}, {String.toLower x.System}, \"{x.DataDescription}\")")
+                                let toPersons =
+                                    app.Collaborators
+                                    |> List.filter (fun x -> x.Kind = AppKind.Person && x.AppName <> "" && meta.System <> "")
+                                    |> List.map (fun x ->
+                                        let person = Naming.personId x.AppName
+                                        if x.Direction = Direction.Upstream then
+                                            $"Rel({person}, {String.toLower meta.System}, \"{x.DataDescription}\")"
+                                        else $"Rel({String.toLower meta.System}, {person}, \"{x.DataDescription}\")")
+                                toSystems @ toPersons)
                             |> List.distinct
 
         let title = String.concat ", " ownSystems
@@ -51,10 +71,12 @@ module Diagram =
             // enterprise boundary
             |> SB.emptyLine
             |> SB.line "Enterprise_Boundary(Enterprise, Enterprise, \"The enterprise boundary\") {"
+            |> SB.lines internalPersons
             |> SB.lines  internalSystems
             |> SB.lines thisSystems
             |> SB.line "}"
-            // external systems
+            // external systems and people
+            |> SB.lines externalPersons
             |> SB.lines externalSystems
             // relationships
             |> SB.emptyLine
@@ -78,7 +100,8 @@ module Diagram =
         let ownKeys = ownApps |> List.map (fun (m, _) -> sameKey m.System m.AppName)
 
         // collaborators in one of our systems (or without any system) that name an app
-        let isOwnSystem (c: CollaboratorDescriptor) = c.AppName <> "" && (c.System = "" || List.contains c.System ownSystems)
+        let isOwnSystem (c: CollaboratorDescriptor) =
+            c.Kind <> AppKind.Person && c.AppName <> "" && (c.System = "" || List.contains c.System ownSystems)
         let collaborators = ownApps |> List.collect (fun (_, a) -> a.Collaborators)
         let declaredHere =
             collaborators
@@ -87,8 +110,13 @@ module Diagram =
             |> List.distinctBy (fun c -> sameKey c.System c.AppName)
         let otherSystems =
             collaborators
-            |> List.filter (fun c -> c.System <> "" && not (List.contains c.System ownSystems))
+            |> List.filter (fun c -> c.Kind <> AppKind.Person && c.System <> "" && not (List.contains c.System ownSystems))
             |> List.distinctBy (_.System)
+        // a person is known by name alone, whatever system the collaborator names; one without a name cannot be drawn
+        let persons =
+            collaborators
+            |> List.filter (fun c -> c.Kind = AppKind.Person && c.AppName <> "")
+            |> List.distinctBy (fun c -> String.toLower c.AppName)
 
         let element (kind: AppKind) (system: string) (name: string) (tech: string) (description: string) =
             let shape =
@@ -117,9 +145,16 @@ module Diagram =
                 let shape = if c.Relationship = Relationship.External then "System_Ext" else "System"
                 $"{shape}({Naming.mermaidId c.System}, \"{c.System}\", \"{c.Description}\")")
 
+        let personElements =
+            persons
+            |> List.map (fun c ->
+                let shape = if c.Relationship = Relationship.External then "Person_Ext" else "Person"
+                $"{shape}({Naming.personId c.AppName}, \"{c.AppName}\", \"{c.Description}\")")
+
         // the id a collaborator is drawn as, if it is drawn at all
         let targetOf (c: CollaboratorDescriptor) =
-            if isOwnSystem c then Some (containerId c.System c.AppName)
+            if c.Kind = AppKind.Person then (if c.AppName <> "" then Some (Naming.personId c.AppName) else None)
+            elif isOwnSystem c then Some (containerId c.System c.AppName)
             elif c.System <> "" then Some (Naming.mermaidId c.System)
             else None
         let relationships =
@@ -143,6 +178,7 @@ module Diagram =
         |> SB.emptyLine
         |> SB.lines boundaries
         |> SB.lines otherSystemElements
+        |> SB.lines personElements
         |> SB.emptyLine
         |> SB.lines relationships
         |> SB.toString

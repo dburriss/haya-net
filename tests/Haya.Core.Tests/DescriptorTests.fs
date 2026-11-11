@@ -41,6 +41,13 @@ let ``Descriptors returned for ResponsibilityAttribute`` () = task {
 }
 
 [<Fact>]
+let ``The example solution has a person collaborator`` () =
+    let customer = allDescriptors |> Descriptor.collaborators |> List.find (fun c -> c.AppName = "Customer")
+    Assert.Equal(AppKind.Person, customer.Kind)
+    Assert.Equal(Relationship.External, customer.Relationship)
+    Assert.Equal(Direction.Upstream, customer.Direction)
+
+[<Fact>]
 let ``Descriptors returned for CollaboratorAttribute`` () = task {
     let descriptor = allDescriptors |> filterToComponentName (nameof(PaymentsController)) |> Descriptor.collaborators |> List.head
     Assert.Equal(Direction.Upstream, descriptor.Direction)
@@ -109,7 +116,7 @@ let private app name system (collaborators: (string * string * Relationship) lis
         |> List.map (fun (cName, cSystem, rel) ->
             { Direction = Direction.Downstream; Tech = ""; Protocol = ""; DataDescription = "uses"; Description = ""
               AppName = cName; System = cSystem; Relationship = rel; ComponentName = ""; ComponentSource = ""
-              Repository = ""; Owner = "" }) }
+              Repository = ""; Owner = ""; Kind = AppKind.Unspecified }) }
 
 [<Fact>]
 let ``Describe output decodes back to the same apps in json and yaml`` () =
@@ -310,7 +317,7 @@ let ``Describe round-trips tech and kind, leaves them out when unset, and reads 
     Assert.Contains("\"tech\": \"Bun\"", text)
     Assert.Contains("\"kind\": \"WebApp\"", text)
     Assert.Equal(1, text.Split("\"kind\"").Length - 1)
-    Assert.Contains("\"version\": \"0.3\"", text)
+    Assert.Contains("\"version\": \"0.4\"", text)
     match Haya.Core.Decode.apps "x.json" text with
     | Ok decoded -> Assert.True(([ set; unset ] = decoded))
     | Error e -> failwith e
@@ -564,3 +571,108 @@ let ``Explore page has a short fixed title however many systems there are`` () =
     let html = Haya.Core.Explore.sprintHtml [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
     Assert.Contains("<title>Haya Explorer</title>", html)
     Assert.DoesNotContain("Billing", html.Substring(0, html.IndexOf "</title>"))
+
+// --- people: a collaborator whose kind is Person ---
+
+/// `app` with the collaborators in `people` (name, relationship, direction) added as persons.
+let private appWithPeople name system (people: (string * Relationship * Direction) list) : App =
+    let a = app name system []
+    { a with
+        Collaborators =
+            people
+            |> List.map (fun (pName, rel, dir) ->
+                { Direction = dir; Tech = ""; Protocol = ""; DataDescription = "uses"; Description = $"{pName} description"
+                  AppName = pName; System = ""; Relationship = rel; ComponentName = ""; ComponentSource = ""
+                  Repository = ""; Owner = ""; Kind = AppKind.Person }) }
+
+[<Fact>]
+let ``A collaborator's kind round-trips through describe and is left out when unset`` () =
+    let apps = [ appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ]; app "Api" "Shop" [ "Db", "Shop", Relationship.Internal ] ]
+    let text = Haya.Core.Describe.serialize (cmd Haya.Core.DataFormat.Json) apps
+    Assert.Equal(1, text.Split("\"kind\": \"Person\"").Length - 1)
+    Assert.Equal(1, text.Split("\"kind\"").Length - 1) // the unset collaborator writes none
+    match Haya.Core.Decode.apps "haya.json" text with
+    | Ok decoded -> Assert.True((apps = decoded))
+    | Error e -> failwith e
+
+[<Fact>]
+let ``Decode rejects the removed relationship values and unknown ones`` () =
+    let doc rel = $"""{{"apps":[{{"collaborators":[{{"appName":"X","relationship":"{rel}"}}],"responsibilities":[]}}],"version":"0.4"}}"""
+    for rel in [ "InternalUser"; "ExternalUser"; "Nonsense" ] do
+        match Haya.Core.Decode.apps "x.json" (doc rel) with
+        | Error e -> Assert.Contains(rel, e)
+        | Ok _ -> failwith $"{rel} should not decode"
+
+[<Fact>]
+let ``Decode reads a collaborator without a relationship as internal`` () =
+    let text = """{"apps":[{"collaborators":[{"appName":"X"}],"responsibilities":[]}],"version":"0.3"}"""
+    match Haya.Core.Decode.apps "x.json" text with
+    | Ok [ a ] -> Assert.Equal(Relationship.Internal, (List.exactlyOne a.Collaborators).Relationship)
+    | other -> failwithf "unexpected %A" other
+
+[<Fact>]
+let ``Graph draws a person once by name, with no parent, and edges in the direction of use`` () =
+    let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ]
+    let api = appWithPeople "Api" "Shop" [ "customer", Relationship.External, Direction.Upstream; "Pager", Relationship.Internal, Direction.Downstream ]
+    let g = Haya.Core.Graph.ofApps [ web; api ]
+    let customer = g.Nodes |> List.find (fun n -> n.Id = "person_customer")
+    Assert.Equal(Haya.Core.Graph.NodeKind.Person, customer.Kind)
+    Assert.Equal(None, customer.Parent)
+    Assert.Equal(Relationship.External, customer.Relationship)
+    Assert.Equal(1, g.Nodes |> List.filter (fun n -> n.Kind = Haya.Core.Graph.NodeKind.Person && n.Name.ToLower() = "customer") |> List.length)
+    Assert.Equal(2, g.Nodes |> List.filter (fun n -> n.Kind = Haya.Core.Graph.NodeKind.Person) |> List.length)
+    // a person is neither an app nor a system
+    Assert.DoesNotContain(g.Nodes, fun n -> n.Kind = Haya.Core.Graph.NodeKind.System && n.Name = "Customer")
+    Assert.DoesNotContain(g.Nodes, fun n -> n.Id = "shop_customer")
+    Assert.Contains(g.Edges, fun e -> e.From = "person_customer" && e.To = "shop_web")  // upstream: the person uses the app
+    Assert.Contains(g.Edges, fun e -> e.From = "shop_api" && e.To = "person_pager")     // downstream: the app notifies them
+
+[<Fact>]
+let ``Graph ignores the system of a person and skips one without a name`` () =
+    let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream; "", Relationship.External, Direction.Upstream ]
+    let web = { web with Collaborators = web.Collaborators |> List.map (fun c -> { c with System = "Elsewhere" }) }
+    let g = Haya.Core.Graph.ofApps [ web ]
+    Assert.DoesNotContain(g.Nodes, fun n -> n.Id = "elsewhere") // no system node from the person
+    Assert.Equal(1, g.Nodes |> List.filter (fun n -> n.Kind = Haya.Core.Graph.NodeKind.Person) |> List.length)
+    Assert.Equal(1, g.Edges.Length)
+
+[<Fact>]
+let ``Graph json marks a person with the person kind and no hasMeta`` () =
+    let json = Haya.Core.Graph.ofApps [ appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ] ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    use doc = System.Text.Json.JsonDocument.Parse json
+    let person = doc.RootElement.GetProperty("nodes").EnumerateArray() |> Seq.find (fun n -> n.GetProperty("id").GetString() = "person_customer")
+    Assert.Equal("person", person.GetProperty("kind").GetString())
+    Assert.Equal("External", person.GetProperty("relationship").GetString())
+    let mutable ignored = Unchecked.defaultof<System.Text.Json.JsonElement>
+    Assert.False(person.TryGetProperty("hasMeta", &ignored))
+    Assert.False(person.TryGetProperty("ownSystem", &ignored))
+
+[<Fact>]
+let ``System diagram draws people inside or outside the enterprise and relates them to the system`` () =
+    let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream; "Support", Relationship.Internal, Direction.Upstream; "Pager", Relationship.Internal, Direction.Downstream ]
+    let text = Haya.Core.Diagram.sprintMermaidC4L1 [ web ]
+    Assert.Contains("Person_Ext(person_customer, Customer, \"Customer description\")", text)
+    Assert.Contains("  Person(person_support, Support, \"Support description\")", text) // indented: inside the boundary
+    Assert.Contains("Rel(person_customer, shop, \"uses\")", text)
+    Assert.Contains("Rel(shop, person_pager, \"uses\")", text)
+    Assert.DoesNotContain("System_Ext", text) // a person is not an external system
+    Assert.DoesNotContain("System(customer", text)
+
+[<Fact>]
+let ``Container diagram draws a person outside the boundaries and relates it to the app`` () =
+    let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream; "Support", Relationship.Internal, Direction.Upstream ]
+    let text = Haya.Core.Diagram.sprintMermaidC4L2 [ web ]
+    Assert.Contains("Person_Ext(person_customer, \"Customer\", \"Customer description\")", text)
+    Assert.Contains("Person(person_support, \"Support\", \"Support description\")", text)
+    Assert.Contains("Rel(person_customer, shop_web, \"uses\")", text)
+    Assert.DoesNotContain("Container(person", text)
+    Assert.Equal(1, text.Split("System_Boundary(").Length - 1) // no boundary for the person
+
+[<Fact>]
+let ``Backstage and Datadog leave people out`` () =
+    let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ]
+    let backstage = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ web ]
+    Assert.DoesNotContain("ustomer", backstage)
+    let datadog = Haya.Core.Datadog.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ web ]
+    Assert.DoesNotContain("ustomer", datadog)
+    Assert.Contains("shop-web", datadog)

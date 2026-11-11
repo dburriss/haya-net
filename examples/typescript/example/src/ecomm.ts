@@ -55,3 +55,13 @@ export class VisaPaymentService {}
   owner: "Shipping Team",
 })
 export class ShippingService {}
+
+@Collaborator({
+  appName: "Customer",
+  kind: AppKind.Person,
+  relationship: Relationship.External,
+  direction: Direction.Upstream,
+  description: "Pays for the items in their cart",
+  dataDescription: "Pays for an order",
+})
+export class CustomerPayment {}

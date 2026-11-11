@@ -12,6 +12,8 @@ module Graph =
         | System = 1
         /// An app with its own `[Meta]`, or one declared from a collaborator inside one of our systems.
         | App = 2
+        /// A person who uses (or is used by) our apps. Known only from collaborators: no app, no system, no `[Meta]`.
+        | Person = 3
 
     type Node =
         { Id: string
@@ -62,7 +64,8 @@ module Graph =
         let ownKeys = ownApps |> List.map (fun (m, _) -> sameKey m.System m.AppName)
 
         // collaborators in one of our systems (or without any system) that name an app
-        let isOwnSystem (c: CollaboratorDescriptor) = c.AppName <> "" && (c.System = "" || List.contains c.System ownSystems)
+        let isOwnSystem (c: CollaboratorDescriptor) =
+            c.Kind <> AppKind.Person && c.AppName <> "" && (c.System = "" || List.contains c.System ownSystems)
         let collaborators = ownApps |> List.collect (fun (_, a) -> a.Collaborators)
         let declaredHere =
             collaborators
@@ -71,8 +74,13 @@ module Graph =
             |> List.distinctBy (fun c -> sameKey c.System c.AppName)
         let otherSystems =
             collaborators
-            |> List.filter (fun c -> c.System <> "" && not (List.contains c.System ownSystems))
+            |> List.filter (fun c -> c.Kind <> AppKind.Person && c.System <> "" && not (List.contains c.System ownSystems))
             |> List.distinctBy (_.System)
+        // a person is known by name alone, whatever system the collaborator names; one without a name cannot be drawn
+        let persons =
+            collaborators
+            |> List.filter (fun c -> c.Kind = AppKind.Person && c.AppName <> "")
+            |> List.distinctBy (fun c -> String.toLower c.AppName)
 
         let parentOf (system: string) = if system = "" then None else Some (systemId system)
 
@@ -120,9 +128,21 @@ module Graph =
                     Relationship = c.Relationship
                     Description = c.Description })
 
+        let personNodes =
+            persons
+            |> List.map (fun c ->
+                { emptyNode with
+                    Id = Naming.personId c.AppName
+                    Kind = NodeKind.Person
+                    Name = c.AppName
+                    Relationship = c.Relationship
+                    Description = c.Description
+                    Owner = c.Owner })
+
         // the id a collaborator resolves to, if it is a node at all
         let targetOf (c: CollaboratorDescriptor) =
-            if isOwnSystem c then Some (appId c.System c.AppName)
+            if c.Kind = AppKind.Person then (if c.AppName <> "" then Some (Naming.personId c.AppName) else None)
+            elif isOwnSystem c then Some (appId c.System c.AppName)
             elif c.System <> "" then Some (systemId c.System)
             else None
 
@@ -140,7 +160,7 @@ module Graph =
             |> List.distinct
 
         let nodes =
-            ownSystemNodes @ otherSystemNodes @ appNodes @ declaredNodes
+            ownSystemNodes @ otherSystemNodes @ personNodes @ appNodes @ declaredNodes
             // a node with its own meta wins over the same id declared from a collaborator
             |> List.distinctBy (_.Id)
             |> List.sortBy (_.Id)

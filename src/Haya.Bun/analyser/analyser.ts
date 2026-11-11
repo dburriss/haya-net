@@ -11,12 +11,12 @@ import * as path from "node:path";
 export const ANNOTATIONS_PACKAGE = "@haya/annotations";
 
 export type Direction = "Upstream" | "Downstream";
-export type Relationship = "Owned" | "Shared" | "Internal" | "External" | "InternalUser" | "ExternalUser";
-export type AppKind = "Service" | "WebApp" | "Api" | "Worker" | "Database" | "Queue";
+export type Relationship = "Owned" | "Shared" | "Internal" | "External";
+export type AppKind = "Service" | "WebApp" | "Api" | "Worker" | "Database" | "Queue" | "Person";
 
 const DIRECTIONS: readonly Direction[] = ["Upstream", "Downstream"];
-const RELATIONSHIPS: readonly Relationship[] = ["Owned", "Shared", "Internal", "External", "InternalUser", "ExternalUser"];
-const APP_KINDS: readonly AppKind[] = ["Service", "WebApp", "Api", "Worker", "Database", "Queue"];
+const RELATIONSHIPS: readonly Relationship[] = ["Owned", "Shared", "Internal", "External"];
+const APP_KINDS: readonly AppKind[] = ["Service", "WebApp", "Api", "Worker", "Database", "Queue", "Person"];
 
 export interface ResponsibilityInfo {
   kind: "responsibility";
@@ -39,6 +39,8 @@ export interface CollaboratorInfo {
   componentSource: string;
   repository: string;
   owner: string;
+  /** What the collaborator is; "Person" for a user. Unset is reported as "Unspecified". (Not `kind`: the discriminator.) */
+  appKind: AppKind | "Unspecified";
 }
 
 export interface MetaInfo {
@@ -90,6 +92,7 @@ const COLLABORATOR_OPTIONS: OptionSpec = {
   relationship: { type: "Relationship" },
   repository: { type: "string" },
   owner: { type: "string" },
+  kind: { type: "AppKind" },
 };
 const META_OPTIONS: OptionSpec = {
   appName: { type: "string" },
@@ -338,6 +341,7 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
             componentSource,
             repository: o.repository ?? "",
             owner: o.owner ?? "",
+            appKind: (o.kind as AppKind | undefined) ?? "Unspecified",
           });
         }
       }

@@ -18,11 +18,12 @@ export enum Relationship {
   Shared = "Shared",
   Internal = "Internal",
   External = "External",
-  InternalUser = "InternalUser",
-  ExternalUser = "ExternalUser",
 }
 
-/** What kind of application this is. Used to pick the shape of the application in diagrams. */
+/**
+ * What kind of application this is. Used to pick the shape of the application in diagrams.
+ * On a collaborator it says what the collaborator is: `Person` for a user rather than an application.
+ */
 export enum AppKind {
   /** A backend service. */
   Service = "Service",
@@ -36,6 +37,11 @@ export enum AppKind {
   Database = "Database",
   /** A message queue or broker. */
   Queue = "Queue",
+  /**
+   * A person who uses, or is used by, the application. Only meaningful on a collaborator: a person has no
+   * application, so it is named with `appName` and does not belong to a system.
+   */
+  Person = "Person",
 }
 
 /** The responsibility, usecase, or feature of the component. Repeatable. */
@@ -66,6 +72,8 @@ export interface CollaboratorOptions {
   repository?: string;
   /** The owner of the system or application. */
   owner?: string;
+  /** What the collaborator is. Use `AppKind.Person` for a user: name it with `appName`; `system` is ignored. */
+  kind?: AppKind;
 }
 
 /** Information about this application or system. Call once per project. */

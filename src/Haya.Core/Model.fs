@@ -6,10 +6,10 @@ type Direction =
     | Downstream = 2
 
 /// The type of relationship between the team and the application or system. Mirrors `Haya.Relationship`.
-type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4 | InternalUser = 5 | ExternalUser = 6
+type Relationship = Owned = 1 | Shared = 2 | Internal = 3 | External = 4
 
 /// What kind of application this is. Used to pick the shape of the app in diagrams. Mirrors `Haya.AppKind`.
-type AppKind = Unspecified = 0 | Service = 1 | WebApp = 2 | Api = 3 | Worker = 4 | Database = 5 | Queue = 6
+type AppKind = Unspecified = 0 | Service = 1 | WebApp = 2 | Api = 3 | Worker = 4 | Database = 5 | Queue = 6 | Person = 7
 
 /// The language/runtime of the analysed codebase. Set by the analyser that produced the app. Mirrors nothing in `Haya`:
 /// users never declare it.
@@ -34,6 +34,8 @@ type CollaboratorDescriptor = {
     ComponentSource: string
     Repository: string
     Owner: string
+    /// What the collaborator is. `Person` for a user: it has no app, so it is named by `AppName` and has no system.
+    Kind: AppKind
 }
 
 type MetaDescriptor = {
@@ -93,11 +95,11 @@ module App =
     let meta (app: App) = app.Meta |> Option.defaultValue emptyMeta
 
     /// A collaborator without a system belongs to the owning app's system, or to "External" when it is external.
-    /// Renderers apply this so that they agree on which system a collaborator is in.
+    /// A person never belongs to a system. Renderers apply this so that they agree on which system a collaborator is in.
     let withDefaultSystems (app: App) =
         let owner = app.Meta |> Option.map (_.System) |> Option.defaultValue ""
         let fill (c: CollaboratorDescriptor) =
-            if c.System <> "" then c
+            if c.System <> "" || c.Kind = AppKind.Person then c
             elif c.Relationship = Relationship.External then { c with System = "External" }
             else { c with System = owner }
         { app with Collaborators = app.Collaborators |> List.map fill }

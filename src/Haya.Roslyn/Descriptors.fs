@@ -60,6 +60,7 @@ module Descriptors =
                 let relationship = map |> Map.tryFind "Relationship" |> Option.map parseEnum<Relationship>|> Option.defaultValue Relationship.Internal
                 let repository = map |> Map.tryFind "Repository" |> Option.defaultValue ""
                 let owner = map |> Map.tryFind "Owner" |> Option.defaultValue ""
+                let kind = map |> Map.tryFind "Kind" |> Option.map parseEnum<AppKind> |> Option.defaultValue AppKind.Unspecified
                 Collaborator {
                     Direction = direction
                     Tech = tech
@@ -72,7 +73,8 @@ module Descriptors =
                     ComponentName = symbol.Name
                     ComponentSource = componentSource rootPath symbol
                     Repository = repository
-                    Owner = owner 
+                    Owner = owner
+                    Kind = kind
                 }
             ) |> Some
         else

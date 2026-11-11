@@ -53,3 +53,12 @@ public class VisaPaymentService
     Owner = "Shipping Team")]
 public class ShippingService
 { }
+
+[Collaborator(AppName = "Customer",
+    Kind = AppKind.Person,
+    Relationship = Relationship.External,
+    Direction = Direction.Upstream,
+    Description = "Pays for the items in their cart",
+    DataDescription = "Pays for an order")]
+public class CustomerPayment
+{ }

@@ -13,6 +13,7 @@ Why Haya is built the way it is. Each record is one decision; newer records can 
 | [ADR007](ADR007-container-diagram-and-app-kind.md) | C4 container diagram and `AppKind`, describe format 0.2 | Describe format superseded by 0.3 in ADR010 |
 | [ADR008](ADR008-custom-attribute-defaults.md) | Defaults for custom attributes and annotations | |
 | [ADR009](ADR009-referenced-assembly-analysis.md) | Opt-in analysis of referenced assemblies (C#) | |
-| [ADR010](ADR010-datadog-command-and-language.md) | Datadog command, analyser-stamped language, lifecycle and tier, describe format 0.3 | |
+| [ADR010](ADR010-datadog-command-and-language.md) | Datadog command, analyser-stamped language, lifecycle and tier, describe format 0.3 | Describe format superseded by 0.4 in ADR013 |
 | [ADR011](ADR011-interactive-html-explorer.md) | Interactive html graph explorer (`diagram -f html`) | |
 | [ADR012](ADR012-complexity-colours-in-the-explorer.md) | Complexity colours in the explorer: a ramp from a cutoff, by apps + relationships | |
+| [ADR013](ADR013-person-collaborators.md) | Person collaborators: a `Kind` on `Collaborator`, `InternalUser`/`ExternalUser` removed, describe format 0.4 | |

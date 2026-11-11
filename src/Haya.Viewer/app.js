@@ -110,7 +110,7 @@ const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n
 // ---------------------------------------------------------------- glyphs
 // A node is a label with small glyphs (kind, tier, lifecycle) instead of text badges, so the boxes stay small.
 // The filter chips and the legend show the same glyphs next to their names.
-const KIND_FILL = { Api: "#2f6fdb", Service: "#6f42c1", WebApp: "#0a8f6a", Worker: "#b7791f", Database: "#c05621", Queue: "#b83280" };
+const KIND_FILL = { Api: "#2f6fdb", Service: "#6f42c1", WebApp: "#0a8f6a", Worker: "#b7791f", Database: "#c05621", Queue: "#b83280", Person: "#1f7a8c" };
 const LIFE_FILL = { production: "#2f855a", experimental: "#b7791f", deprecated: "#c53030" };
 const GREY = "#8b949e", AMBER = "#d69e2e";
 const xml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
@@ -126,6 +126,8 @@ const GLYPH = {
   Worker: (c) => `<circle cx="6" cy="6" r="3" fill="none" stroke="${c}" stroke-width="1.8"/><circle cx="6" cy="6" r="5.4" fill="none" stroke="${c}" stroke-width="1.2" stroke-dasharray="2 1.4"/>`,
   Database: (c) => `<ellipse cx="6" cy="2.6" rx="5" ry="2" fill="${c}"/><path d="M1 2.6V9.4A5 2 0 0 0 11 9.4V2.6" fill="none" stroke="${c}" stroke-width="1.3"/>`,
   Queue: (c) => [1, 4.8, 8.6].map((y) => `<rect x=".5" y="${y}" width="11" height="2.4" rx="1" fill="${c}"/>`).join(""),
+  // a head and shoulders
+  Person: (c) => `<circle cx="6" cy="3.5" r="2.5" fill="${c}"/><path d="M1.2 11.3C1.2 8.2 3.3 6.9 6 6.9s4.8 1.3 4.8 4.4z" fill="${c}"/>`,
   Unspecified: (c) => `<rect x="1.5" y="1.5" width="9" height="9" rx="2" fill="none" stroke="${c}" stroke-width="1.3"/>`,
   System: (c) => `<rect x=".7" y=".7" width="10.6" height="10.6" rx="2" fill="none" stroke="${c}" stroke-width="1.2" stroke-dasharray="2.4 1.4"/><rect x="3.5" y="3.5" width="5" height="5" rx="1" fill="${c}"/>`,
   External: (c) => `<path d="M5 2H1.5V10.5H10V7M6 6 11 1M7.5 1H11V4.5" fill="none" stroke="${c}" stroke-width="1.3"/>`,
@@ -149,6 +151,9 @@ const nodeImage = (n) => {
       const t = String(count), w = Math.max(18, t.length * 7 + 10);
       parts.push(`<rect x="${W - w - 7}" y="${(HEIGHT - 16) / 2}" width="${w}" height="16" rx="8" fill="${GREY}"/><text x="${W - 7 - w / 2}" y="${HEIGHT / 2 + 3.7}" font-size="10.5" font-family="system-ui,sans-serif" font-weight="600" fill="#fff" text-anchor="middle">${t}</text>`);
     }
+  } else if (n.kind === "person") {
+    // a person is known only from collaborators, so there is no meta to be missing: no "undocumented" mark
+    parts.push(glyphG("Person", kindColor("Person"), 9, (HEIGHT - 12) / 2));
   } else {
     parts.push(glyphG(n.appKind || "Unspecified", kindColor(n.appKind), 9, (HEIGHT - 12) / 2));
     if (!n.hasMeta) parts.push(glyphG("Undocumented", AMBER, W - 19, (HEIGHT - 12) / 2));
@@ -167,6 +172,8 @@ const factPills = (n) => {
   const pill = (text, color, glyph) => h("span", { class: "pill" }, glyph, text);
   if (n.kind === "system") {
     out.push(pill(n.ownSystem ? `${(appsOf.get(n.id) || []).length} apps` : n.relationship === "External" ? "external" : "other system", GREY, glyphImg(n.ownSystem ? "System" : "External", GREY, 12)));
+  } else if (n.kind === "person") {
+    out.push(pill(n.relationship === "External" ? "external person" : "person", kindColor("Person"), glyphImg("Person", kindColor("Person"), 12)));
   } else {
     out.push(pill(n.appKind || "Unspecified", kindColor(n.appKind), glyphImg(n.appKind || "Unspecified", kindColor(n.appKind), 12)));
     if (n.tier) out.push(pill(tierText(n.tier), GREY, null));
@@ -200,6 +207,7 @@ const styleFor = () => {
       "text-max-width": 112, "text-margin-x": -9, shape: "round-rectangle", width: W, height: HEIGHT, "background-color": card,
       "border-width": 1, "border-color": line, "background-image": "data(img)", "background-fit": "contain", "background-clip": "node" } },
     { selector: "node.system", style: { "border-width": 2, "border-color": muted } },
+    { selector: "node.person", style: { shape: "round-rectangle", "corner-radius": 15 } },
     { selector: "node.external", style: { "border-style": "dashed" } },
     { selector: "node.undoc", style: { "border-style": "dashed", "border-color": "#d69e2e" } },
     { selector: ":parent", style: {
@@ -229,7 +237,7 @@ new ResizeObserver(redrawSoon).observe(document.getElementById("graph"));
 
 const desired = () => {
   const want = { nodes: new Map(), edges: new Map() };
-  for (const n of data.nodes) if (n.kind === "system" || shown.has(n.id)) want.nodes.set(n.id, n);
+  for (const n of data.nodes) if (n.kind === "system" || n.kind === "person" || shown.has(n.id)) want.nodes.set(n.id, n); // people are always drawn
   // one line per pair of drawn nodes, whichever way the relationships go
   for (const e of data.edges) {
     const f = rep(e.from), t = rep(e.to);
@@ -255,7 +263,10 @@ const nodeData = (n, includeParent) => {
   if (heatOf.has(n.id)) d.heat = heatOf.get(n.id);
   return d;
 };
-const classOf = (n) => (n.kind === "system" ? "system" + (n.ownSystem ? "" : " external") : "app" + (n.hasMeta ? "" : " undoc"));
+const classOf = (n) =>
+  n.kind === "system" ? "system" + (n.ownSystem ? "" : " external")
+  : n.kind === "person" ? "person" + (n.relationship === "External" ? " external" : "")
+  : "app" + (n.hasMeta ? "" : " undoc");
 
 /** Bring the drawn graph in line with the state. `seeds` maps a node id to where to start it (else beside its system). */
 const sync = (seeds = new Map()) => {
@@ -264,7 +275,7 @@ const sync = (seeds = new Map()) => {
   cy.remove(gone);
   const fresh = [];
   cy.batch(() => {
-    for (const kind of ["system", "app"]) for (const n of want.nodes.values()) {
+    for (const kind of ["system", "person", "app"]) for (const n of want.nodes.values()) {
       if (n.kind !== kind) continue;
       const cur = cy.getElementById(n.id);
       if (cur.nonempty()) { cur.data(nodeData(n, false)); continue; }
@@ -429,7 +440,7 @@ searchBox.addEventListener("input", () => {
     if (e.key === "ArrowDown") { e.preventDefault(); e.currentTarget.parentElement.nextElementSibling?.firstChild.focus(); }
     if (e.key === "ArrowUp") { e.preventDefault(); (e.currentTarget.parentElement.previousElementSibling?.firstChild || searchBox).focus(); }
     if (e.key === "Escape") { e.stopPropagation(); closeResults(); searchBox.focus(); } // not also a deselect
-  } }, name(n.id) + (n.kind === "app" && n.parent ? " · " + name(n.parent) : n.kind === "system" ? " · system" : "")))));
+  } }, name(n.id) + (n.kind === "app" && n.parent ? " · " + name(n.parent) : n.kind === "system" ? " · system" : n.kind === "person" ? " · person" : "")))));
   resultsEl.hidden = found.length === 0;
 });
 searchBox.addEventListener("keydown", (e) => {
@@ -502,6 +513,16 @@ function nodePanel(n) {
     const mine = touching.get(n.id) || [];
     kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
     kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
+  } else if (n.kind === "person") {
+    if (n.description) kids.push(h("p", {}, n.description));
+    kids.push(h("dl", {}, field("Owner", n.owner)));
+    const hidden = neighboursOf(n.id).length;
+    kids.push(h("div", { class: "actions" },
+      h("button", { type: "button", disabled: !hidden, onclick: () => expandNeighbours(n.id) }, hidden ? `Show connected apps (${hidden})` : "All connected apps shown"),
+      act("Centre", () => cy.animate({ center: { eles: cy.getElementById(n.id) }, duration: 250 }))));
+    const mine = touching.get(n.id) || [];
+    kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
+    kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
   } else {
     // by kind, then name, both alphabetical; an app with no kind sorts as "Unspecified"
     const kindOf = (id) => nodes.get(id).appKind || "Unspecified";
@@ -535,12 +556,14 @@ function nodePanel(n) {
 
 function overviewPanel() {
   const apps = data.nodes.filter((n) => n.kind === "app"), systems = data.nodes.filter((n) => n.kind === "system");
+  const people = data.nodes.filter((n) => n.kind === "person");
   const undocumented = apps.filter((n) => !n.hasMeta);
   return [
     h("h2", {}, "Overview"),
-    h("p", {}, `${systems.length} systems, ${apps.length} apps, ${data.edges.length} relationships.`),
+    h("p", {}, `${systems.length} systems, ${apps.length} apps, ${people.length ? people.length + " people, " : ""}${data.edges.length} relationships.`),
     h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Press Enter or Space to do the same to the selected node, Esc to deselect, r to start over. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
     section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
+    section("People", people.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),
   ];
 }
@@ -568,6 +591,7 @@ function renderPanel() {
     [glyphImg("System", GREY), "System, with its number of apps"],
     [glyphImg("External", GREY), "Outside the documented systems"],
     [glyphImg("Undocumented", AMBER), "Undocumented: no [Meta] of its own"],
+    ...(data.nodes.some((n) => n.kind === "person") ? [[glyphImg("Person", kindColor("Person")), "Person: a user, dashed when outside the organisation"]] : []),
     [heatBar(), `System border, by apps + relationships: plain under ${appStops[0]}, yellow from ${appStops[0]}, orange by ${appStops[2]}, deep red at ${appStops[3]}`],
     [heatBar(), `Line between systems, by relationships: plain under ${linkStops[0]}, yellow from ${linkStops[0]}, orange by ${linkStops[2]}, deep red at ${linkStops[3]}`],
     [h("span", { class: "arrows" }, "→ ↔"), "One line per pair, with the number of relationships"],

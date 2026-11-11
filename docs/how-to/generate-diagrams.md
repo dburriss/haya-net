@@ -26,6 +26,12 @@ Level 2 draws each application inside its system, labelled with the `Technology`
 `Kind` (`Service`, `WebApp`, `Api`, `Worker`, `Database`, `Queue`). Set both on `Meta`; see the
 [attribute reference](../reference/attributes.md). Collaborator `Technology` and `Protocol` label the relationships.
 
+## Show the people who use a system
+
+Add a collaborator with `Kind = AppKind.Person` for each kind of user, `Upstream` when they use the application. Level 1 and
+level 2 draw it as a person, outside the boundary when its `Relationship` is `External`, with a relationship to the system
+(level 1) or the application (level 2). See [People](../reference/attributes.md#people).
+
 ## Explore a large system interactively
 
 Level 2 stops being readable once a system has many applications. `-f html` writes one self-contained page instead:

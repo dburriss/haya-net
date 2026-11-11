@@ -17,13 +17,15 @@ It is a floor, not a replacement for good documentation: enough for a new joiner
 - **System**: a collection of applications that work together to provide a service.
 - **Application**: a single deployable piece of software. Declared once with `Meta`.
 - **Responsibility**: a use case, feature or capability an application has.
-- **Collaborator**: another application or system it interacts with, with a direction and a relationship.
+- **Collaborator**: another application, system or person it interacts with, with a direction and a relationship. A
+  collaborator whose `Kind` is `Person` is a user rather than software: it has no application of its own, so no `Meta`.
 - **CRC**: Component, Responsibilities, Collaborators, after the idea of a CRC card. A "component" is the class that carries an annotation.
 
 ## How the model becomes diagrams
 
 - **C4 level 1 (system context)**: systems and the relationships between them, derived from collaborators.
-  Collaborators with an `External` relationship are drawn as external systems.
+  Collaborators with an `External` relationship are drawn as external systems, and people as people (outside the
+  enterprise boundary when `External`).
 - **C4 level 2 (containers)**: each application inside its system, labelled with `Meta.Technology` and shaped by
   `Meta.Kind`. The naming avoids C4 jargon in the API: the C4 "container" is an *application* here, and the
   `Kind` is an `AppKind`. See [ADR007](../adr/ADR007-container-diagram-and-app-kind.md).

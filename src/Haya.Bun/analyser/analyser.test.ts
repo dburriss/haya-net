@@ -49,16 +49,20 @@ describe("analyse", () => {
 @Collaborator({ appName: "Other", direction: Direction.Upstream, relationship: Relationship.External, technology: "Go", description: \`tpl\` })
 export class Thing {}
 @Collaborator({ appName: "Plain" })
-export class Plain {}`,
+export class Plain {}
+@Collaborator({ appName: "Customer", direction: Direction.Upstream, relationship: Relationship.External, kind: AppKind.Person })
+export class Shopper {}`,
     });
     const ds = analyse(root, root);
-    expect(ds.map((d) => d.kind)).toEqual(["responsibility", "collaborator", "collaborator", "meta"]);
+    expect(ds.map((d) => d.kind)).toEqual(["responsibility", "collaborator", "collaborator", "collaborator", "meta"]);
     expect(ds[0]).toEqual({ kind: "responsibility", description: "Does things", componentName: "Thing", componentSource: "src/a.ts" });
     const other = ds[1] as CollaboratorInfo;
     expect(other).toMatchObject({ appName: "Other", direction: "Upstream", relationship: "External", tech: "Go", description: "tpl", protocol: "", owner: "" });
     // unset properties default like Haya.Roslyn: "", Downstream, Internal
-    expect(ds[2]).toMatchObject({ appName: "Plain", direction: "Downstream", relationship: "Internal", tech: "", protocol: "" });
-    expect(ds[3]).toEqual({ kind: "meta", appName: "App", description: "", system: "Sys", repository: "", owner: "", tech: "", appKind: "Unspecified", lifecycle: "", tier: "" });
+    expect(ds[2]).toMatchObject({ appName: "Plain", direction: "Downstream", relationship: "Internal", tech: "", protocol: "", appKind: "Unspecified" });
+    // a person: what the collaborator is, separate from where it sits (relationship)
+    expect(ds[3]).toMatchObject({ appName: "Customer", direction: "Upstream", relationship: "External", appKind: "Person" });
+    expect(ds[4]).toEqual({ kind: "meta", appName: "App", description: "", system: "Sys", repository: "", owner: "", tech: "", appKind: "Unspecified", lifecycle: "", tier: "" });
   });
 
   test("reads lifecycle and tier of meta", () => {

@@ -21,8 +21,6 @@ const RELATIONSHIP: Record<Relationship, number> = {
   Shared: 2,
   Internal: 3,
   External: 4,
-  InternalUser: 5,
-  ExternalUser: 6,
 };
 
 /** `Language.JavaScript` of `Haya.Core.Analysis` (an F# enum, so a number under Fable). */
@@ -36,6 +34,7 @@ const APP_KIND: Record<AppKind | "Unspecified", number> = {
   Worker: 4,
   Database: 5,
   Queue: 6,
+  Person: 7,
 };
 
 export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
@@ -57,6 +56,7 @@ export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
           d.componentSource,
           d.repository,
           d.owner,
+          APP_KIND[d.appKind],
         ),
       );
     case "meta":

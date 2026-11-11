@@ -51,6 +51,9 @@ To see one first, open the [live example](https://dburriss.github.io/haya-net/),
 - An app with a **?** and a dashed outline is **undocumented**: it is known only because another app declares it as a
   collaborator and has no `[Meta]` of its own, so the panel shows what the collaborator said about it. The overview lists them
   all, which makes them easy to find and annotate.
+- A **person** (a collaborator with `Kind` `Person`) is a rounded node with a head-and-shoulders glyph, dashed when it is
+  outside the organisation. People are always on the graph, belong to no system, and are not marked undocumented. Double-click
+  one to show the apps it uses. They are listed in the overview.
 
 ## Link to a view
 

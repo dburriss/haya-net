@@ -15,8 +15,13 @@ module Catalog =
 
     let isUpstream (c: Analysis.CollaboratorDescriptor) = c.Direction = Analysis.Direction.Upstream
 
-    /// Apps with their collaborators' systems defaulted, so that every format agrees on which system a collaborator is in.
-    let withDefaultSystems (apps: Analysis.App list) = apps |> List.map Analysis.App.withDefaultSystems
+    /// Apps as the catalog formats see them: collaborators' systems defaulted, so that every format agrees on which system a
+    /// collaborator is in, and persons left out, because neither Backstage nor Datadog has an entity for one.
+    let withDefaultSystems (apps: Analysis.App list) =
+        apps
+        |> List.map Analysis.App.withDefaultSystems
+        |> List.map (fun a ->
+            { a with Collaborators = a.Collaborators |> List.filter (fun c -> c.Kind <> Analysis.AppKind.Person) })
 
     /// The apps that have a meta, i.e. an identity. Apps without one only contribute their collaborators.
     let withMeta (apps: Analysis.App list) =

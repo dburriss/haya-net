@@ -16,6 +16,7 @@ export class CreditCardPaymentUsecase {}
 
 - `@Responsibility({...})` and `@Collaborator({...})` are class decorators and are repeatable.
 - `meta({...})` is a top-level call, once per project (the equivalent of the C# assembly-level `Meta`).
+- A collaborator with `kind: AppKind.Person` is a user rather than an application: name it with `appName`; it has no system.
 - Values must be static: string literals, template literals without substitutions, and `AppKind.*`, `Direction.*` /
   `Relationship.*` members. Otherwise `haya` reports an error with file and line.
 

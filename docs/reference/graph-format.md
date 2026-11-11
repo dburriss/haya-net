@@ -1,7 +1,7 @@
 # Graph format
 
 The graph that `haya diagram -f html` embeds in the page and the viewer reads. It is resolved from the apps by `Graph.ofApps`
-in `Haya.Core`, written by `Encode.graph`, and identical on both stacks. The current version is `0.1`. It is an internal
+in `Haya.Core`, written by `Encode.graph`, and identical on both stacks. The current version is `0.2`. It is an internal
 format for the page: it may change between versions, so read the [describe format](describe-format.md) if you need data
 to consume.
 
@@ -26,7 +26,7 @@ values are written as `\u` escapes, so the document is still valid JSON and no v
       "tier": "1", "lifecycle": "production", "responsibilities": [ "Handles order processing" ]
     }
   ],
-  "version": "0.1"
+  "version": "0.2"
 }
 ```
 
@@ -37,13 +37,13 @@ Nodes are sorted by `id`; edges keep the order in which the apps and collaborato
 | Field | Notes |
 | --- | --- |
 | `id` | Lower-case name with `_` between words: `system_app` for an app, the system name for a system. The same ids as the Mermaid output. |
-| `kind` | `system` or `app`. |
+| `kind` | `system`, `app` or `person`. |
 | `name` | The name as written. |
-| `parent` | Apps only: the `id` of the system it is in. Left out when the app has no system. |
+| `parent` | Apps only (a person has no system): the `id` of the system it is in. Left out when the app has no system. |
 | `ownSystem` | Systems only. `true` when the system holds apps of ours (the viewer draws a boundary), `false` for another system known only from collaborators. |
-| `hasMeta` | Apps only. `true` when the app has its own `[Meta]`; `false` when it is known only from a collaborator that names it. |
-| `appKind` | `Service`, `WebApp`, `Api`, `Worker`, `Database` or `Queue`. Left out when unspecified. |
-| `relationship` | `Owned`, `Shared`, `Internal`, `External`, `InternalUser` or `ExternalUser`. For a node known only from a collaborator, what that collaborator said. |
+| `hasMeta` | Apps only (a person has no `Meta` to be without). `true` when the app has its own `[Meta]`; `false` when it is known only from a collaborator that names it. |
+| `appKind` | `Service`, `WebApp`, `Api`, `Worker`, `Database` or `Queue`. Left out when unspecified, and for a person (its `kind` says so). |
+| `relationship` | `Owned`, `Shared`, `Internal` or `External`. For a node known only from a collaborator, what that collaborator said. |
 | `description`, `tech`, `owner`, `repository`, `tier`, `lifecycle` | From the app's `Meta`; for a node known only from a collaborator, from that collaborator. |
 | `responsibilities` | Apps with a `Meta` only: the description of each responsibility. |
 
@@ -70,5 +70,8 @@ The rules are those of the level 2 diagram ([ADR007](../adr/ADR007-container-dia
 - A system that holds such an app is an own system. A collaborator without a system takes its owner's system, or `External`
   when it is external.
 - A collaborator naming an app in an own system, with no `Meta` of its own, becomes an app node with `hasMeta` `false`.
+- A collaborator with `Kind` `Person` and an `AppName` becomes a `person` node, whatever system it names: its `id` is
+  `person_` and the name, it has no `parent`, and persons with the same name (ignoring case) are one node. One without a
+  name is skipped.
 - A collaborator in another system becomes a system node. When apps disagree about the same node, the one with its own
   `Meta` wins, then the first in order.

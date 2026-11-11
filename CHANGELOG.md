@@ -10,11 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** `Relationship.InternalUser` and `ExternalUser` are removed (C#, TypeScript and describe files). Use a
+  collaborator with `Kind = AppKind.Person` and `Relationship.Internal` or `External`. A describe file that still uses them, or
+  any unknown relationship, is now an error; before, it read as `ExternalUser`. See ADR013.
 - Releases are tag-driven: pushing a `v*` tag publishes `Haya` and `Haya.Tool` to NuGet with
   Trusted Publishing (no API key), both at one version. Use `./publish.sh` to bump, tag and push. Previously every push to
   `main` tried to publish. `Haya.Core` and `Haya.Roslyn` are no longer packable; `Haya.Tool` bundles them.
 
 ### Added
+- People: a collaborator with `Kind = AppKind.Person` (C#; `kind: AppKind.Person` in TypeScript) is a user rather than an
+  application. It is named with `AppName`, has no system and no `Meta`, and is one node however many apps name it. The Mermaid
+  system and container diagrams draw `Person` or `Person_Ext`, and the explorer draws a person node. Backstage and Datadog leave
+  people out. Describe format `0.4` adds the optional collaborator `kind`; graph format `0.2` adds the `person` node kind.
+  `0.3` and older describe files are still read. See [the reference](docs/reference/attributes.md#people) and ADR013.
 - The interactive explorer is published to GitHub Pages at <https://dburriss.github.io/haya-net/>, built in CI from `examples/org-explorer` (nine systems, JSON and YAML describe files); no HTML is committed.
 - `haya diagram -f html` writes an interactive graph explorer: one self-contained page (no network, works from a file)
   for systems too big for a Mermaid diagram. It starts with every system collapsed to a box with its app count; double-click

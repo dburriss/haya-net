@@ -23,9 +23,7 @@ module Encode =
         | Relationship.Owned -> "Owned"
         | Relationship.Shared -> "Shared"
         | Relationship.Internal -> "Internal"
-        | Relationship.External -> "External"
-        | Relationship.InternalUser -> "InternalUser"
-        | _ -> "ExternalUser"
+        | _ -> "External"
 
     let appKind (k: AppKind) =
         match k with
@@ -35,6 +33,7 @@ module Encode =
         | AppKind.Worker -> "Worker"
         | AppKind.Database -> "Database"
         | AppKind.Queue -> "Queue"
+        | AppKind.Person -> "Person"
         | _ -> ""
 
     let language (l: Language) =
@@ -64,6 +63,8 @@ module Encode =
             "componentSource", str x.ComponentSource
             "repository", str x.Repository
             "owner", str x.Owner
+            // optional: left out when unset so documents without it stay unchanged
+            if x.Kind <> AppKind.Unspecified then "kind", str (appKind x.Kind)
         ]
 
     let meta (x: MetaDescriptor) =
@@ -101,7 +102,7 @@ module Encode =
 
     /// Version of the graph document embedded in the interactive html diagram.
     [<Literal>]
-    let GraphVersion = "0.1"
+    let GraphVersion = "0.2"
 
     /// The resolved graph the html explorer reads: `{ edges: [...], nodes: [...], version }`. Empty strings and lists
     /// are left out. `Language` and component sources are deliberately not part of it.
@@ -110,13 +111,18 @@ module Encode =
         let node (n: Graph.Node) =
             record [
                 yield "id", str n.Id
-                yield "kind", str (if n.Kind = Graph.NodeKind.System then "system" else "app")
+                yield "kind", str (match n.Kind with
+                                   | Graph.NodeKind.System -> "system"
+                                   | Graph.NodeKind.Person -> "person"
+                                   | _ -> "app")
                 yield! optional "name" n.Name
                 match n.Parent with
                 | Some p -> yield "parent", str p
                 | None -> ()
-                if n.Kind = Graph.NodeKind.System then yield "ownSystem", JsonValue.Boolean n.OwnSystem
-                else yield "hasMeta", JsonValue.Boolean n.HasMeta
+                match n.Kind with
+                | Graph.NodeKind.System -> yield "ownSystem", JsonValue.Boolean n.OwnSystem
+                | Graph.NodeKind.Person -> ()
+                | _ -> yield "hasMeta", JsonValue.Boolean n.HasMeta
                 yield! optional "appKind" (appKind n.AppKind)
                 yield "relationship", str (relationship n.Relationship)
                 yield! optional "description" n.Description

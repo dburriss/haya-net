@@ -92,6 +92,27 @@ let ``Defaults are inherited down a chain of custom attributes and derived class
     Assert.Equal("AMQP", c.Protocol)
     Assert.Equal("Acme", c.System)
 
+let private customPerson = """
+using Haya;
+[CollaboratorDefaults(AppName = "Customer", Kind = AppKind.Person, Relationship = Relationship.External, Direction = Direction.Upstream)]
+public class UsedByCustomerAttribute : CollaboratorAttribute { }
+[UsedByCustomer(DataDescription = "pays")]
+public class Checkout { }
+[Collaborator(AppName = "Support", Kind = AppKind.Person)]
+public class Console { }
+[Collaborator(AppName = "Db")]
+public class Repo { }
+"""
+
+[<Fact>]
+let ``A collaborator's Kind is read from the attribute and from custom attribute defaults`` () =
+    let cs = analyse [] customPerson |> collaborators
+    let kindOf name = (cs |> List.find (fun c -> c.AppName = name)).Kind
+    Assert.Equal(AppKind.Person, kindOf "Customer") // from the defaults
+    Assert.Equal(AppKind.Person, kindOf "Support")  // written at the usage site
+    Assert.Equal(AppKind.Unspecified, kindOf "Db")  // unset
+    Assert.Equal(Relationship.External, (cs |> List.find (fun c -> c.AppName = "Customer")).Relationship)
+
 let private customResponsibility = """
 using Haya;
 [ResponsibilityDefaults(Description = "Place orders")]

@@ -47,8 +47,9 @@ module Decode =
         | "Shared" -> Relationship.Shared
         | "Internal" -> Relationship.Internal
         | "External" -> Relationship.External
-        | "InternalUser" -> Relationship.InternalUser
-        | _ -> Relationship.ExternalUser
+        // not written: the attribute default
+        | "" -> Relationship.Internal
+        | other -> failwith $"Unknown relationship '{other}': expected Owned, Shared, Internal or External"
 
     let private appKind (s: string) =
         match s with
@@ -58,6 +59,7 @@ module Decode =
         | "Worker" -> AppKind.Worker
         | "Database" -> AppKind.Database
         | "Queue" -> AppKind.Queue
+        | "Person" -> AppKind.Person
         | _ -> AppKind.Unspecified
 
     let private language (s: string) =
@@ -83,7 +85,8 @@ module Decode =
                        ComponentName = str "componentName" v
                        ComponentSource = str "componentSource" v
                        Repository = str "repository" v
-                       Owner = str "owner" v }
+                       Owner = str "owner" v
+                       Kind = appKind (str "kind" v) }
 
     let private meta (v: JsonValue) =
         Meta { AppName = str "appName" v

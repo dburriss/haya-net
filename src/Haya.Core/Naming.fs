@@ -18,3 +18,6 @@ module Naming =
     /// An identifier that is safe to use as a Mermaid alias: lower case letters, digits and underscores.
     let mermaidId (name: string) =
         Regex.Replace(toKebabCase name, "[^a-z0-9]+", "_")
+
+    /// The identifier of a person: just their name, as a Mermaid alias, prefixed so it cannot clash with a system or app.
+    let personId (name: string) = mermaidId ("person " + name)

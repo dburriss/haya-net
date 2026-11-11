@@ -79,7 +79,7 @@ let private meta name system kind : MetaDescriptor =
 let private collaborator name system direction relationship : CollaboratorDescriptor =
     { Direction = direction; Tech = ""; Protocol = ""; DataDescription = "uses"; Description = $"{name} description"
       AppName = name; System = system; Relationship = relationship; ComponentName = ""; ComponentSource = ""
-      Repository = ""; Owner = "Owner" }
+      Repository = ""; Owner = "Owner"; Kind = AppKind.Unspecified }
 
 let private app (m: MetaDescriptor) language collaborators : App =
     { Meta = Some m; Language = language; Responsibilities = []; Collaborators = collaborators }
@@ -94,7 +94,9 @@ let private rich : App list =
           [ down "Db" "Ordering" Direction.Downstream Relationship.Internal
             down "Events" "Ordering" Direction.Downstream Relationship.Internal
             down "Visa" "Visa" Direction.Downstream Relationship.External
-            down "Mobile" "Shop" Direction.Upstream Relationship.ExternalUser ]
+            down "Mobile" "Shop" Direction.Upstream Relationship.External
+            // a person has no entity in Datadog: it must not turn into a stub
+            { down "Customer" "" Direction.Upstream Relationship.External with Kind = AppKind.Person } ]
       app { meta "Db" "Ordering" AppKind.Database with Tier = "2" } Language.Unknown []
       app (meta "Events" "Ordering" AppKind.Queue) Language.Unknown []
       app (meta "Worker" "Ordering" AppKind.Worker) Language.DotNet [ down "Events" "Ordering" Direction.Upstream Relationship.Internal ]
