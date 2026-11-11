@@ -3,7 +3,7 @@ apps:
     collaborators:
       -
         direction: Downstream
-        tech: Java 21
+        tech: .NET 10
         protocol: HTTPS
         dataDescription: Authorise
         description: Talks to card networks and providers
@@ -113,7 +113,7 @@ apps:
         system: Stripe
         relationship: External
         componentName: StripeClient
-        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        componentSource: Billing/PaymentGateway/PaymentGateway.cs
         repository: ''
         owner: ''
       -
@@ -126,12 +126,12 @@ apps:
         system: Visa
         relationship: External
         componentName: VisaClient
-        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        componentSource: Billing/PaymentGateway/PaymentGateway.cs
         repository: ''
         owner: ''
       -
         direction: Downstream
-        tech: Java 21
+        tech: .NET 10
         protocol: gRPC
         dataDescription: Post entry
         description: Double-entry ledger
@@ -139,7 +139,7 @@ apps:
         system: Billing
         relationship: Internal
         componentName: LedgerServiceClient
-        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        componentSource: Billing/PaymentGateway/PaymentGateway.cs
         repository: shop/ledgerservice
         owner: Billing team
     components:
@@ -158,33 +158,33 @@ apps:
         members:
           -
             kind: Method
-            name: authorise
-            type: CompletableFuture<Authorisation>
+            name: Authorise
+            type: Task<Authorisation>
             parameters:
               -
                 name: orderId
-                type: String
+                type: string
               -
                 name: amountInCents
                 type: long
           -
             kind: Method
-            name: capture
-            type: CompletableFuture<Charge>
+            name: Capture
+            type: Task<Charge>
             parameters:
               -
                 name: authorisationId
-                type: String
+                type: string
           -
             kind: Method
-            name: refund
-            type: CompletableFuture<Refund>
+            name: Refund
+            type: Task<Refund>
             parameters:
               -
                 name: chargeId
-                type: String
+                type: string
         name: PaymentGateway
-        source: Billing/PaymentGateway/PaymentGateway.java
+        source: Billing/PaymentGateway/PaymentGateway.cs
       -
         constructors:
           -
@@ -194,14 +194,14 @@ apps:
         members:
           -
             kind: Method
-            name: chargeCard
-            type: CompletableFuture<Void>
+            name: ChargeCard
+            type: Task
             parameters:
               -
                 name: request
                 type: StripeRequest
         name: StripeClient
-        source: Billing/PaymentGateway/PaymentGateway.java
+        source: Billing/PaymentGateway/PaymentGateway.cs
       -
         constructors:
           -
@@ -211,38 +211,38 @@ apps:
         members:
           -
             kind: Method
-            name: cardNetwork
-            type: CompletableFuture<Void>
+            name: CardNetwork
+            type: Task
             parameters:
               -
                 name: request
                 type: VisaRequest
         name: VisaClient
-        source: Billing/PaymentGateway/PaymentGateway.java
+        source: Billing/PaymentGateway/PaymentGateway.cs
       -
         constructors:
           -
             -
               name: channel
-              type: ManagedChannel
+              type: GrpcChannel
         members:
           -
             kind: Method
-            name: postEntry
-            type: CompletableFuture<Void>
+            name: PostEntry
+            type: Task
             parameters:
               -
                 name: request
                 type: LedgerServiceRequest
         name: LedgerServiceClient
-        source: Billing/PaymentGateway/PaymentGateway.java
+        source: Billing/PaymentGateway/PaymentGateway.cs
     meta:
       appName: PaymentGateway
       description: Talks to card networks and providers
       system: Billing
       repository: shop/paymentgateway
       owner: Billing team
-      tech: Java 21
+      tech: .NET 10
       kind: Service
       lifecycle: production
       tier: '1'
@@ -250,11 +250,12 @@ apps:
       -
         description: Authorises and captures card payments
         componentName: PaymentGateway
-        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        componentSource: Billing/PaymentGateway/PaymentGateway.cs
       -
         description: Refunds charges
         componentName: PaymentGateway
-        componentSource: Billing/PaymentGateway/PaymentGateway.java
+        componentSource: Billing/PaymentGateway/PaymentGateway.cs
+    language: dotnet
   -
     collaborators:
       -
@@ -267,7 +268,7 @@ apps:
         system: Billing
         relationship: Internal
         componentName: LedgerDbClient
-        componentSource: Billing/LedgerService/LedgerService.java
+        componentSource: Billing/LedgerService/LedgerService.cs
         repository: shop/ledgerdb
         owner: Billing team
     components:
@@ -280,46 +281,46 @@ apps:
         members:
           -
             kind: Method
-            name: entriesFor
-            type: List<LedgerEntry>
+            name: EntriesFor
+            type: Task<IReadOnlyList<LedgerEntry>>
             parameters:
               -
                 name: orderId
-                type: String
+                type: string
           -
             kind: Method
-            name: postEntry
-            type: CompletableFuture<Void>
+            name: PostEntry
+            type: Task
             parameters:
               -
                 name: entry
                 type: LedgerEntry
         name: LedgerService
-        source: Billing/LedgerService/LedgerService.java
+        source: Billing/LedgerService/LedgerService.cs
       -
         constructors:
           -
             -
               name: dataSource
-              type: DataSource
+              type: NpgsqlDataSource
         members:
           -
             kind: Method
-            name: persistEntries
-            type: CompletableFuture<Void>
+            name: PersistEntries
+            type: Task
             parameters:
               -
                 name: request
                 type: LedgerDbRequest
         name: LedgerDbClient
-        source: Billing/LedgerService/LedgerService.java
+        source: Billing/LedgerService/LedgerService.cs
     meta:
       appName: LedgerService
       description: Double-entry ledger
       system: Billing
       repository: shop/ledgerservice
       owner: Billing team
-      tech: Java 21
+      tech: .NET 10
       kind: Service
       lifecycle: production
       tier: '1'
@@ -327,7 +328,8 @@ apps:
       -
         description: Posts ledger entries
         componentName: LedgerService
-        componentSource: Billing/LedgerService/LedgerService.java
+        componentSource: Billing/LedgerService/LedgerService.cs
+    language: dotnet
   -
     collaborators: []
     meta:
@@ -349,7 +351,7 @@ apps:
     collaborators:
       -
         direction: Downstream
-        tech: Java 21
+        tech: .NET 10
         protocol: HTTPS
         dataDescription: Refund charge
         description: Talks to card networks and providers
@@ -357,12 +359,12 @@ apps:
         system: Billing
         relationship: Internal
         componentName: PaymentGatewayClient
-        componentSource: Billing/RefundService/RefundService.java
+        componentSource: Billing/RefundService/RefundService.cs
         repository: shop/paymentgateway
         owner: Billing team
       -
         direction: Downstream
-        tech: Java 21
+        tech: .NET 10
         protocol: gRPC
         dataDescription: Post reversal
         description: Double-entry ledger
@@ -370,7 +372,7 @@ apps:
         system: Billing
         relationship: Internal
         componentName: LedgerServiceClient
-        componentSource: Billing/RefundService/RefundService.java
+        componentSource: Billing/RefundService/RefundService.cs
         repository: shop/ledgerservice
         owner: Billing team
     components:
@@ -386,17 +388,17 @@ apps:
         members:
           -
             kind: Method
-            name: refund
-            type: CompletableFuture<Refund>
+            name: Refund
+            type: Task<Refund>
             parameters:
               -
                 name: chargeId
-                type: String
+                type: string
               -
                 name: reason
-                type: String
+                type: string
         name: RefundService
-        source: Billing/RefundService/RefundService.java
+        source: Billing/RefundService/RefundService.cs
       -
         constructors:
           -
@@ -406,38 +408,38 @@ apps:
         members:
           -
             kind: Method
-            name: refundCharge
-            type: CompletableFuture<Void>
+            name: RefundCharge
+            type: Task
             parameters:
               -
                 name: request
                 type: PaymentGatewayRequest
         name: PaymentGatewayClient
-        source: Billing/RefundService/RefundService.java
+        source: Billing/RefundService/RefundService.cs
       -
         constructors:
           -
             -
               name: channel
-              type: ManagedChannel
+              type: GrpcChannel
         members:
           -
             kind: Method
-            name: postReversal
-            type: CompletableFuture<Void>
+            name: PostReversal
+            type: Task
             parameters:
               -
                 name: request
                 type: LedgerServiceRequest
         name: LedgerServiceClient
-        source: Billing/RefundService/RefundService.java
+        source: Billing/RefundService/RefundService.cs
     meta:
       appName: RefundService
       description: Coordinates refunds
       system: Billing
       repository: shop/refundservice
       owner: Billing team
-      tech: Java 21
+      tech: .NET 10
       kind: Service
       lifecycle: production
       tier: '2'
@@ -445,12 +447,13 @@ apps:
       -
         description: Refunds a charge and reverses its ledger entries
         componentName: RefundService
-        componentSource: Billing/RefundService/RefundService.java
+        componentSource: Billing/RefundService/RefundService.cs
+    language: dotnet
   -
     collaborators:
       -
         direction: Downstream
-        tech: Python 3.12
+        tech: Node.js
         protocol: gRPC
         dataDescription: Score
         description: Machine learning model behind the fraud score
@@ -458,7 +461,7 @@ apps:
         system: Billing
         relationship: Internal
         componentName: FraudModelClient
-        componentSource: Billing/FraudCheck/FraudCheck.py
+        componentSource: Billing/FraudCheck/FraudCheck.ts
         repository: shop/fraudmodel
         owner: Billing team
     components:
@@ -466,43 +469,43 @@ apps:
         constructors:
           -
             -
-              name: fraud_model
+              name: fraudModel
               type: FraudModelClient
         members:
           -
             kind: Method
             name: score
-            type: float
+            type: Promise<number>
             parameters:
               -
                 name: order
                 type: Order
         name: FraudCheck
-        source: Billing/FraudCheck/FraudCheck.py
+        source: Billing/FraudCheck/FraudCheck.ts
       -
         constructors:
           -
             -
               name: channel
-              type: grpc.Channel
+              type: Channel
         members:
           -
             kind: Method
             name: score
-            type: None
+            type: Promise<void>
             parameters:
               -
                 name: request
                 type: FraudModelRequest
         name: FraudModelClient
-        source: Billing/FraudCheck/FraudCheck.py
+        source: Billing/FraudCheck/FraudCheck.ts
     meta:
       appName: FraudCheck
       description: Scores orders for fraud risk
       system: Billing
       repository: shop/fraudcheck
       owner: Billing team
-      tech: Python 3.12
+      tech: Node.js
       kind: Api
       lifecycle: production
       tier: '2'
@@ -510,7 +513,8 @@ apps:
       -
         description: Returns a fraud score for an order
         componentName: FraudCheck
-        componentSource: Billing/FraudCheck/FraudCheck.py
+        componentSource: Billing/FraudCheck/FraudCheck.ts
+    language: javascript
   -
     collaborators: []
     components:
@@ -521,20 +525,20 @@ apps:
           -
             kind: Method
             name: predict
-            type: float
+            type: Promise<number>
             parameters:
               -
                 name: features
-                type: dict[str, float]
+                type: Record<string, number>
         name: FraudModel
-        source: Billing/FraudModel/FraudModel.py
+        source: Billing/FraudModel/FraudModel.ts
     meta:
       appName: FraudModel
       description: Machine learning model behind the fraud score
       system: Billing
       repository: shop/fraudmodel
       owner: Billing team
-      tech: Python 3.12
+      tech: Node.js
       kind: Service
       lifecycle: experimental
       tier: '2'
@@ -542,7 +546,8 @@ apps:
       -
         description: Predicts fraud risk
         componentName: FraudModel
-        componentSource: Billing/FraudModel/FraudModel.py
+        componentSource: Billing/FraudModel/FraudModel.ts
+    language: javascript
   -
     collaborators:
       -
@@ -555,12 +560,12 @@ apps:
         system: Ordering
         relationship: Internal
         componentName: OrderEventsClient
-        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.cs
         repository: shop/orderevents
         owner: Ordering team
       -
         direction: Downstream
-        tech: Java 21
+        tech: .NET 10
         protocol: gRPC
         dataDescription: Read entries
         description: Double-entry ledger
@@ -568,7 +573,7 @@ apps:
         system: Billing
         relationship: Internal
         componentName: LedgerServiceClient
-        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.cs
         repository: shop/ledgerservice
         owner: Billing team
       -
@@ -581,7 +586,7 @@ apps:
         system: Notifications
         relationship: Internal
         componentName: EmailGatewayClient
-        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.cs
         repository: shop/emailgateway
         owner: Notifications team
     components:
@@ -600,48 +605,48 @@ apps:
         members:
           -
             kind: Method
-            name: onOrderPlaced
-            type: void
+            name: OnOrderPlaced
+            type: Task
             parameters:
               -
-                name: event
+                name: orderPlaced
                 type: OrderPlaced
         name: InvoiceWorker
-        source: Billing/InvoiceWorker/InvoiceWorker.java
+        source: Billing/InvoiceWorker/InvoiceWorker.cs
       -
         constructors:
           -
             -
-              name: config
-              type: Properties
+              name: consumer
+              type: IConsumer<string, string>
         members:
           -
             kind: Method
-            name: consumeOrders
-            type: CompletableFuture<Void>
+            name: ConsumeOrders
+            type: Task
             parameters:
               -
                 name: request
                 type: OrderEventsRequest
         name: OrderEventsClient
-        source: Billing/InvoiceWorker/InvoiceWorker.java
+        source: Billing/InvoiceWorker/InvoiceWorker.cs
       -
         constructors:
           -
             -
               name: channel
-              type: ManagedChannel
+              type: GrpcChannel
         members:
           -
             kind: Method
-            name: readEntries
-            type: CompletableFuture<Void>
+            name: ReadEntries
+            type: Task
             parameters:
               -
                 name: request
                 type: LedgerServiceRequest
         name: LedgerServiceClient
-        source: Billing/InvoiceWorker/InvoiceWorker.java
+        source: Billing/InvoiceWorker/InvoiceWorker.cs
       -
         constructors:
           -
@@ -651,21 +656,21 @@ apps:
         members:
           -
             kind: Method
-            name: sendInvoice
-            type: CompletableFuture<Void>
+            name: SendInvoice
+            type: Task
             parameters:
               -
                 name: request
                 type: EmailGatewayRequest
         name: EmailGatewayClient
-        source: Billing/InvoiceWorker/InvoiceWorker.java
+        source: Billing/InvoiceWorker/InvoiceWorker.cs
     meta:
       appName: InvoiceWorker
       description: Produces and sends invoices
       system: Billing
       repository: shop/invoiceworker
       owner: Billing team
-      tech: Java 21
+      tech: .NET 10
       kind: Worker
       lifecycle: production
       tier: '3'
@@ -673,10 +678,11 @@ apps:
       -
         description: Creates an invoice for each order
         componentName: InvoiceWorker
-        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.cs
       -
         description: Emails invoices
         componentName: InvoiceWorker
-        componentSource: Billing/InvoiceWorker/InvoiceWorker.java
+        componentSource: Billing/InvoiceWorker/InvoiceWorker.cs
+    language: dotnet
 detail: members
 version: '0.5'

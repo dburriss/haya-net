@@ -4,7 +4,7 @@
       "collaborators": [
         {
           "direction": "Downstream",
-          "tech": "Go",
+          "tech": "Node.js",
           "protocol": "HTTPS",
           "dataDescription": "Browse products",
           "description": "Serves product data",
@@ -117,7 +117,7 @@
       "collaborators": [
         {
           "direction": "Downstream",
-          "tech": "Go",
+          "tech": "Node.js",
           "protocol": "HTTPS",
           "dataDescription": "Product data",
           "description": "Serves product data",
@@ -265,5 +265,6 @@
       ]
     }
   ],
-  "version": "0.3"
+  "detail": "apps",
+  "version": "0.5"
 }

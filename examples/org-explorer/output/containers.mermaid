@@ -2,33 +2,33 @@ C4Container
 title C4 Container Diagram for Analytics, Billing, Catalog, Identity, Notifications, Ordering, Shipping, Storefront, Warehouse
 
 System_Boundary(analytics, "Analytics") {
-  Container(analytics_event_collector, "EventCollector", "Python 3.12", "Collects business events for analysis")
+  Container(analytics_event_collector, "EventCollector", "Node.js", "Collects business events for analysis")
   ContainerDb(analytics_data_warehouse, "DataWarehouse", "BigQuery", "Store for analytics data")
   Container(analytics_reporting_ui, "ReportingUi", "Metabase", "Dashboards for the business")
 }
 System_Boundary(billing, "Billing") {
   Container(billing_payments_api, "PaymentsApi", ".NET 10", "Entry point for taking payments")
-  Container(billing_payment_gateway, "PaymentGateway", "Java 21", "Talks to card networks and providers")
-  Container(billing_ledger_service, "LedgerService", "Java 21", "Double-entry ledger")
+  Container(billing_payment_gateway, "PaymentGateway", ".NET 10", "Talks to card networks and providers")
+  Container(billing_ledger_service, "LedgerService", ".NET 10", "Double-entry ledger")
   ContainerDb(billing_ledger_db, "LedgerDb", "PostgreSQL", "Store for the ledger")
-  Container(billing_refund_service, "RefundService", "Java 21", "Coordinates refunds")
-  Container(billing_fraud_check, "FraudCheck", "Python 3.12", "Scores orders for fraud risk")
-  Container(billing_fraud_model, "FraudModel", "Python 3.12", "Machine learning model behind the fraud score")
-  Container(billing_invoice_worker, "InvoiceWorker", "Java 21", "Produces and sends invoices")
+  Container(billing_refund_service, "RefundService", ".NET 10", "Coordinates refunds")
+  Container(billing_fraud_check, "FraudCheck", "Node.js", "Scores orders for fraud risk")
+  Container(billing_fraud_model, "FraudModel", "Node.js", "Machine learning model behind the fraud score")
+  Container(billing_invoice_worker, "InvoiceWorker", ".NET 10", "Produces and sends invoices")
 }
 System_Boundary(catalog, "Catalog") {
-  Container(catalog_catalog_api, "CatalogApi", "Go", "Serves product data")
+  Container(catalog_catalog_api, "CatalogApi", "Node.js", "Serves product data")
   ContainerDb(catalog_catalog_db, "CatalogDb", "MongoDB", "Store for products")
-  Container(catalog_pricing_service, "PricingService", "Go", "Works out the price of a product or basket")
-  Container(catalog_pricing_rules, "PricingRules", "Go", "Holds the pricing rules")
+  Container(catalog_pricing_service, "PricingService", "Node.js", "Works out the price of a product or basket")
+  Container(catalog_pricing_rules, "PricingRules", "Node.js", "Holds the pricing rules")
   Container(catalog_search_api, "SearchApi", "Elasticsearch", "Product search")
-  Container(catalog_search_indexer, "SearchIndexer", "Go", "Keeps the search index up to date")
+  Container(catalog_search_indexer, "SearchIndexer", "Node.js", "Keeps the search index up to date")
   ContainerQueue(catalog_catalog_events, "CatalogEvents", "Kafka", "Stream of product changes")
-  Container(catalog_image_service, "ImageService", "Go", "Resizes and serves product images")
+  Container(catalog_image_service, "ImageService", "Node.js", "Resizes and serves product images")
   ContainerDb(catalog_image_store, "ImageStore", "S3", "Store for product images")
-  Container(catalog_product_importer, "ProductImporter", "Go", "Loads products from supplier feeds")
-  Container(catalog_supplier_feed, "SupplierFeed", "Go", "Receives the nightly supplier file")
-  Container(catalog_reviews_api, "ReviewsApi", "Go", "Customer product reviews")
+  Container(catalog_product_importer, "ProductImporter", "Node.js", "Loads products from supplier feeds")
+  Container(catalog_supplier_feed, "SupplierFeed", "Node.js", "Receives the nightly supplier file")
+  Container(catalog_reviews_api, "ReviewsApi", "Node.js", "Customer product reviews")
   ContainerDb(catalog_reviews_db, "ReviewsDb", "MongoDB", "Store for reviews")
 }
 System_Boundary(identity, "Identity") {
@@ -66,8 +66,8 @@ System_Boundary(storefront, "Storefront") {
   ContainerDb(storefront_content_db, "ContentDb", "PostgreSQL", "Store for editorial content")
 }
 System_Boundary(warehouse, "Warehouse") {
-  Container(warehouse_stock_reservation, "StockReservation", "Kotlin", "Holds stock for orders")
-  Container(warehouse_stock_levels, "StockLevels", "Kotlin", "Reports what is in stock")
+  Container(warehouse_stock_reservation, "StockReservation", ".NET 10", "Holds stock for orders")
+  Container(warehouse_stock_levels, "StockLevels", ".NET 10", "Reports what is in stock")
   ContainerDb(warehouse_stock_db, "StockDb", "PostgreSQL", "Store for stock")
   Container(warehouse_picking_app, "PickingApp", "React", "Used by pickers on the warehouse floor")
 }

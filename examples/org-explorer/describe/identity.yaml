@@ -77,4 +77,5 @@ apps:
         componentName: ProfileApi
         componentSource: Identity/ProfileApi/ProfileApi.cs
     language: dotnet
-version: '0.3'
+detail: apps
+version: '0.5'

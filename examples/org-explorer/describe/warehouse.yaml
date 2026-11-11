@@ -11,7 +11,7 @@ apps:
         system: Warehouse
         relationship: Internal
         componentName: StockDbClient
-        componentSource: Warehouse/StockReservation/StockReservation.kt
+        componentSource: Warehouse/StockReservation/StockReservation.cs
         repository: shop/stockdb
         owner: Warehouse team
     meta:
@@ -20,7 +20,7 @@ apps:
       system: Warehouse
       repository: shop/stockreservation
       owner: Warehouse team
-      tech: Kotlin
+      tech: .NET 10
       kind: Service
       lifecycle: production
       tier: '1'
@@ -28,7 +28,8 @@ apps:
       -
         description: Reserves and releases stock
         componentName: StockReservation
-        componentSource: Warehouse/StockReservation/StockReservation.kt
+        componentSource: Warehouse/StockReservation/StockReservation.cs
+    language: dotnet
   -
     collaborators:
       -
@@ -41,7 +42,7 @@ apps:
         system: Warehouse
         relationship: Internal
         componentName: StockDbClient
-        componentSource: Warehouse/StockLevels/StockLevels.kt
+        componentSource: Warehouse/StockLevels/StockLevels.cs
         repository: shop/stockdb
         owner: Warehouse team
     meta:
@@ -50,7 +51,7 @@ apps:
       system: Warehouse
       repository: shop/stocklevels
       owner: Warehouse team
-      tech: Kotlin
+      tech: .NET 10
       kind: Api
       lifecycle: production
       tier: '1'
@@ -58,7 +59,8 @@ apps:
       -
         description: Reports stock levels
         componentName: StockLevels
-        componentSource: Warehouse/StockLevels/StockLevels.kt
+        componentSource: Warehouse/StockLevels/StockLevels.cs
+    language: dotnet
   -
     collaborators: []
     meta:
@@ -80,7 +82,7 @@ apps:
     collaborators:
       -
         direction: Downstream
-        tech: Kotlin
+        tech: .NET 10
         protocol: HTTPS
         dataDescription: Find stock
         description: Reports what is in stock
@@ -134,4 +136,5 @@ apps:
         componentName: PickingApp
         componentSource: Warehouse/PickingApp/PickingApp.ts
     language: javascript
-version: '0.3'
+detail: apps
+version: '0.5'

@@ -75,5 +75,6 @@
       "language": "javascript"
     }
   ],
-  "version": "0.3"
+  "detail": "apps",
+  "version": "0.5"
 }

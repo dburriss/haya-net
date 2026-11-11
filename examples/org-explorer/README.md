@@ -10,7 +10,8 @@ repository). Someone merges them centrally: [describe/](describe) holds one file
 run reads them all. JSON and YAML are mixed on purpose, since teams pick their own; both are read in one call.
 Ordering, Billing and Catalog published theirs with `haya describe --detail members`, so their files also hold each class's
 constructors and public members (a `components` array per app). The other teams did not, and a merge of both kinds is fine.
-The types are written in each class's own language: C# for `.cs`, Java, Go and Python.
+Every app's code is C# (`.cs`) or TypeScript (`.ts`), the two languages Haya analyses, and the member types are written in
+the class's own language (`Task<…>` or `Promise<…>`).
 
 The live page is built in CI from this folder (`.github/workflows/pages.yml`) on every push to `main` that touches `src/` or
 here. For the how-to, see [Document several systems together](../../docs/how-to/document-multiple-systems.md).

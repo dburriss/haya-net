@@ -12,13 +12,13 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "CatalogDbClient",
-          "componentSource": "Catalog/CatalogApi/CatalogApi.go",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.ts",
           "repository": "shop/catalogdb",
           "owner": "Catalog team"
         },
         {
           "direction": "Downstream",
-          "tech": "Go",
+          "tech": "Node.js",
           "protocol": "gRPC",
           "dataDescription": "Prices",
           "description": "Works out the price of a product or basket",
@@ -26,13 +26,13 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "PricingServiceClient",
-          "componentSource": "Catalog/CatalogApi/CatalogApi.go",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.ts",
           "repository": "shop/pricingservice",
           "owner": "Catalog team"
         },
         {
           "direction": "Downstream",
-          "tech": "Kotlin",
+          "tech": ".NET 10",
           "protocol": "HTTPS",
           "dataDescription": "Availability",
           "description": "Reports what is in stock",
@@ -40,7 +40,7 @@
           "system": "Warehouse",
           "relationship": "Internal",
           "componentName": "StockLevelsClient",
-          "componentSource": "Catalog/CatalogApi/CatalogApi.go",
+          "componentSource": "Catalog/CatalogApi/CatalogApi.ts",
           "repository": "shop/stocklevels",
           "owner": "Warehouse team"
         }
@@ -66,13 +66,9 @@
           "members": [
             {
               "kind": "Method",
-              "name": "GetProduct",
-              "type": "(Product, error)",
+              "name": "getProduct",
+              "type": "Promise<Product | undefined>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "id",
                   "type": "string"
@@ -81,13 +77,9 @@
             },
             {
               "kind": "Method",
-              "name": "ListCategory",
-              "type": "([]Product, error)",
+              "name": "listCategory",
+              "type": "Promise<Product[]>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "category",
                   "type": "string"
@@ -96,27 +88,23 @@
             }
           ],
           "name": "CatalogApi",
-          "source": "Catalog/CatalogApi/CatalogApi.go"
+          "source": "Catalog/CatalogApi/CatalogApi.ts"
         },
         {
           "constructors": [
             [
               {
                 "name": "db",
-                "type": "*mongo.Database"
+                "type": "Db"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "ReadProducts",
-              "type": "error",
+              "name": "readProducts",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "CatalogDbRequest"
@@ -125,27 +113,23 @@
             }
           ],
           "name": "CatalogDbClient",
-          "source": "Catalog/CatalogApi/CatalogApi.go"
+          "source": "Catalog/CatalogApi/CatalogApi.ts"
         },
         {
           "constructors": [
             [
               {
-                "name": "conn",
-                "type": "*grpc.ClientConn"
+                "name": "channel",
+                "type": "Channel"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "Prices",
-              "type": "error",
+              "name": "prices",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "PricingServiceRequest"
@@ -154,27 +138,23 @@
             }
           ],
           "name": "PricingServiceClient",
-          "source": "Catalog/CatalogApi/CatalogApi.go"
+          "source": "Catalog/CatalogApi/CatalogApi.ts"
         },
         {
           "constructors": [
             [
               {
-                "name": "client",
-                "type": "*http.Client"
+                "name": "http",
+                "type": "HttpClient"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "Availability",
-              "type": "error",
+              "name": "availability",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "StockLevelsRequest"
@@ -183,7 +163,7 @@
             }
           ],
           "name": "StockLevelsClient",
-          "source": "Catalog/CatalogApi/CatalogApi.go"
+          "source": "Catalog/CatalogApi/CatalogApi.ts"
         }
       ],
       "meta": {
@@ -192,7 +172,7 @@
         "system": "Catalog",
         "repository": "shop/catalogapi",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Api",
         "lifecycle": "production",
         "tier": "1"
@@ -201,9 +181,10 @@
         {
           "description": "Serves products and categories",
           "componentName": "CatalogApi",
-          "componentSource": "Catalog/CatalogApi/CatalogApi.go"
+          "componentSource": "Catalog/CatalogApi/CatalogApi.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [],
@@ -230,7 +211,7 @@
       "collaborators": [
         {
           "direction": "Downstream",
-          "tech": "Go",
+          "tech": "Node.js",
           "protocol": "HTTPS",
           "dataDescription": "Load rules",
           "description": "Holds the pricing rules",
@@ -238,7 +219,7 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "PricingRulesClient",
-          "componentSource": "Catalog/PricingService/PricingService.go",
+          "componentSource": "Catalog/PricingService/PricingService.ts",
           "repository": "shop/pricingrules",
           "owner": "Catalog team"
         }
@@ -256,13 +237,9 @@
           "members": [
             {
               "kind": "Method",
-              "name": "Price",
-              "type": "(Price, error)",
+              "name": "price",
+              "type": "Promise<Price>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "sku",
                   "type": "string"
@@ -271,27 +248,23 @@
             }
           ],
           "name": "PricingService",
-          "source": "Catalog/PricingService/PricingService.go"
+          "source": "Catalog/PricingService/PricingService.ts"
         },
         {
           "constructors": [
             [
               {
-                "name": "client",
-                "type": "*http.Client"
+                "name": "http",
+                "type": "HttpClient"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "LoadRules",
-              "type": "error",
+              "name": "loadRules",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "PricingRulesRequest"
@@ -300,7 +273,7 @@
             }
           ],
           "name": "PricingRulesClient",
-          "source": "Catalog/PricingService/PricingService.go"
+          "source": "Catalog/PricingService/PricingService.ts"
         }
       ],
       "meta": {
@@ -309,7 +282,7 @@
         "system": "Catalog",
         "repository": "shop/pricingservice",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Service",
         "lifecycle": "production",
         "tier": "1"
@@ -318,9 +291,10 @@
         {
           "description": "Applies pricing rules to prices",
           "componentName": "PricingService",
-          "componentSource": "Catalog/PricingService/PricingService.go"
+          "componentSource": "Catalog/PricingService/PricingService.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [],
@@ -332,18 +306,13 @@
           "members": [
             {
               "kind": "Method",
-              "name": "Rules",
-              "type": "([]Rule, error)",
-              "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                }
-              ]
+              "name": "rules",
+              "type": "Promise<Rule[]>",
+              "parameters": []
             }
           ],
           "name": "PricingRules",
-          "source": "Catalog/PricingRules/PricingRules.go"
+          "source": "Catalog/PricingRules/PricingRules.ts"
         }
       ],
       "meta": {
@@ -352,7 +321,7 @@
         "system": "Catalog",
         "repository": "shop/pricingrules",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Service",
         "lifecycle": "production",
         "tier": "2"
@@ -361,15 +330,16 @@
         {
           "description": "Stores and serves pricing rules",
           "componentName": "PricingRules",
-          "componentSource": "Catalog/PricingRules/PricingRules.go"
+          "componentSource": "Catalog/PricingRules/PricingRules.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [
         {
           "direction": "Downstream",
-          "tech": "Go",
+          "tech": "Node.js",
           "protocol": "HTTPS",
           "dataDescription": "Query index",
           "description": "Keeps the search index up to date",
@@ -469,7 +439,7 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "CatalogEventsClient",
-          "componentSource": "Catalog/SearchIndexer/SearchIndexer.go",
+          "componentSource": "Catalog/SearchIndexer/SearchIndexer.ts",
           "repository": "shop/catalogevents",
           "owner": "Catalog team"
         }
@@ -487,13 +457,9 @@
           "members": [
             {
               "kind": "Method",
-              "name": "Handle",
-              "type": "error",
+              "name": "handle",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "change",
                   "type": "ProductChanged"
@@ -502,27 +468,23 @@
             }
           ],
           "name": "SearchIndexer",
-          "source": "Catalog/SearchIndexer/SearchIndexer.go"
+          "source": "Catalog/SearchIndexer/SearchIndexer.ts"
         },
         {
           "constructors": [
             [
               {
-                "name": "reader",
-                "type": "*kafka.Reader"
+                "name": "consumer",
+                "type": "Consumer"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "ConsumeChanges",
-              "type": "error",
+              "name": "consumeChanges",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "CatalogEventsRequest"
@@ -531,7 +493,7 @@
             }
           ],
           "name": "CatalogEventsClient",
-          "source": "Catalog/SearchIndexer/SearchIndexer.go"
+          "source": "Catalog/SearchIndexer/SearchIndexer.ts"
         }
       ],
       "meta": {
@@ -540,7 +502,7 @@
         "system": "Catalog",
         "repository": "shop/searchindexer",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Worker",
         "lifecycle": "production",
         "tier": "2"
@@ -549,9 +511,10 @@
         {
           "description": "Updates the index when products change",
           "componentName": "SearchIndexer",
-          "componentSource": "Catalog/SearchIndexer/SearchIndexer.go"
+          "componentSource": "Catalog/SearchIndexer/SearchIndexer.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [],
@@ -586,7 +549,7 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "ImageStoreClient",
-          "componentSource": "Catalog/ImageService/ImageService.go",
+          "componentSource": "Catalog/ImageService/ImageService.ts",
           "repository": "shop/imagestore",
           "owner": "Catalog team"
         }
@@ -604,46 +567,38 @@
           "members": [
             {
               "kind": "Method",
-              "name": "Resize",
-              "type": "([]byte, error)",
+              "name": "resize",
+              "type": "Promise<Uint8Array>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "imageId",
                   "type": "string"
                 },
                 {
                   "name": "width",
-                  "type": "int"
+                  "type": "number"
                 }
               ]
             }
           ],
           "name": "ImageService",
-          "source": "Catalog/ImageService/ImageService.go"
+          "source": "Catalog/ImageService/ImageService.ts"
         },
         {
           "constructors": [
             [
               {
                 "name": "s3",
-                "type": "*s3.Client"
+                "type": "S3Client"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "StoreImages",
-              "type": "error",
+              "name": "storeImages",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "ImageStoreRequest"
@@ -652,7 +607,7 @@
             }
           ],
           "name": "ImageStoreClient",
-          "source": "Catalog/ImageService/ImageService.go"
+          "source": "Catalog/ImageService/ImageService.ts"
         }
       ],
       "meta": {
@@ -661,7 +616,7 @@
         "system": "Catalog",
         "repository": "shop/imageservice",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Service",
         "lifecycle": "production",
         "tier": "3"
@@ -670,9 +625,10 @@
         {
           "description": "Serves product images in the requested size",
           "componentName": "ImageService",
-          "componentSource": "Catalog/ImageService/ImageService.go"
+          "componentSource": "Catalog/ImageService/ImageService.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [],
@@ -707,13 +663,13 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "CatalogDbClient",
-          "componentSource": "Catalog/ProductImporter/ProductImporter.go",
+          "componentSource": "Catalog/ProductImporter/ProductImporter.ts",
           "repository": "shop/catalogdb",
           "owner": "Catalog team"
         },
         {
           "direction": "Downstream",
-          "tech": "Go",
+          "tech": "Node.js",
           "protocol": "SFTP",
           "dataDescription": "Read feed",
           "description": "Receives the nightly supplier file",
@@ -721,7 +677,7 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "SupplierFeedClient",
-          "componentSource": "Catalog/ProductImporter/ProductImporter.go",
+          "componentSource": "Catalog/ProductImporter/ProductImporter.ts",
           "repository": "shop/supplierfeed",
           "owner": "Catalog team"
         }
@@ -743,13 +699,9 @@
           "members": [
             {
               "kind": "Method",
-              "name": "Import",
-              "type": "error",
+              "name": "import",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "feedId",
                   "type": "string"
@@ -758,27 +710,23 @@
             }
           ],
           "name": "ProductImporter",
-          "source": "Catalog/ProductImporter/ProductImporter.go"
+          "source": "Catalog/ProductImporter/ProductImporter.ts"
         },
         {
           "constructors": [
             [
               {
                 "name": "db",
-                "type": "*mongo.Database"
+                "type": "Db"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "UpsertProducts",
-              "type": "error",
+              "name": "upsertProducts",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "CatalogDbRequest"
@@ -787,27 +735,23 @@
             }
           ],
           "name": "CatalogDbClient",
-          "source": "Catalog/ProductImporter/ProductImporter.go"
+          "source": "Catalog/ProductImporter/ProductImporter.ts"
         },
         {
           "constructors": [
             [
               {
                 "name": "sftp",
-                "type": "*sftp.Client"
+                "type": "SftpClient"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "ReadFeed",
-              "type": "error",
+              "name": "readFeed",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "SupplierFeedRequest"
@@ -816,7 +760,7 @@
             }
           ],
           "name": "SupplierFeedClient",
-          "source": "Catalog/ProductImporter/ProductImporter.go"
+          "source": "Catalog/ProductImporter/ProductImporter.ts"
         }
       ],
       "meta": {
@@ -825,7 +769,7 @@
         "system": "Catalog",
         "repository": "shop/productimporter",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Worker",
         "lifecycle": "deprecated",
         "tier": "3"
@@ -834,9 +778,10 @@
         {
           "description": "Imports supplier product data",
           "componentName": "ProductImporter",
-          "componentSource": "Catalog/ProductImporter/ProductImporter.go"
+          "componentSource": "Catalog/ProductImporter/ProductImporter.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [],
@@ -848,22 +793,18 @@
           "members": [
             {
               "kind": "Method",
-              "name": "Receive",
-              "type": "error",
+              "name": "receive",
+              "type": "Promise<void>",
               "parameters": [
                 {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
-                {
                   "name": "file",
-                  "type": "[]byte"
+                  "type": "Uint8Array"
                 }
               ]
             }
           ],
           "name": "SupplierFeed",
-          "source": "Catalog/SupplierFeed/SupplierFeed.go"
+          "source": "Catalog/SupplierFeed/SupplierFeed.ts"
         }
       ],
       "meta": {
@@ -872,7 +813,7 @@
         "system": "Catalog",
         "repository": "shop/supplierfeed",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Service",
         "lifecycle": "deprecated",
         "tier": "3"
@@ -881,9 +822,10 @@
         {
           "description": "Receives supplier files",
           "componentName": "SupplierFeed",
-          "componentSource": "Catalog/SupplierFeed/SupplierFeed.go"
+          "componentSource": "Catalog/SupplierFeed/SupplierFeed.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [
@@ -897,7 +839,7 @@
           "system": "Catalog",
           "relationship": "Internal",
           "componentName": "ReviewsDbClient",
-          "componentSource": "Catalog/ReviewsApi/ReviewsApi.go",
+          "componentSource": "Catalog/ReviewsApi/ReviewsApi.ts",
           "repository": "shop/reviewsdb",
           "owner": "Catalog team"
         }
@@ -915,13 +857,9 @@
           "members": [
             {
               "kind": "Method",
-              "name": "AddReview",
-              "type": "error",
+              "name": "addReview",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "review",
                   "type": "Review"
@@ -930,13 +868,9 @@
             },
             {
               "kind": "Method",
-              "name": "ListReviews",
-              "type": "([]Review, error)",
+              "name": "listReviews",
+              "type": "Promise<Review[]>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "sku",
                   "type": "string"
@@ -945,27 +879,23 @@
             }
           ],
           "name": "ReviewsApi",
-          "source": "Catalog/ReviewsApi/ReviewsApi.go"
+          "source": "Catalog/ReviewsApi/ReviewsApi.ts"
         },
         {
           "constructors": [
             [
               {
                 "name": "db",
-                "type": "*mongo.Database"
+                "type": "Db"
               }
             ]
           ],
           "members": [
             {
               "kind": "Method",
-              "name": "PersistReviews",
-              "type": "error",
+              "name": "persistReviews",
+              "type": "Promise<void>",
               "parameters": [
-                {
-                  "name": "ctx",
-                  "type": "context.Context"
-                },
                 {
                   "name": "request",
                   "type": "ReviewsDbRequest"
@@ -974,7 +904,7 @@
             }
           ],
           "name": "ReviewsDbClient",
-          "source": "Catalog/ReviewsApi/ReviewsApi.go"
+          "source": "Catalog/ReviewsApi/ReviewsApi.ts"
         }
       ],
       "meta": {
@@ -983,7 +913,7 @@
         "system": "Catalog",
         "repository": "shop/reviewsapi",
         "owner": "Catalog team",
-        "tech": "Go",
+        "tech": "Node.js",
         "kind": "Api",
         "lifecycle": "experimental",
         "tier": "3"
@@ -992,9 +922,10 @@
         {
           "description": "Accepts and lists reviews",
           "componentName": "ReviewsApi",
-          "componentSource": "Catalog/ReviewsApi/ReviewsApi.go"
+          "componentSource": "Catalog/ReviewsApi/ReviewsApi.ts"
         }
-      ]
+      ],
+      "language": "javascript"
     },
     {
       "collaborators": [],

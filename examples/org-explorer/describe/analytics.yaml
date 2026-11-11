@@ -11,7 +11,7 @@ apps:
         system: Ordering
         relationship: Internal
         componentName: OrderEventsClient
-        componentSource: Analytics/EventCollector/EventCollector.py
+        componentSource: Analytics/EventCollector/EventCollector.ts
         repository: shop/orderevents
         owner: Ordering team
       -
@@ -24,7 +24,7 @@ apps:
         system: Catalog
         relationship: Internal
         componentName: CatalogEventsClient
-        componentSource: Analytics/EventCollector/EventCollector.py
+        componentSource: Analytics/EventCollector/EventCollector.ts
         repository: shop/catalogevents
         owner: Catalog team
       -
@@ -37,7 +37,7 @@ apps:
         system: Analytics
         relationship: Internal
         componentName: DataWarehouseClient
-        componentSource: Analytics/EventCollector/EventCollector.py
+        componentSource: Analytics/EventCollector/EventCollector.ts
         repository: shop/datawarehouse
         owner: Analytics team
     meta:
@@ -46,7 +46,7 @@ apps:
       system: Analytics
       repository: shop/eventcollector
       owner: Analytics team
-      tech: Python 3.12
+      tech: Node.js
       kind: Worker
       lifecycle: production
       tier: '3'
@@ -54,7 +54,8 @@ apps:
       -
         description: Writes order and catalogue events to the warehouse
         componentName: EventCollector
-        componentSource: Analytics/EventCollector/EventCollector.py
+        componentSource: Analytics/EventCollector/EventCollector.ts
+    language: javascript
   -
     collaborators: []
     meta:
@@ -102,4 +103,5 @@ apps:
         description: Shows dashboards and reports
         componentName: ReportingUi
         componentSource: Analytics/ReportingUi/ReportingUi.cs
-version: '0.3'
+detail: apps
+version: '0.5'

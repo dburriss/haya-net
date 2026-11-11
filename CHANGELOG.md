@@ -28,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   other annotated classes of the app that a constructor takes, matched exactly by class name (graph format `0.4` adds
   `constructors`, `members` and `uses` to a component). `--detail members -f mermaid` is the component diagram.
 - The org-explorer example (and its [live page](https://dburriss.github.io/haya-net/)) is built with `--detail members`: the
-  Ordering, Billing and Catalog describe files now hold their classes' constructors and members.
+  Ordering, Billing and Catalog describe files now hold their classes' constructors and members. Its apps are all C# or
+  TypeScript now (sources, `tech` and `language`), the languages Haya analyses; Go, Java, Kotlin and Python are gone.
 - With `--detail components`, the explorer (`haya diagram -f html`) lists an app's components in its panel: each class that carries a `[Responsibility]`
   or `[Collaborator]` (`@Responsibility`/`@Collaborator` in TypeScript), once, with its source file. Graph format `0.3` adds
   the optional `components` field to app nodes. Other outputs are unchanged. See ADR014.

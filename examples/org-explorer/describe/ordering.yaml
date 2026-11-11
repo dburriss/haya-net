@@ -3,7 +3,7 @@ apps:
     collaborators:
       -
         direction: Downstream
-        tech: Go
+        tech: Node.js
         protocol: gRPC
         dataDescription: Price basket
         description: Works out the price of a product or basket
@@ -159,7 +159,7 @@ apps:
         owner: Billing team
       -
         direction: Downstream
-        tech: Python 3.12
+        tech: Node.js
         protocol: HTTPS
         dataDescription: Score order
         description: Scores orders for fraud risk
@@ -298,7 +298,7 @@ apps:
         owner: Ordering team
       -
         direction: Downstream
-        tech: Kotlin
+        tech: .NET 10
         protocol: gRPC
         dataDescription: Reserve stock
         description: Holds stock for orders
@@ -378,8 +378,8 @@ apps:
         constructors:
           -
             -
-              name: config
-              type: KafkaConfig
+              name: consumer
+              type: IConsumer<string, string>
         members:
           -
             kind: Method
@@ -536,8 +536,8 @@ apps:
         constructors:
           -
             -
-              name: config
-              type: KafkaConfig
+              name: consumer
+              type: IConsumer<string, string>
         members:
           -
             kind: Method
@@ -616,7 +616,7 @@ apps:
         owner: Ordering team
       -
         direction: Downstream
-        tech: Java 21
+        tech: .NET 10
         protocol: HTTPS
         dataDescription: Refund
         description: Coordinates refunds
