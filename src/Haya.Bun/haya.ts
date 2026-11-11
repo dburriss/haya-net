@@ -4,7 +4,7 @@
 import { existsSync } from "node:fs";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { analyse, AnalysisError } from "./analyser/analyser.ts";
+import { analyse, analyseWithMembers, AnalysisError } from "./analyser/analyser.ts";
 import { toFableApp } from "./analyser/bridge.ts";
 import type { App } from "./fable_output/Haya.Core/Model.ts";
 import { ofArray } from "./fable_output/fable_modules/fable-library-ts.5.27.0/List.ts";
@@ -30,35 +30,43 @@ import { generateCatalog as generateDatadogCatalog } from "./fable_output/Haya.C
 
 type Format = "json" | "yaml";
 
-const details = { systems: Detail.Systems, apps: Detail.Apps, components: Detail.Components } as const;
+const details = { systems: Detail.Systems, apps: Detail.Apps, components: Detail.Components, members: Detail.Members } as const;
 // Same text as CliText.detailUsage in src/Haya.Tool/Cli.fs
 const detailUsage =
-  "Level of detail. systems (systems and how they connect), apps (the apps inside their systems) or components (the classes inside the apps). With -f html, components adds the classes to the explorer (default: systems)";
+  "Level of detail. systems (systems and how they connect), apps (the apps inside their systems), components (the classes inside the apps) or members (also each class's constructors and public members). With -f html, components adds the classes to the explorer and members their constructors and members; the Mermaid diagram is the same for components and members (default: systems)";
+// Same text as CliText.describeDetailUsage in src/Haya.Tool/Cli.fs
+const describeDetailUsage =
+  "Level of detail. apps (responsibilities, collaborators and meta), components (the same as apps today: classes are already named on each responsibility and collaborator) or members (adds each annotated class's constructors and public members) (default: apps)";
 const dataFormat = (f: Format) => (f === "yaml" ? DataFormat_Yaml() : DataFormat_Json());
 const defaultFile = (format: Format, name: string) => `./${name}.${format}`;
 
-/** The apps of one input: a haya describe file (json/yaml) or an analysed tsconfig.json / directory (one app). */
-const loadOne = (inputPath: string): App[] => {
+/**
+ * The apps of one input: a haya describe file (json/yaml) or an analysed tsconfig.json / directory (one app). With
+ * `members`, the analyser also collects each annotated class's constructors and public members.
+ */
+const loadOne = (inputPath: string, members: boolean): App[] => {
   if (isDescribeFile(inputPath)) {
     if (!existsSync(inputPath)) throw new Error(`File not found: ${inputPath}`);
     const decoded = decodeApps(inputPath, IO_readAllText(inputPath));
     if (decoded.tag === 1) throw new Error(decoded.fields[0]);
     return Array.from(decoded.fields[0]);
   }
-  return [toFableApp(analyse(inputPath, process.cwd()))];
+  if (!members) return [toFableApp(analyse(inputPath, process.cwd()))];
+  const analysis = analyseWithMembers(inputPath, process.cwd());
+  return [toFableApp(analysis.descriptors, analysis.components)];
 };
 
 /** Loads every input and merges them into one system; conflicts between inputs are warned about on stderr. */
-const load = (inputPaths: string[]) => {
-  const [merged, warnings] = mergeApps(ofArray(inputPaths.flatMap(loadOne)));
+const load = (inputPaths: string[], members = false) => {
+  const [merged, warnings] = mergeApps(ofArray(inputPaths.flatMap((p) => loadOne(p, members))));
   for (const w of warnings) console.error(`Warning: ${w}`);
   return merged;
 };
 
 /** Load, render and write; prints the success message like `Haya.Tool` or an error with exit code 1. */
-const exec = (label: string, inputPaths: string[], outputPath: string, render: (apps: ReturnType<typeof load>) => string) => {
+const exec = (label: string, inputPaths: string[], outputPath: string, render: (apps: ReturnType<typeof load>) => string, members = false) => {
   try {
-    const apps = load(inputPaths);
+    const apps = load(inputPaths, members);
     const result = IO_write(outputPath, render(apps));
     if (result.tag === 0) console.info(`${label} successfully generated from ${inputPaths.join(", ")}`);
     else {
@@ -99,11 +107,12 @@ await yargs(hideBin(Bun.argv))
     (y) =>
       inputPath(y)
         .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./haya.json)" })
-        .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "json" as const, describe: "Output format" }),
+        .option("format", { alias: "f", choices: ["json", "yaml"] as const, default: "json" as const, describe: "Output format" })
+        .option("detail", { alias: "d", choices: ["apps", "components", "members"] as const, default: "apps" as const, describe: describeDetailUsage }),
     (argv) => {
       const out = argv["output-path"] ?? defaultFile(argv.format, "haya");
-      const cmd = new DescribeCommand(ofArray(argv.inputPaths), out, dataFormat(argv.format), process.cwd());
-      exec("Describe", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => serialize(cmd, ds));
+      const cmd = new DescribeCommand(ofArray(argv.inputPaths), out, dataFormat(argv.format), details[argv.detail], process.cwd());
+      exec("Describe", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => serialize(cmd, ds), argv.detail === "members");
     },
   )
   .command(
@@ -138,13 +147,13 @@ await yargs(hideBin(Bun.argv))
     (y) =>
       inputPath(y)
         .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./c4-system-context.mermaid, or ./diagram.html for -f html)" })
-        .option("detail", { alias: "d", choices: ["systems", "apps", "components"] as const, default: "systems" as const, describe: detailUsage })
+        .option("detail", { alias: "d", choices: ["systems", "apps", "components", "members"] as const, default: "systems" as const, describe: detailUsage })
         .option("diagram-format", { alias: "f", choices: ["mermaid", "html"] as const, default: "mermaid" as const, describe: "Diagram format. html is an interactive explorer (a self-contained page)" }),
     (argv) => {
       const html = argv["diagram-format"] === "html";
       const out = argv["output-path"] ?? (html ? "./diagram.html" : "./c4-system-context.mermaid");
       const cmd = new DiagramCommand(ofArray(argv.inputPaths), out, details[argv.detail], html ? DiagramFormat.Html : DiagramFormat.Mermaid, process.cwd());
-      exec("Diagram", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
+      exec("Diagram", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDiagram(cmd, ds), argv.detail === "members");
     },
   )
   .strictCommands()

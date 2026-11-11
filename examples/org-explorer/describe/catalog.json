@@ -45,6 +45,147 @@
           "owner": "Warehouse team"
         }
       ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "catalogDb",
+                "type": "CatalogDbClient"
+              },
+              {
+                "name": "pricingService",
+                "type": "PricingServiceClient"
+              },
+              {
+                "name": "stockLevels",
+                "type": "StockLevelsClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "GetProduct",
+              "type": "(Product, error)",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "id",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "kind": "Method",
+              "name": "ListCategory",
+              "type": "([]Product, error)",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "category",
+                  "type": "string"
+                }
+              ]
+            }
+          ],
+          "name": "CatalogApi",
+          "source": "Catalog/CatalogApi/CatalogApi.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "db",
+                "type": "*mongo.Database"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "ReadProducts",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "CatalogDbRequest"
+                }
+              ]
+            }
+          ],
+          "name": "CatalogDbClient",
+          "source": "Catalog/CatalogApi/CatalogApi.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "conn",
+                "type": "*grpc.ClientConn"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Prices",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "PricingServiceRequest"
+                }
+              ]
+            }
+          ],
+          "name": "PricingServiceClient",
+          "source": "Catalog/CatalogApi/CatalogApi.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "client",
+                "type": "*http.Client"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Availability",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "StockLevelsRequest"
+                }
+              ]
+            }
+          ],
+          "name": "StockLevelsClient",
+          "source": "Catalog/CatalogApi/CatalogApi.go"
+        }
+      ],
       "meta": {
         "appName": "CatalogApi",
         "description": "Serves product data",
@@ -102,6 +243,66 @@
           "owner": "Catalog team"
         }
       ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "pricingRules",
+                "type": "PricingRulesClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Price",
+              "type": "(Price, error)",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "sku",
+                  "type": "string"
+                }
+              ]
+            }
+          ],
+          "name": "PricingService",
+          "source": "Catalog/PricingService/PricingService.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "client",
+                "type": "*http.Client"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "LoadRules",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "PricingRulesRequest"
+                }
+              ]
+            }
+          ],
+          "name": "PricingRulesClient",
+          "source": "Catalog/PricingService/PricingService.go"
+        }
+      ],
       "meta": {
         "appName": "PricingService",
         "description": "Works out the price of a product or basket",
@@ -123,6 +324,28 @@
     },
     {
       "collaborators": [],
+      "components": [
+        {
+          "constructors": [
+            []
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Rules",
+              "type": "([]Rule, error)",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                }
+              ]
+            }
+          ],
+          "name": "PricingRules",
+          "source": "Catalog/PricingRules/PricingRules.go"
+        }
+      ],
       "meta": {
         "appName": "PricingRules",
         "description": "Holds the pricing rules",
@@ -159,6 +382,62 @@
           "owner": "Catalog team"
         }
       ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "searchIndexer",
+                "type": "SearchIndexerClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Search",
+              "type": "Task<SearchResult>",
+              "parameters": [
+                {
+                  "name": "query",
+                  "type": "string"
+                },
+                {
+                  "name": "page",
+                  "type": "int"
+                }
+              ]
+            }
+          ],
+          "name": "SearchApi",
+          "source": "Catalog/SearchApi/SearchApi.cs"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "http",
+                "type": "HttpClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "QueryIndex",
+              "type": "Task",
+              "parameters": [
+                {
+                  "name": "request",
+                  "type": "SearchIndexerRequest"
+                }
+              ]
+            }
+          ],
+          "name": "SearchIndexerClient",
+          "source": "Catalog/SearchApi/SearchApi.cs"
+        }
+      ],
       "meta": {
         "appName": "SearchApi",
         "description": "Product search",
@@ -193,6 +472,66 @@
           "componentSource": "Catalog/SearchIndexer/SearchIndexer.go",
           "repository": "shop/catalogevents",
           "owner": "Catalog team"
+        }
+      ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "catalogEvents",
+                "type": "CatalogEventsClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Handle",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "change",
+                  "type": "ProductChanged"
+                }
+              ]
+            }
+          ],
+          "name": "SearchIndexer",
+          "source": "Catalog/SearchIndexer/SearchIndexer.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "reader",
+                "type": "*kafka.Reader"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "ConsumeChanges",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "CatalogEventsRequest"
+                }
+              ]
+            }
+          ],
+          "name": "CatalogEventsClient",
+          "source": "Catalog/SearchIndexer/SearchIndexer.go"
         }
       ],
       "meta": {
@@ -250,6 +589,70 @@
           "componentSource": "Catalog/ImageService/ImageService.go",
           "repository": "shop/imagestore",
           "owner": "Catalog team"
+        }
+      ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "imageStore",
+                "type": "ImageStoreClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Resize",
+              "type": "([]byte, error)",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "imageId",
+                  "type": "string"
+                },
+                {
+                  "name": "width",
+                  "type": "int"
+                }
+              ]
+            }
+          ],
+          "name": "ImageService",
+          "source": "Catalog/ImageService/ImageService.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "s3",
+                "type": "*s3.Client"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "StoreImages",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "ImageStoreRequest"
+                }
+              ]
+            }
+          ],
+          "name": "ImageStoreClient",
+          "source": "Catalog/ImageService/ImageService.go"
         }
       ],
       "meta": {
@@ -323,6 +726,99 @@
           "owner": "Catalog team"
         }
       ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "catalogDb",
+                "type": "CatalogDbClient"
+              },
+              {
+                "name": "supplierFeed",
+                "type": "SupplierFeedClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Import",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "feedId",
+                  "type": "string"
+                }
+              ]
+            }
+          ],
+          "name": "ProductImporter",
+          "source": "Catalog/ProductImporter/ProductImporter.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "db",
+                "type": "*mongo.Database"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "UpsertProducts",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "CatalogDbRequest"
+                }
+              ]
+            }
+          ],
+          "name": "CatalogDbClient",
+          "source": "Catalog/ProductImporter/ProductImporter.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "sftp",
+                "type": "*sftp.Client"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "ReadFeed",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "SupplierFeedRequest"
+                }
+              ]
+            }
+          ],
+          "name": "SupplierFeedClient",
+          "source": "Catalog/ProductImporter/ProductImporter.go"
+        }
+      ],
       "meta": {
         "appName": "ProductImporter",
         "description": "Loads products from supplier feeds",
@@ -344,6 +840,32 @@
     },
     {
       "collaborators": [],
+      "components": [
+        {
+          "constructors": [
+            []
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "Receive",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "file",
+                  "type": "[]byte"
+                }
+              ]
+            }
+          ],
+          "name": "SupplierFeed",
+          "source": "Catalog/SupplierFeed/SupplierFeed.go"
+        }
+      ],
       "meta": {
         "appName": "SupplierFeed",
         "description": "Receives the nightly supplier file",
@@ -378,6 +900,81 @@
           "componentSource": "Catalog/ReviewsApi/ReviewsApi.go",
           "repository": "shop/reviewsdb",
           "owner": "Catalog team"
+        }
+      ],
+      "components": [
+        {
+          "constructors": [
+            [
+              {
+                "name": "reviewsDb",
+                "type": "ReviewsDbClient"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "AddReview",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "review",
+                  "type": "Review"
+                }
+              ]
+            },
+            {
+              "kind": "Method",
+              "name": "ListReviews",
+              "type": "([]Review, error)",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "sku",
+                  "type": "string"
+                }
+              ]
+            }
+          ],
+          "name": "ReviewsApi",
+          "source": "Catalog/ReviewsApi/ReviewsApi.go"
+        },
+        {
+          "constructors": [
+            [
+              {
+                "name": "db",
+                "type": "*mongo.Database"
+              }
+            ]
+          ],
+          "members": [
+            {
+              "kind": "Method",
+              "name": "PersistReviews",
+              "type": "error",
+              "parameters": [
+                {
+                  "name": "ctx",
+                  "type": "context.Context"
+                },
+                {
+                  "name": "request",
+                  "type": "ReviewsDbRequest"
+                }
+              ]
+            }
+          ],
+          "name": "ReviewsDbClient",
+          "source": "Catalog/ReviewsApi/ReviewsApi.go"
         }
       ],
       "meta": {
@@ -421,5 +1018,6 @@
       ]
     }
   ],
-  "version": "0.3"
+  "detail": "members",
+  "version": "0.5"
 }

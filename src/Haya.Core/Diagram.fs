@@ -295,6 +295,8 @@ module Diagram =
         match (cmd.Detail, cmd.DiagramFormat) with
         | Systems, Mermaid -> sprintMermaidC4L1 apps
         | Apps, Mermaid -> sprintMermaidC4L2 apps
-        | Components, Mermaid -> sprintMermaidC4L3 apps
+        // the component diagram does not draw members (yet)
+        | Components, Mermaid
+        | Members, Mermaid -> sprintMermaidC4L3 apps
         // the explorer always shows systems and apps; the detail only decides whether the classes are in it
         | detail, Html -> Explore.sprintHtml detail apps

@@ -10,11 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `haya describe` writes describe format `0.5`: every document has a top-level `"detail"` (`"apps"` by default), so default
+  output differs from before in the version and that one line. Files from `0.0` to `0.4` are still read. The graph in
+  `haya diagram -f html` is format `0.4`; the default page differs in that version string and the viewer code only. See ADR017.
 - **Breaking:** `haya diagram -t/--diagram-type c4system|c4container` is replaced by `-d/--detail systems|apps|components`
   (default `systems`), in both CLIs. `--detail` picks the Mermaid level (systems, apps inside systems, classes inside apps),
   and for `-f html` whether the explorer has the classes in it: they are only there with `--detail components`. See ADR016.
 
 ### Added
+- A `members` detail level, opt-in: `haya describe --detail members` and `haya diagram --detail members` record, for each class
+  with a `[Responsibility]` or `[Collaborator]`, its public constructors (parameters in order) and the public methods,
+  properties, fields and events declared on it, with types as the language writes them (`Task<bool>`, `Promise<boolean>`).
+  Compiler-generated, inherited, non-public and `Object` override members are left out. Describe gains an optional per-app
+  `components` array; `describe --detail apps|components|members` (default `apps`; `components` is the same as `apps` today).
+  `crc`, `backstage` and `datadog` ignore it. See ADR017.
+- With `--detail members`, the explorer's class panel shows **Constructor**, **Uses** and **Members**. **Uses** links to the
+  other annotated classes of the app that a constructor takes, matched exactly by class name (graph format `0.4` adds
+  `constructors`, `members` and `uses` to a component). `--detail members -f mermaid` is the component diagram.
+- The org-explorer example (and its [live page](https://dburriss.github.io/haya-net/)) is built with `--detail members`: the
+  Ordering, Billing and Catalog describe files now hold their classes' constructors and members.
 - With `--detail components`, the explorer (`haya diagram -f html`) lists an app's components in its panel: each class that carries a `[Responsibility]`
   or `[Collaborator]` (`@Responsibility`/`@Collaborator` in TypeScript), once, with its source file. Graph format `0.3` adds
   the optional `components` field to app nodes. Other outputs are unchanged. See ADR014.

@@ -1,7 +1,7 @@
 # ADR016: One `--detail` level for diagrams, classes opt-in
 
 Date: 2026-11-11  
-Status: Accepted  
+Status: Accepted, extended by [ADR017](ADR017-member-detail.md)  
 Author: dburriss
 
 ### Context
@@ -30,9 +30,10 @@ for which one wins (`-t c4component` with `--detail apps`). The `c4…` values w
   graph document leaves them out (they were already omitted when empty) and the viewer works as before ADR014: no Components
   section, no opening apps into classes, and double-click on an app shows the apps it connects to. The viewer needed no change.
   The component diagram always asks the graph for `Components`.
-- **Describe, crc, backstage and datadog do not change and take no `--detail`.** Describe already carries `componentName` and
+- **Describe, crc, backstage and datadog do not change and take no `--detail`.** (ADR017 gives `describe` a `--detail` for
+  members; crc, backstage and datadog still take none.) Describe already carries `componentName` and
   `componentSource` on each responsibility and collaborator, and the CRC table uses them; nothing there needs a level.
-- **`members` is reserved** as the next level: constructor parameters and public members per class. It is not built yet.
+- **`members` is reserved** as the next level: constructor parameters and public members per class. Built in ADR017.
 
 ### Alternatives considered
 - **Keep `-t` and add `--detail` for html only**, with `-t c4component` always drawing classes. Two options for one idea and a

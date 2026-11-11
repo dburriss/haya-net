@@ -2,7 +2,11 @@
 // Enums are ints in Fable output (see Haya.Core/Model.fs) and lists are fable-library lists.
 import {
   AppModule_ofDescriptors,
+  AppModule_withComponents,
   AppModule_withLanguage,
+  ComponentDetail,
+  Member,
+  Parameter,
   type App,
   CollaboratorDescriptor,
   Descriptor_Collaborator,
@@ -13,7 +17,7 @@ import {
   type Descriptor_$union,
 } from "../fable_output/Haya.Core/Model.ts";
 import { ofArray, type FSharpList } from "../fable_output/fable_modules/fable-library-ts.5.27.0/List.ts";
-import type { AppKind, Direction, DescriptorInfo, Relationship } from "./analyser.ts";
+import type { AppKind, ComponentInfo, Direction, DescriptorInfo, MemberKind, ParameterInfo, Relationship } from "./analyser.ts";
 
 const DIRECTION: Record<Direction, number> = { Upstream: 1, Downstream: 2 };
 const RELATIONSHIP: Record<Relationship, number> = {
@@ -64,8 +68,27 @@ export const toFableDescriptor = (d: DescriptorInfo): Descriptor_$union => {
   }
 };
 
+/** `MemberKind` of `Haya.Core.Analysis` (an F# enum, so a number under Fable). */
+const MEMBER_KIND: Record<MemberKind, number> = { Method: 1, Property: 2, Field: 3, Event: 4 };
+
+const toFableParameters = (ps: ParameterInfo[]) => ofArray(ps.map((p) => new Parameter(p.name, p.type)));
+
+export const toFableComponent = (c: ComponentInfo): ComponentDetail =>
+  new ComponentDetail(
+    c.name,
+    c.source,
+    ofArray(c.constructors.map(toFableParameters)),
+    ofArray(c.members.map((m) => new Member(m.name, MEMBER_KIND[m.kind], m.type, toFableParameters(m.parameters)))),
+  );
+
 export const toFableDescriptors = (ds: DescriptorInfo[]): FSharpList<Descriptor_$union> => ofArray(ds.map(toFableDescriptor));
 
-/** One analysed project becomes one app (the counterpart of `App.ofDescriptors` on the .NET side). */
-export const toFableApp = (ds: DescriptorInfo[]): App =>
-  AppModule_withLanguage(LANGUAGE_JAVASCRIPT, AppModule_ofDescriptors(toFableDescriptors(ds)));
+/**
+ * One analysed project becomes one app (the counterpart of `App.ofDescriptors` on the .NET side). `components` holds
+ * the classes' constructors and members, only at `--detail members`; Haya.Core puts them in order.
+ */
+export const toFableApp = (ds: DescriptorInfo[], components: ComponentInfo[] = []): App =>
+  AppModule_withComponents(
+    ofArray(components.map(toFableComponent)),
+    AppModule_withLanguage(LANGUAGE_JAVASCRIPT, AppModule_ofDescriptors(toFableDescriptors(ds))),
+  );

@@ -15,6 +15,7 @@
         <Compile Include="InMemoryAnalysis.fs" />
         <Compile Include="CustomAttributeTests.fs" />
         <Compile Include="ReferencedAttributeTests.fs" />
+        <Compile Include="MemberTests.fs" />
     </ItemGroup>
 
     <ItemGroup>

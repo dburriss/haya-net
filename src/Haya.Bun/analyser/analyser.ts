@@ -59,6 +59,36 @@ export interface MetaInfo {
 
 export type DescriptorInfo = ResponsibilityInfo | CollaboratorInfo | MetaInfo;
 
+export interface ParameterInfo {
+  name: string;
+  type: string;
+}
+
+export type MemberKind = "Method" | "Property" | "Field" | "Event";
+
+export interface MemberInfo {
+  name: string;
+  kind: MemberKind;
+  /** The return/property type as the TypeScript checker prints it, e.g. `Promise<boolean>`. */
+  type: string;
+  /** Methods only: the parameters in order. */
+  parameters: ParameterInfo[];
+}
+
+/** The public constructors and members of an annotated class (`--detail members`, ADR017). Order is set by Haya.Core. */
+export interface ComponentInfo {
+  name: string;
+  source: string;
+  constructors: ParameterInfo[][];
+  members: MemberInfo[];
+}
+
+/** What a project analysed with members holds. */
+export interface Analysis {
+  descriptors: DescriptorInfo[];
+  components: ComponentInfo[];
+}
+
 export interface Problem {
   /** Path relative to the current directory, or undefined when not tied to a source file. */
   file?: string;
@@ -153,7 +183,15 @@ const isHayaDeclaration = (decl: ts.Declaration): boolean =>
   packageNameOf(path.dirname(decl.getSourceFile().fileName)) === ANNOTATIONS_PACKAGE;
 
 /** Analyse the TypeScript project at `inputPath` and return descriptors in the same order as `Haya.Roslyn`. */
-export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
+export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => analyseProject(inputPath, cwd, false).descriptors;
+
+/** Analyse the project and also collect each annotated class's public constructors and members (`--detail members`). */
+export const analyseWithMembers = (inputPath: string, cwd: string): Analysis => analyseProject(inputPath, cwd, true);
+
+/** Names the C# side leaves out as overrides of `System.Object`; their TypeScript counterparts. */
+const OBJECT_MEMBERS = new Set(["toString", "valueOf"]);
+
+const analyseProject = (inputPath: string, cwd: string, withMembers: boolean): Analysis => {
   const configPath = path.resolve(cwd, findConfig(path.resolve(cwd, inputPath)));
   const read = ts.readConfigFile(configPath, ts.sys.readFile);
   const configProblems = (diags: readonly ts.Diagnostic[]): Problem[] =>
@@ -301,6 +339,69 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
     return result;
   };
 
+  const typeText = (t: ts.Type): string => checker.typeToString(t, undefined, ts.TypeFormatFlags.NoTruncation);
+
+  /** Hidden from other code: `private`, `protected` or an ECMAScript `#private` name. */
+  const isHidden = (node: ts.Node): boolean => {
+    const flags = ts.getCombinedModifierFlags(node as ts.Declaration);
+    if (flags & (ts.ModifierFlags.Private | ts.ModifierFlags.Protected)) return true;
+    const name = (node as ts.NamedDeclaration).name;
+    return name !== undefined && ts.isPrivateIdentifier(name);
+  };
+
+  const parametersOf = (params: readonly ts.ParameterDeclaration[]): ParameterInfo[] =>
+    params.map((p) => ({
+      name: p.name.getText(),
+      type: typeText(checker.getTypeAtLocation(p)),
+    }));
+
+  /** The declarations that make up the public signatures: the overloads, or the implementation when there are none. */
+  const signatures = <T extends ts.FunctionLikeDeclaration>(decls: T[]): T[] => {
+    const overloads = decls.filter((d) => d.body === undefined);
+    return overloads.length > 0 ? overloads : decls;
+  };
+
+  /** The public constructors and the public members declared on the class (not inherited). */
+  const componentOf = (node: ts.ClassDeclaration, name: string, source: string): ComponentInfo => {
+    const ctors = signatures(node.members.filter(ts.isConstructorDeclaration)).filter((c) => !isHidden(c));
+    const members: MemberInfo[] = [];
+    const methods = new Map<string, ts.MethodDeclaration[]>();
+    const accessors = new Set<string>();
+    for (const m of node.members) {
+      if (isHidden(m) || m.name === undefined || ts.isComputedPropertyName(m.name)) continue;
+      const memberName = m.name.getText();
+      if (OBJECT_MEMBERS.has(memberName)) continue;
+      if (ts.isMethodDeclaration(m)) {
+        methods.set(memberName, [...(methods.get(memberName) ?? []), m]);
+      } else if (ts.isPropertyDeclaration(m)) {
+        members.push({ name: memberName, kind: "Property", type: typeText(checker.getTypeAtLocation(m)), parameters: [] });
+      } else if ((ts.isGetAccessorDeclaration(m) || ts.isSetAccessorDeclaration(m)) && !accessors.has(memberName)) {
+        // one property per name, whether it has a getter, a setter or both
+        accessors.add(memberName);
+        const sym = checker.getSymbolAtLocation(m.name);
+        const type = sym ? checker.getTypeOfSymbolAtLocation(sym, m) : checker.getTypeAtLocation(m);
+        members.push({ name: memberName, kind: "Property", type: typeText(type), parameters: [] });
+      }
+    }
+    for (const [memberName, decls] of methods) {
+      for (const d of signatures(decls)) {
+        const sig = checker.getSignatureFromDeclaration(d);
+        const type = sig ? typeText(checker.getReturnTypeOfSignature(sig)) : "";
+        members.push({ name: memberName, kind: "Method", type, parameters: parametersOf(d.parameters) });
+      }
+    }
+    // public parameter properties (`constructor(public repo: Repo)`) are properties of the class
+    for (const c of node.members.filter(ts.isConstructorDeclaration)) {
+      for (const p of c.parameters) {
+        if (ts.isParameterPropertyDeclaration(p, c) && !isHidden(p)) {
+          members.push({ name: p.name.getText(), kind: "Property", type: typeText(checker.getTypeAtLocation(p)), parameters: [] });
+        }
+      }
+    }
+    return { name, source, constructors: ctors.map((c) => parametersOf(c.parameters)), members };
+  };
+
+  const components: ComponentInfo[] = [];
   const responsibilities: ResponsibilityInfo[] = [];
   const collaborators: CollaboratorInfo[] = [];
   const metas: { node: ts.Node; info: MetaInfo }[] = [];
@@ -309,6 +410,7 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
     if (ts.isClassDeclaration(node)) {
       const componentName = node.name?.text ?? "default";
       const componentSource = makeRelativePath(cwd, sf.fileName);
+      let annotated = false;
       for (const decorator of ts.getDecorators(node) ?? []) {
         const call = ts.isCallExpression(decorator.expression) ? decorator.expression : undefined;
         const annotation = annotationOf(call ? call.expression : decorator.expression);
@@ -324,6 +426,7 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
           continue;
         }
         const o = { ...annotation.defaults, ...readOptions(call, name, `@${written}`, annotation.custom) };
+        annotated = true;
         if (name === "Responsibility") {
           responsibilities.push({ kind: "responsibility", description: o.description ?? "", componentName, componentSource });
         } else {
@@ -345,6 +448,7 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
           });
         }
       }
+      if (withMembers && annotated) components.push(componentOf(node, componentName, componentSource));
     } else if (ts.isCallExpression(node) && annotationOf(node.expression)?.name === "meta") {
       const annotation = annotationOf(node.expression)!;
       const written = calleeName(node.expression)?.text ?? "meta";
@@ -397,5 +501,5 @@ export const analyse = (inputPath: string, cwd: string): DescriptorInfo[] => {
   }
   if (problems.length > 0) throw new AnalysisError(problems);
 
-  return [...responsibilities, ...collaborators, ...metas.map((m) => m.info)];
+  return { descriptors: [...responsibilities, ...collaborators, ...metas.map((m) => m.info)], components };
 };

@@ -549,6 +549,13 @@ const note = (e) => [e.label || "(no description)", e.protocol && ` [${e.protoco
 const relRow = (e, id) => h("li", {}, goto(e.from === id || inside(id, e.from) ? e.to : e.from), " · " + note(e));
 const inside = (id, other) => nodes.get(id).kind === "system" && (appsOf.get(id) || []).includes(other);
 const section = (title, items) => (items.length ? [h("h3", {}, title), h("ul", {}, items)] : []);
+// A section that folds like the legend, with its count in the heading. It starts open; one you close stays closed on the
+// next panel, so a long list of members can be kept out of the way while you click through classes.
+const folded = new Set();
+const foldable = (title, items) => (items.length
+  ? [h("details", { class: "fold", open: !folded.has(title), ontoggle: (e) => (e.target.open ? folded.delete(title) : folded.add(title)) },
+      h("summary", {}, `${title} (${items.length})`), h("ul", {}, items))]
+  : []);
 
 function nodePanel(n) {
   const kids = [h("h2", {}, name(n.id)), h("div", {}, factPills(n))];
@@ -564,11 +571,11 @@ function nodePanel(n) {
       n.parent && act("Hide", () => hideApp(n.id)),
       act("Centre", () => cy.animate({ center: { eles: cy.getElementById(n.id) }, duration: 250 }))));
     kids.push(section("Responsibilities", (n.responsibilities || []).map((r) => h("li", {}, r))));
-    // the classes that carry the app's attributes, with the file (or referenced assembly) they are in
-    kids.push(section("Components", (n.components || []).map((c) => h("li", { class: "component" }, goto(c.id), c.source && h("div", { class: "muted source" }, c.source)))));
     const mine = touching.get(n.id) || [];
     kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
     kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
+    // the classes that carry the app's attributes, with the file (or referenced assembly) they are in, after the relationships
+    kids.push(section("Components", (n.components || []).map((c) => h("li", { class: "component" }, goto(c.id), c.source && h("div", { class: "muted source" }, c.source)))));
   } else if (n.kind === "component") {
     // a class of an app: where it is, what it does, and the relationships written on it (or that name it from another app)
     kids.push(h("p", {}, h("span", { class: "pill" }, "class"), " in ", goto(n.parent)));
@@ -580,6 +587,13 @@ function nodePanel(n) {
     const row = (e) => h("li", {}, goto(other(e)), " · " + note(e));
     kids.push(section("Inbound", mine.filter((e) => (e.toComponents || []).includes(n.id)).map(row)));
     kids.push(section("Outbound", mine.filter((e) => (e.fromComponents || []).includes(n.id)).map(row)));
+    // `--detail members` only, after the relationships: what the class takes, the classes of its app it uses, and what it offers
+    const params = (ps) => "(" + (ps || []).map((p) => `${p.name}: ${p.type}`).join(", ") + ")";
+    kids.push(foldable("Constructor", (n.constructors || []).map((ps) => h("li", { class: "code" }, params(ps)))));
+    kids.push(foldable("Uses", (n.uses || []).filter((id) => nodes.has(id)).map((id) => h("li", {}, goto(id)))));
+    kids.push(foldable("Members", (n.members || []).map((m) =>
+      h("li", { class: "code" }, h("span", { class: "muted" }, m.kind.toLowerCase() + " "),
+        m.kind === "Method" ? `${m.name}${params(m.parameters)}: ${m.type}` : `${m.name}: ${m.type}`))));
   } else if (n.kind === "person") {
     if (n.description) kids.push(h("p", {}, n.description));
     kids.push(h("dl", {}, field("Owner", n.owner)));

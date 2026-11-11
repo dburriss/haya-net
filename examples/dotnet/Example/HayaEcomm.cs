@@ -13,8 +13,15 @@
 namespace Example;
 
 [Responsibility(Description = "Handles order processing")]
-public class CreditCardPaymentUsecase
-{ }
+public class CreditCardPaymentUsecase(VisaPaymentService visa, ShippingService shipping)
+{
+    public async Task<bool> Pay(string orderId, string cardToken, int amountInCents)
+    {
+        var paid = await visa.Charge(cardToken, amountInCents);
+        if (paid) await shipping.Ship(orderId);
+        return paid;
+    }
+}
 
 [Collaborator(AppName = "Checkout",
     Relationship = Relationship.Internal,
@@ -26,8 +33,10 @@ public class CreditCardPaymentUsecase
     DataDescription = "Request payment",
     Repository = "org/checkout-api",
     Owner = "Checkout Team")]
-public class PaymentsController
-{ }
+public class PaymentsController(CreditCardPaymentUsecase usecase)
+{
+    public Task<bool> Post(string orderId, string cardToken, int amountInCents) => usecase.Pay(orderId, cardToken, amountInCents);
+}
 
 [Collaborator(AppName = "Visa Payment Provider",
     Protocol = "HTTPS",
@@ -39,7 +48,11 @@ public class PaymentsController
     Repository = "org/webshop",
     Owner = "Visa")]
 public class VisaPaymentService
-{ }
+{
+    public string Endpoint { get; } = "https://visa.example/pay";
+
+    public Task<bool> Charge(string cardToken, int amountInCents) => Task.FromResult(amountInCents > 0);
+}
 
 [Collaborator(AppName = "Shipping Service",
     Relationship = Relationship.Internal,
@@ -52,7 +65,9 @@ public class VisaPaymentService
     Repository = "org/shipping-service",
     Owner = "Shipping Team")]
 public class ShippingService
-{ }
+{
+    public Task Ship(string orderId) => Task.CompletedTask;
+}
 
 [Collaborator(AppName = "Customer",
     Kind = AppKind.Person,

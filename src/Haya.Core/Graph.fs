@@ -23,7 +23,13 @@ module Graph =
           Name: string
           Source: string
           /// The descriptions of the class's responsibilities, in the order they were found.
-          Responsibilities: string list }
+          Responsibilities: string list
+          /// `Detail.Members` only: each public constructor's parameters.
+          Constructors: Parameter list list
+          /// `Detail.Members` only: the public members declared on the class.
+          Members: Member list
+          /// `Detail.Members` only: the ids of the other classes of the same app that a constructor takes (see `uses`).
+          Uses: string list }
 
     type Node =
         { Id: string
@@ -71,8 +77,18 @@ module Graph =
     let private systemId (system: string) = Naming.mermaidId system
     let private sameKey (system: string) (appName: string) = String.toLower system + "/" + String.toLower appName
 
+    /// The ids of the components (of one app) that `c` takes in a constructor: a parameter's type is exactly the
+    /// class name of another component. No generics, nullability or interface-prefix matching (ADR017).
+    let uses (components: Component list) (c: Component) =
+        c.Constructors
+        |> List.concat
+        |> List.choose (fun p -> components |> List.tryFind (fun x -> x.Id <> c.Id && x.Name = p.Type))
+        |> List.map (_.Id)
+        |> List.distinct
+
     /// Resolve the apps into nodes and edges. Output is ordered by id (nodes) and by first appearance (edges) so it is deterministic.
-    /// The classes of the apps (`Node.Components`, `Edge.FromComponents`/`ToComponents`) are only filled at `Detail.Components`.
+    /// The classes of the apps (`Node.Components`, `Edge.FromComponents`/`ToComponents`) are only filled from `Detail.Components`,
+    /// and their constructors, members and uses only at `Detail.Members`.
     let ofApps (detail: Detail) (apps: App list) : Graph =
         let apps = apps |> List.map App.withDefaultSystems
         // apps without a meta (or app name) have no identity, so they cannot be a node
@@ -103,7 +119,11 @@ module Graph =
 
         // one entry per class, however many attributes it carries; a descriptor without a class name is not one
         let componentsOf ((m: MetaDescriptor), (a: App)) =
-            if detail <> Detail.Components then [] else
+            if not (Detail.atLeast Detail.Components detail) then [] else
+            let detailOf (name: string) (source: string) =
+                if Detail.atLeast Detail.Members detail then
+                    a.Components |> List.tryFind (fun d -> d.Name = name && d.Source = source)
+                else None
             (a.Responsibilities |> List.map (fun r -> r.ComponentName, r.ComponentSource))
             @ (a.Collaborators |> List.map (fun c -> c.ComponentName, c.ComponentSource))
             |> List.filter (fun (name, _) -> name <> "")
@@ -121,7 +141,11 @@ module Graph =
                       Responsibilities =
                           a.Responsibilities
                           |> List.filter (fun r -> r.ComponentName = name && r.ComponentSource = source)
-                          |> List.map (_.Description) })
+                          |> List.map (_.Description)
+                      Constructors = detailOf name source |> Option.map (_.Constructors) |> Option.defaultValue []
+                      Members = detailOf name source |> Option.map (_.Members) |> Option.defaultValue []
+                      Uses = [] })
+                |> fun cs -> cs |> List.map (fun c -> { c with Uses = uses cs c })
 
         let parentOf (system: string) = if system = "" then None else Some (systemId system)
 

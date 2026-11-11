@@ -81,10 +81,43 @@ module Encode =
             if x.Tier <> "" then "tier", str x.Tier
         ]
 
+    let memberKind (k: MemberKind) =
+        match k with
+        | MemberKind.Method -> "Method"
+        | MemberKind.Property -> "Property"
+        | MemberKind.Field -> "Field"
+        | _ -> "Event"
+
+    let private array (f: 'a -> JsonValue) (xs: 'a list) = xs |> List.map f |> List.toArray |> JsonValue.Array
+
+    let parameter (x: Parameter) = record [ "name", str x.Name; "type", str x.Type ]
+
+    let constructors (xs: Parameter list list) = xs |> array (array parameter)
+
+    let classMember (x: Member) =
+        record [
+            "kind", str (memberKind x.Kind)
+            "name", str x.Name
+            "type", str x.Type
+            // methods and indexers only
+            if not x.Parameters.IsEmpty || x.Kind = MemberKind.Method then "parameters", x.Parameters |> array parameter
+        ]
+
+    /// The constructors and public members of one annotated class (`describe --detail members`).
+    let componentDetail (x: ComponentDetail) =
+        record [
+            "constructors", constructors x.Constructors
+            "members", x.Members |> array classMember
+            "name", str x.Name
+            "source", str x.Source
+        ]
+
     /// One app of the document written by `describe`. `meta` is omitted when there is none.
     let app (x: App) =
         record [
             "collaborators", x.Collaborators |> List.map collaborator |> List.toArray |> JsonValue.Array
+            // optional: only written at `--detail members`
+            if not x.Components.IsEmpty then "components", x.Components |> array componentDetail
             match x.Meta with
             | Some m -> "meta", meta m
             | None -> ()
@@ -93,16 +126,19 @@ module Encode =
             if x.Language <> Language.Unknown then "language", str (language x.Language)
         ]
 
-    /// The document written by `describe`: `{ apps: [...], version }`.
-    let description (version: string) (apps: App list) =
+    /// The document written by `describe`: `{ apps: [...], detail, version }`. Below `Detail.Members` the classes'
+    /// members are left out, so `detail` always says what the document holds.
+    let description (version: string) (detail: Detail) (apps: App list) =
+        let apps = if Detail.atLeast Detail.Members detail then apps else apps |> List.map (fun a -> { a with Components = [] })
         record [
             "apps", apps |> List.map app |> List.toArray |> JsonValue.Array
+            "detail", str (Detail.name detail)
             "version", str version
         ]
 
     /// Version of the graph document embedded in the interactive html diagram.
     [<Literal>]
-    let GraphVersion = "0.3"
+    let GraphVersion = "0.4"
 
     /// The resolved graph the html explorer reads: `{ edges: [...], nodes: [...], version }`. Empty strings and lists
     /// are left out. `Language` is deliberately not part of it.
@@ -139,6 +175,10 @@ module Encode =
                             yield "name", str c.Name
                             yield! optional "source" c.Source
                             if not c.Responsibilities.IsEmpty then yield "responsibilities", strings c.Responsibilities
+                            // optional: only at `--detail members`
+                            if not c.Constructors.IsEmpty then yield "constructors", constructors c.Constructors
+                            if not c.Uses.IsEmpty then yield "uses", strings c.Uses
+                            if not c.Members.IsEmpty then yield "members", c.Members |> array classMember
                         ]
                     yield "components", n.Components |> List.map comp |> List.toArray |> JsonValue.Array
             ]

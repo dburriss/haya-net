@@ -32,8 +32,9 @@ let compileLibrary (assemblyName: string) (withHaya: bool) (source: string) : Me
     Assert.True(result.Success, String.Join("\n", result.Diagnostics))
     MetadataReference.CreateFromImage(stream.ToArray()) :> MetadataReference
 
-/// Analyse `source` as the only document of a C# project (which references Haya and `extraReferences`).
-let analyseWith (options: Roslyn.ReferenceOptions) (extraReferences: MetadataReference list) (source: string) =
+/// Analyse `source` as the only document of a C# project (which references Haya and `extraReferences`). With `members`,
+/// also collect the constructors and public members of the annotated classes.
+let analyseWithMembers (members: bool) (options: Roslyn.ReferenceOptions) (extraReferences: MetadataReference list) (source: string) =
     let workspace = new AdhocWorkspace()
     let projectId = ProjectId.CreateNewId()
     let projectInfo =
@@ -46,5 +47,9 @@ let analyseWith (options: Roslyn.ReferenceOptions) (extraReferences: MetadataRef
                 DocumentId.CreateNewId projectId, "Source.cs", null, SourceCodeKind.Regular,
                 TextLoader.From(TextAndVersion.Create(SourceText.From source, VersionStamp.Create())),
                 filePath = "/virtual/Source.cs"))
-    Descriptors.getAnalysisWith options "/virtual" Descriptors.attributeNames solution
+    Descriptors.getAnalysisWithMembers members options "/virtual" Descriptors.attributeNames solution
     |> Async.AwaitTask |> Async.RunSynchronously
+
+/// Analyse `source` as the only document of a C# project (which references Haya and `extraReferences`).
+let analyseWith (options: Roslyn.ReferenceOptions) (extraReferences: MetadataReference list) (source: string) =
+    analyseWithMembers false options extraReferences source

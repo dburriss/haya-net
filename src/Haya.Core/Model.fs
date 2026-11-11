@@ -70,6 +70,43 @@ module Descriptor =
         descriptors |> List.choose (function | Meta x -> Some x | _ -> None)
 
 
+/// A parameter of a constructor or method: its name and the display string of its type, as the language writes it.
+type Parameter = { Name: string; Type: string }
+
+/// What a public member of a class is.
+type MemberKind = Method = 1 | Property = 2 | Field = 3 | Event = 4
+
+/// A public member declared on a class (not inherited).
+type Member = {
+    Name: string
+    Kind: MemberKind
+    /// The display string of the return, property, field or event type, in the language's own short form
+    /// (`Task<bool>` in C#, `Promise<boolean>` in TypeScript).
+    Type: string
+    /// Methods and indexers only: the parameters in order.
+    Parameters: Parameter list
+}
+
+/// The constructors and public members of a class that carries a Haya attribute. Keyed like the descriptors by
+/// `ComponentName` and `ComponentSource`. Only collected at `Detail.Members` (ADR017).
+type ComponentDetail = {
+    Name: string
+    Source: string
+    /// Each public constructor's parameters, in order.
+    Constructors: Parameter list list
+    Members: Member list
+}
+
+module ComponentDetail =
+    let private signature (ps: Parameter list) = ps |> List.map (fun p -> p.Name + ": " + p.Type) |> String.concat ", "
+
+    /// The one ordering rule for both analysers: constructors by parameter count then signature; members by kind,
+    /// then name, then signature. Ordinal string comparison.
+    let normalise (c: ComponentDetail) =
+        { c with
+            Constructors = c.Constructors |> List.sortBy (fun ps -> List.length ps, signature ps)
+            Members = c.Members |> List.sortBy (fun m -> int m.Kind, m.Name, signature m.Parameters + " -> " + m.Type) }
+
 /// One application: what a single describe file (or one analysed solution) holds.
 type App = {
     Meta: MetaDescriptor option
@@ -77,6 +114,8 @@ type App = {
     Collaborators: CollaboratorDescriptor list
     /// What the app is written in, as known by the analyser. `Unknown` when the source did not say.
     Language: Language
+    /// The constructors and members of the annotated classes. Empty unless analysed (or described) at `Detail.Members`.
+    Components: ComponentDetail list
 }
 
 module App =
@@ -86,7 +125,12 @@ module App =
         { Meta = descriptors |> Descriptor.metas |> List.tryHead
           Responsibilities = descriptors |> Descriptor.responsibilities
           Collaborators = descriptors |> Descriptor.collaborators
-          Language = Language.Unknown }
+          Language = Language.Unknown
+          Components = [] }
+
+    /// The same app with the details of its classes, in the shared order (`ComponentDetail.normalise`).
+    let withComponents (components: ComponentDetail list) (app: App) =
+        { app with Components = components |> List.map ComponentDetail.normalise }
 
     /// The same app, marked as written in `language`.
     let withLanguage (language: Language) (app: App) = { app with Language = language }

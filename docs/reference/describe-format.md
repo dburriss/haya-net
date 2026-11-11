@@ -2,7 +2,7 @@
 
 The output of `haya describe` and an accepted input to every command. JSON or YAML with the same shape.
 
-## Version 0.4 (current)
+## Version 0.5 (current)
 
 ```json
 {
@@ -30,10 +30,21 @@ The output of `haya describe` and an accepted input to every command. JSON or YA
           "componentName": "OrderEndpoints", "componentSource": "Orders/Orders.cs"
         }
       ],
+      "components": [
+        {
+          "name": "OrderService", "source": "Orders/Orders.cs",
+          "constructors": [ [ { "name": "payments", "type": "PaymentsClient" } ] ],
+          "members": [
+            { "kind": "Method", "name": "Place", "type": "Task<bool>", "parameters": [ { "name": "orderId", "type": "string" } ] },
+            { "kind": "Property", "name": "Name", "type": "string" }
+          ]
+        }
+      ],
       "language": "dotnet"
     }
   ],
-  "version": "0.4"
+  "detail": "members",
+  "version": "0.5"
 }
 ```
 
@@ -44,13 +55,17 @@ The output of `haya describe` and an accepted input to every command. JSON or YA
 | `language` | What the analyser that wrote the file analysed: `dotnet` (`Haya.Tool`) or `javascript` (`Haya.Bun`). Left out when unknown, e.g. in a file written by hand. |
 | `responsibilities[]` | `description`, plus the class (`componentName`) and file (`componentSource`, relative to where `haya` ran). |
 | `collaborators[]` | From `Collaborator`, plus `componentName`/`componentSource`. `direction` is `Upstream`/`Downstream`; `relationship` is one of `Owned`, `Shared`, `Internal`, `External` (a missing one reads as `Internal`). `kind` is `Person` for a person and is left out otherwise: a person is named by `appName` and has no `system`. |
-| `version` | `"0.4"`. |
+| `components[]` | Only with `describe --detail members`, left out when empty: each class with a responsibility or collaborator, by `name` and `source` (as `componentName`/`componentSource`). `constructors` holds each public constructor's parameters in order. `members` holds the public members declared on the class: `kind` (`Method`, `Property`, `Field` or `Event`), `name`, `type`, and `parameters` for methods (and C# indexers). Types are as the language writes them (`Task<bool>` in C#, `Promise<boolean>` in TypeScript). See [ADR017](../adr/ADR017-member-detail.md) for what is left out. |
+| `detail` | What the document was asked to hold: `apps` (the default), `components` (the same as `apps` today) or `members` (adds `components[]`). Tells "not asked for" apart from "none". |
+| `version` | `"0.5"`. |
 
 ## Older versions (still read)
 
+- `0.4`: same without `detail` and `components[]`.
 - `0.3`: same without `collaborators[].kind`. The `relationship` values `InternalUser` and `ExternalUser` that earlier
-  versions allowed are no longer read (an error): write `"kind": "Person"` with `Internal` or `External` instead.- `0.2`: same without `meta.lifecycle`, `meta.tier` and `language`.
+  versions allowed are no longer read (an error): write `"kind": "Person"` with `Internal` or `External` instead.
+- `0.2`: same without `meta.lifecycle`, `meta.tier` and `language`.
 - `0.1`: same without `meta.tech` and `meta.kind`.
 - `0.0`: a single app at the top level (`meta`, `responsibilities`, `collaborators`) instead of `apps`.
 
-See [ADR006](../adr/ADR006-multi-app-system-model.md), [ADR007](../adr/ADR007-container-diagram-and-app-kind.md), [ADR010](../adr/ADR010-datadog-command-and-language.md) and [ADR013](../adr/ADR013-person-collaborators.md).
+See [ADR006](../adr/ADR006-multi-app-system-model.md), [ADR007](../adr/ADR007-container-diagram-and-app-kind.md), [ADR010](../adr/ADR010-datadog-command-and-language.md), [ADR013](../adr/ADR013-person-collaborators.md) and [ADR017](../adr/ADR017-member-detail.md).

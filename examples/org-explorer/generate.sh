@@ -10,8 +10,9 @@ dotnet build ../../src/Haya.Tool --nologo -v q
 
 mkdir -p output
 # The input paths go last. JSON and YAML describe files can be mixed in one call, and with solutions or tsconfig projects.
-# --detail components: the live example shows the classes inside the apps too.
-haya diagram -f html --detail components -o output/explorer.html describe/*
+# --detail members: the live example shows the classes inside the apps, and for Ordering, Billing and Catalog (whose describe
+# files were written with `describe --detail members`) each class's constructor, members and the classes it uses.
+haya diagram -f html --detail members -o output/explorer.html describe/*
 # The static diagrams of the same system, for comparison: level 1 is readable, level 2 is the one that does not scale.
 haya diagram -o output/system.mermaid describe/*
 haya diagram --detail apps -o output/containers.mermaid describe/*

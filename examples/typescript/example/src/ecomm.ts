@@ -13,7 +13,18 @@ meta({
 });
 
 @Responsibility({ description: "Handles order processing" })
-export class CreditCardPaymentUsecase {}
+export class CreditCardPaymentUsecase {
+  constructor(
+    private readonly visa: VisaPaymentService,
+    private readonly shipping: ShippingService,
+  ) {}
+
+  async pay(orderId: string, cardToken: string, amountInCents: number): Promise<boolean> {
+    const paid = await this.visa.charge(cardToken, amountInCents);
+    if (paid) await this.shipping.ship(orderId);
+    return paid;
+  }
+}
 
 @Collaborator({
   appName: "Checkout",
@@ -27,7 +38,13 @@ export class CreditCardPaymentUsecase {}
   repository: "org/checkout-api",
   owner: "Checkout Team",
 })
-export class PaymentsController {}
+export class PaymentsController {
+  constructor(private readonly usecase: CreditCardPaymentUsecase) {}
+
+  post(orderId: string, cardToken: string, amountInCents: number): Promise<boolean> {
+    return this.usecase.pay(orderId, cardToken, amountInCents);
+  }
+}
 
 @Collaborator({
   appName: "Visa Payment Provider",
@@ -40,7 +57,13 @@ export class PaymentsController {}
   repository: "org/webshop",
   owner: "Visa",
 })
-export class VisaPaymentService {}
+export class VisaPaymentService {
+  readonly endpoint: string = "https://visa.example/pay";
+
+  charge(cardToken: string, amountInCents: number): Promise<boolean> {
+    return Promise.resolve(amountInCents > 0);
+  }
+}
 
 @Collaborator({
   appName: "Shipping Service",
@@ -54,7 +77,11 @@ export class VisaPaymentService {}
   repository: "org/shipping-service",
   owner: "Shipping Team",
 })
-export class ShippingService {}
+export class ShippingService {
+  ship(orderId: string): Promise<void> {
+    return Promise.resolve();
+  }
+}
 
 @Collaborator({
   appName: "Customer",

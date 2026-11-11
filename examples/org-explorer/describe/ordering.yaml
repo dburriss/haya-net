@@ -27,6 +27,75 @@ apps:
         componentSource: Ordering/BasketApi/BasketApi.cs
         repository: shop/basketcache
         owner: Ordering team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: pricingService
+              type: PricingServiceClient
+            -
+              name: basketCache
+              type: BasketCacheClient
+        members:
+          -
+            kind: Method
+            name: AddLine
+            type: Task<Basket>
+            parameters:
+              -
+                name: basketId
+                type: string
+              -
+                name: sku
+                type: string
+              -
+                name: quantity
+                type: int
+          -
+            kind: Method
+            name: GetBasket
+            type: Task<Basket?>
+            parameters:
+              -
+                name: basketId
+                type: string
+        name: BasketApi
+        source: Ordering/BasketApi/BasketApi.cs
+      -
+        constructors:
+          -
+            -
+              name: channel
+              type: GrpcChannel
+        members:
+          -
+            kind: Method
+            name: PriceBasket
+            type: Task
+            parameters:
+              -
+                name: request
+                type: PricingServiceRequest
+        name: PricingServiceClient
+        source: Ordering/BasketApi/BasketApi.cs
+      -
+        constructors:
+          -
+            -
+              name: redis
+              type: IConnectionMultiplexer
+        members:
+          -
+            kind: Method
+            name: CacheBaskets
+            type: Task
+            parameters:
+              -
+                name: request
+                type: BasketCacheRequest
+        name: BasketCacheClient
+        source: Ordering/BasketApi/BasketApi.cs
     meta:
       appName: BasketApi
       description: Holds a customer's basket
@@ -101,6 +170,84 @@ apps:
         componentSource: Ordering/CheckoutApi/CheckoutApi.cs
         repository: shop/fraudcheck
         owner: Billing team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: orderService
+              type: OrderServiceClient
+            -
+              name: paymentsApi
+              type: PaymentsApiClient
+            -
+              name: fraudCheck
+              type: FraudCheckClient
+        members:
+          -
+            kind: Method
+            name: Checkout
+            type: Task<CheckoutResult>
+            parameters:
+              -
+                name: basketId
+                type: string
+              -
+                name: paymentToken
+                type: string
+        name: CheckoutApi
+        source: Ordering/CheckoutApi/CheckoutApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: CreateOrder
+            type: Task
+            parameters:
+              -
+                name: request
+                type: OrderServiceRequest
+        name: OrderServiceClient
+        source: Ordering/CheckoutApi/CheckoutApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: RequestPayment
+            type: Task
+            parameters:
+              -
+                name: request
+                type: PaymentsApiRequest
+        name: PaymentsApiClient
+        source: Ordering/CheckoutApi/CheckoutApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: ScoreOrder
+            type: Task
+            parameters:
+              -
+                name: request
+                type: FraudCheckRequest
+        name: FraudCheckClient
+        source: Ordering/CheckoutApi/CheckoutApi.cs
     meta:
       appName: CheckoutApi
       description: Turns a basket into an order
@@ -175,6 +322,109 @@ apps:
         componentSource: Ordering/OrderService/OrderService.cs
         repository: ''
         owner: ''
+    components:
+      -
+        constructors:
+          -
+            -
+              name: ordersDb
+              type: OrdersDbClient
+            -
+              name: orderEvents
+              type: OrderEventsClient
+            -
+              name: stockReservation
+              type: StockReservationClient
+            -
+              name: taxEngine
+              type: TaxEngineClient
+        members:
+          -
+            kind: Method
+            name: CancelOrder
+            type: Task
+            parameters:
+              -
+                name: orderId
+                type: string
+          -
+            kind: Method
+            name: PlaceOrder
+            type: Task<Order>
+            parameters:
+              -
+                name: basket
+                type: Basket
+        name: OrderService
+        source: Ordering/OrderService/OrderService.cs
+      -
+        constructors:
+          -
+            -
+              name: dataSource
+              type: NpgsqlDataSource
+        members:
+          -
+            kind: Method
+            name: PersistOrders
+            type: Task
+            parameters:
+              -
+                name: request
+                type: OrdersDbRequest
+        name: OrdersDbClient
+        source: Ordering/OrderService/OrderService.cs
+      -
+        constructors:
+          -
+            -
+              name: config
+              type: KafkaConfig
+        members:
+          -
+            kind: Method
+            name: PublishOrderPlaced
+            type: Task
+            parameters:
+              -
+                name: request
+                type: OrderEventsRequest
+        name: OrderEventsClient
+        source: Ordering/OrderService/OrderService.cs
+      -
+        constructors:
+          -
+            -
+              name: channel
+              type: GrpcChannel
+        members:
+          -
+            kind: Method
+            name: ReserveStock
+            type: Task
+            parameters:
+              -
+                name: request
+                type: StockReservationRequest
+        name: StockReservationClient
+        source: Ordering/OrderService/OrderService.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: CalculateTax
+            type: Task
+            parameters:
+              -
+                name: request
+                type: TaxEngineRequest
+        name: TaxEngineClient
+        source: Ordering/OrderService/OrderService.cs
     meta:
       appName: OrderService
       description: Owns the lifecycle of an order
@@ -261,6 +511,61 @@ apps:
         componentSource: Ordering/OrderReadModel/OrderReadModel.cs
         repository: shop/ordersviewdb
         owner: Ordering team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: orderEvents
+              type: OrderEventsClient
+            -
+              name: ordersViewDb
+              type: OrdersViewDbClient
+        members:
+          -
+            kind: Method
+            name: Project
+            type: Task
+            parameters:
+              -
+                name: orderEvent
+                type: OrderEvent
+        name: OrderReadModel
+        source: Ordering/OrderReadModel/OrderReadModel.cs
+      -
+        constructors:
+          -
+            -
+              name: config
+              type: KafkaConfig
+        members:
+          -
+            kind: Method
+            name: ConsumeOrders
+            type: Task
+            parameters:
+              -
+                name: request
+                type: OrderEventsRequest
+        name: OrderEventsClient
+        source: Ordering/OrderReadModel/OrderReadModel.cs
+      -
+        constructors:
+          -
+            -
+              name: dataSource
+              type: NpgsqlDataSource
+        members:
+          -
+            kind: Method
+            name: ProjectOrders
+            type: Task
+            parameters:
+              -
+                name: request
+                type: OrdersViewDbRequest
+        name: OrdersViewDbClient
+        source: Ordering/OrderReadModel/OrderReadModel.cs
     meta:
       appName: OrderReadModel
       description: Query-friendly view of orders
@@ -335,6 +640,84 @@ apps:
         componentSource: Ordering/ReturnsApi/ReturnsApi.cs
         repository: ''
         owner: ''
+    components:
+      -
+        constructors:
+          -
+            -
+              name: orderService
+              type: OrderServiceClient
+            -
+              name: refundService
+              type: RefundServiceClient
+            -
+              name: legacyErp
+              type: LegacyErpClient
+        members:
+          -
+            kind: Method
+            name: RequestReturn
+            type: Task<ReturnRequest>
+            parameters:
+              -
+                name: orderId
+                type: string
+              -
+                name: reason
+                type: string
+        name: ReturnsApi
+        source: Ordering/ReturnsApi/ReturnsApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: LookUpOrder
+            type: Task
+            parameters:
+              -
+                name: request
+                type: OrderServiceRequest
+        name: OrderServiceClient
+        source: Ordering/ReturnsApi/ReturnsApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: Refund
+            type: Task
+            parameters:
+              -
+                name: request
+                type: RefundServiceRequest
+        name: RefundServiceClient
+        source: Ordering/ReturnsApi/ReturnsApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: SyncReturns
+            type: Task
+            parameters:
+              -
+                name: request
+                type: LegacyErpRequest
+        name: LegacyErpClient
+        source: Ordering/ReturnsApi/ReturnsApi.cs
     meta:
       appName: ReturnsApi
       description: Handles customer returns
@@ -355,4 +738,5 @@ apps:
         componentName: ReturnsApi
         componentSource: Ordering/ReturnsApi/ReturnsApi.cs
     language: dotnet
-version: '0.3'
+detail: members
+version: '0.5'

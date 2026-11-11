@@ -39,6 +39,7 @@ module Merge =
                     { Meta = existing.Meta
                       Responsibilities = existing.Responsibilities @ app.Responsibilities |> List.distinct
                       Collaborators = existing.Collaborators @ app.Collaborators |> List.distinct
-                      Language = if existing.Language <> Language.Unknown then existing.Language else app.Language }
+                      Language = if existing.Language <> Language.Unknown then existing.Language else app.Language
+                      Components = existing.Components @ app.Components |> List.distinctBy (fun c -> c.Name, c.Source) }
                 acc |> List.mapi (fun j x -> if j = i then merged else x), warnings @ extra
         input |> List.fold step ([], [])

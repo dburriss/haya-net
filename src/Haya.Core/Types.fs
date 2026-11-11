@@ -4,10 +4,35 @@ open System.Text
 
 type DataFormat = | Json | Yaml 
 
+/// How much of the graph a command shows: systems, the apps inside them, the classes inside the apps, or also the
+/// constructors and public members of those classes. Each level includes the ones before it (ADR016, ADR017).
+type Detail = | Systems | Apps | Components | Members
+
+module Detail =
+    let private rank (d: Detail) =
+        match d with
+        | Systems -> 0
+        | Apps -> 1
+        | Components -> 2
+        | Members -> 3
+
+    /// True when `detail` includes `level`.
+    let atLeast (level: Detail) (detail: Detail) = rank detail >= rank level
+
+    /// The name used on the command line and in the describe document.
+    let name (d: Detail) =
+        match d with
+        | Systems -> "systems"
+        | Apps -> "apps"
+        | Components -> "components"
+        | Members -> "members"
+
 type DescribeCommand = {
     InputPaths: string list
     OutputPath: string
     Format: DataFormat
+    /// `Members` adds each annotated class's constructors and public members; lower levels add nothing.
+    Detail: Detail
     CurrentDirectory: string
 }
 
@@ -33,9 +58,6 @@ type DatadogCommand = {
     CurrentDirectory: string
 }
 
-/// How much of the graph a diagram shows: systems, the apps inside them, or the classes inside the apps.
-/// `Members` (constructor parameters and public members per class) is the planned next level (ADR016).
-type Detail = | Systems | Apps | Components
 type DiagramFormat = | Mermaid | Html
 type DiagramCommand = {
     InputPaths: string list

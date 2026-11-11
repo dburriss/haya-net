@@ -31,6 +31,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #panel { width: 340px; overflow: auto; padding: 12px 16px; border-left: 1px solid var(--line); }
 #panel h2 { margin: 0 0 4px; font-size: 16px; }
 #panel h3 { margin: 16px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+/* a section that folds (Constructor, Uses, Members): the summary looks like a section heading */
+#panel details.fold summary { margin: 16px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); cursor: pointer; font-weight: bold; }
 #panel p { margin: 4px 0; }
 #panel ul { margin: 0; padding-left: 0; list-style: none; }
 #panel li { margin: 2px 0; }
@@ -45,6 +47,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .note { padding: 6px 8px; border-left: 3px solid #b7791f; background: var(--card); margin: 8px 0; }
 .muted { color: var(--muted); }
 .component .source { font-size: 0.85em; overflow-wrap: anywhere; }
+/* a constructor or member of a class (`--detail members`) */
+li.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
 @media (max-width: 800px) { #bar-main { grid-template-columns: 1fr; } #bar-actions { justify-content: flex-start; } }
 @media (max-width: 700px) { #main { flex-direction: column; } #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: 45%; } }
 .actions button:disabled { opacity: .5; cursor: default; }

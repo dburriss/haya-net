@@ -99,6 +99,31 @@ module Decode =
                Lifecycle = str "lifecycle" v
                Tier = str "tier" v }
 
+    let private memberKind (s: string) =
+        match s with
+        | "Property" -> MemberKind.Property
+        | "Field" -> MemberKind.Field
+        | "Event" -> MemberKind.Event
+        | _ -> MemberKind.Method
+
+    let private parameter (v: JsonValue) : Parameter = { Name = str "name" v; Type = str "type" v }
+
+    let private classMember (v: JsonValue) : Member =
+        { Name = str "name" v
+          Kind = memberKind (str "kind" v)
+          Type = str "type" v
+          Parameters = items "parameters" v |> List.map parameter }
+
+    let private componentDetail (v: JsonValue) : ComponentDetail =
+        { Name = str "name" v
+          Source = str "source" v
+          Constructors =
+              items "constructors" v
+              |> List.map (fun c -> match c with
+                                    | JsonValue.Array ps -> ps |> Array.toList |> List.map parameter
+                                    | _ -> [])
+          Members = items "members" v |> List.map classMember }
+
     let private isApp (doc: JsonValue) =
         match doc with
         | JsonValue.Record _ -> (prop "responsibilities" doc).IsSome || (prop "collaborators" doc).IsSome || (prop "meta" doc).IsSome
@@ -112,6 +137,8 @@ module Decode =
               yield! items "responsibilities" doc |> List.map responsibility
               yield! items "collaborators" doc |> List.map collaborator ]
         |> App.withLanguage (language (str "language" doc))
+        // 0.5 at `--detail members`; missing (and in 0.0 to 0.4) means none
+        |> App.withComponents (items "components" doc |> List.map componentDetail)
 
     /// Version 0.1 documents hold an `apps` array; version 0.0 documents are a single app.
     let private ofDocument (doc: JsonValue) : Result<App list, string> =

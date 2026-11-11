@@ -46,13 +46,14 @@ A [describe file](describe-format.md) of the analysed code.
 | --- | --- | --- |
 | `-o`, `--output-path` | Output file | `./haya.json` or `./haya.yaml` |
 | `-f`, `--format` | `json` or `yaml` | `json` |
+| `-d`, `--detail` | `apps` (responsibilities, collaborators and meta), `components` (the same as `apps` today: the classes are already named on each responsibility and collaborator) or `members` (adds each annotated class's constructors and public members, see [ADR017](../adr/ADR017-member-detail.md)). Written to the file as `detail` | `apps` |
 
 ## `diagram`
 
 | Flag | Meaning | Default |
 | --- | --- | --- |
 | `-o`, `--output-path` | Output file | `./c4-system-context.mermaid`, or `./diagram.html` for `-f html` |
-| `-d`, `--detail` | `systems` (systems and how they connect), `apps` (the apps inside their systems) or `components` (the classes inside the apps). With `-f html`, `components` adds the classes to the explorer; `systems` and `apps` give the same page | `systems` |
+| `-d`, `--detail` | `systems` (systems and how they connect), `apps` (the apps inside their systems), `components` (the classes inside the apps) or `members` (also each class's constructors and public members). With `-f html`, `components` adds the classes to the explorer and `members` their constructors, members and the classes they use; `systems` and `apps` give the same page. The Mermaid diagram is the same for `components` and `members` | `systems` |
 | `-f`, `--diagram-format` | `mermaid`, or `html` (an interactive explorer, one self-contained page) | `mermaid` |
 
 ## `backstage`

@@ -28,6 +28,10 @@ const cases: { file: string; args: string[] }[] = [
   { file: "diagram-l3.mermaid", args: ["diagram", "--detail", "components", "-o", "diagram-l3.mermaid"] },
   { file: "diagram.html", args: ["diagram", "-f", "html", "-o", "diagram.html"] },
   { file: "diagram-components.html", args: ["diagram", "-f", "html", "--detail", "components", "-o", "diagram-components.html"] },
+  { file: "describe-members.json", args: ["describe", "--detail", "members", "-o", "describe-members.json"] },
+  { file: "describe-members.yaml", args: ["describe", "-f", "yaml", "--detail", "members", "-o", "describe-members.yaml"] },
+  { file: "diagram-members.html", args: ["diagram", "-f", "html", "--detail", "members", "-o", "diagram-members.html"] },
+  { file: "diagram-members.mermaid", args: ["diagram", "--detail", "members", "-o", "diagram-members.mermaid"] },
   { file: "backstage.yaml", args: ["backstage", "-o", "backstage.yaml"] },
   { file: "backstage.json", args: ["backstage", "-f", "json", "-o", "backstage.json"] },
   { file: "datadog.yaml", args: ["datadog", "-o", "datadog.yaml"] },
@@ -49,6 +53,7 @@ run(["dotnet", "build", tool, "--nologo", "-v", "q"], repo);
 const fixtures = [join(repo, "src/Haya.Bun/scripts/fixtures/ordering.json"), join(repo, "src/Haya.Bun/scripts/fixtures/billing.yaml")];
 const multiCases: { file: string; args: string[] }[] = [
   { file: "multi-describe.json", args: ["describe", "-o", "multi-describe.json"] },
+  { file: "multi-describe-members.json", args: ["describe", "--detail", "members", "-o", "multi-describe-members.json"] },
   { file: "multi-crc.md", args: ["crc", "-c", "-o", "multi-crc.md"] },
   { file: "multi-crc-cc.md", args: ["crc", "-cc", "-o", "multi-crc-cc.md"] },
   { file: "multi-diagram.mermaid", args: ["diagram", "-o", "multi-diagram.mermaid"] },
@@ -71,6 +76,8 @@ const orgCases: { file: string; args: string[] }[] = [
   { file: "org-diagram-l3.mermaid", args: ["diagram", "--detail", "components", "-o", "org-diagram-l3.mermaid"] },
   { file: "org-diagram.html", args: ["diagram", "-f", "html", "-o", "org-diagram.html"] },
   { file: "org-diagram-components.html", args: ["diagram", "-f", "html", "--detail", "components", "-o", "org-diagram-components.html"] },
+  { file: "org-describe-members.yaml", args: ["describe", "-f", "yaml", "--detail", "members", "-o", "org-describe-members.yaml"] },
+  { file: "org-diagram-members.html", args: ["diagram", "-f", "html", "--detail", "members", "-o", "org-diagram-members.html"] },
   { file: "org-backstage.yaml", args: ["backstage", "-o", "org-backstage.yaml"] },
   { file: "org-datadog.yaml", args: ["datadog", "-o", "org-datadog.yaml"] },
 ];
@@ -114,6 +121,29 @@ const sameLanguage = (text: string) =>
     .replace(/(languages:\n\s+- )js\n/g, "$1dotnet\n")
     // a class's technology comes from its file extension in the component diagram: .ts against .cs
     .replace(/^(\s*Component\([^,]+, "[^"]*", )"TypeScript"/gm, '$1"C#"');
+// `--detail members` (ADR017): each compiler prints types in its own short form and each language has its own naming
+// convention, so these known differences are mapped from the TypeScript side to the C# one. Only in member and
+// parameter `type` values, and in the first letter of a member's name (not a parameter's or class's):
+//   Promise<void> -> Task, Promise<T> -> Task<T>, number -> int, boolean -> bool; pay -> Pay
+// `<` is written as \u003c in the html page's script-safe JSON.
+const csharpType = (t: string) => {
+  const escaped = t.includes("\\u003c");
+  const mapped = t
+    .replaceAll("\\u003c", "<")
+    .replace(/Promise<void>/g, "Task")
+    .replace(/\bPromise\b/g, "Task")
+    .replace(/\bnumber\b/g, "int")
+    .replace(/\bboolean\b/g, "bool");
+  return escaped ? mapped.replaceAll("<", "\\u003c") : mapped;
+};
+const sameMembers = (text: string) =>
+  text
+    // json, compact or indented
+    .replace(/("type":\s*")([^"]*)(")/g, (_, a, t, b) => a + csharpType(t) + b)
+    .replace(/("kind":\s*"(?:Method|Property|Field|Event)",\s*"name":\s*")(\w)/g, (_, a, c) => a + c.toUpperCase())
+    // yaml
+    .replace(/^(\s*type: )(.*)$/gm, (_, a, t) => a + csharpType(t))
+    .replace(/(kind: (?:Method|Property|Field|Event)\s*\n\s*name: )(\w)/g, (_, a, c) => a + c.toUpperCase());
 // The same comparison on a pair of example projects. `tsPath` -> `netPath` and the language are the only substitutions.
 const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: string, tsPath: string, netPath: string) => {
   for (const { file, args } of cases) {
@@ -123,7 +153,7 @@ const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: 
     const withOut = (a: string[], o: string) => a.map((x) => (x === file ? o : x));
     run(["dotnet", "run", "--no-build", "--project", tool, "--", ...withOut(args, net), sln], dotnetDir);
     run(["bun", "run", hayaTs, ...withOut(args, bun), "."], tsDir);
-    check(label, net, sameLanguage(readFileSync(bun, "utf8").replaceAll(tsPath, netPath)));
+    check(label, net, sameMembers(sameLanguage(readFileSync(bun, "utf8").replaceAll(tsPath, netPath))));
   }
 };
 compareExamples("", dotnetCwd, dotnetSln, tsCwd, "src/ecomm.ts", "HayaEcomm.cs");

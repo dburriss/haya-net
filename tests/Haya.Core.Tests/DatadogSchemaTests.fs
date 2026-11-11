@@ -82,7 +82,7 @@ let private collaborator name system direction relationship : CollaboratorDescri
       Repository = ""; Owner = "Owner"; Kind = AppKind.Unspecified }
 
 let private app (m: MetaDescriptor) language collaborators : App =
-    { Meta = Some m; Language = language; Responsibilities = []; Collaborators = collaborators }
+    { Components = []; Meta = Some m; Language = language; Responsibilities = []; Collaborators = collaborators }
 
 /// Every kind of app, calls both ways, apps of several systems, stubs, and every optional value set and unset.
 let private rich : App list =
@@ -135,7 +135,7 @@ let ``The yaml is the same entities as the json, and valid`` () =
 
 [<Fact>]
 let ``Apps without a meta only contribute stubs, which are valid`` () =
-    let anon : App = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [ collaborator "Visa" "Visa" Direction.Downstream Relationship.External ] }
+    let anon : App = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [ collaborator "Visa" "Visa" Direction.Downstream Relationship.External ] }
     assertValid (jsonCatalog [ anon ])
 
 // ---- the validation can fail --------------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open Microsoft.CodeAnalysis.MSBuild
 open Microsoft.CodeAnalysis.FindSymbols
+open Haya.Core.Analysis
 
 module Roslyn =
 
@@ -205,5 +206,42 @@ module Roslyn =
                     results.Add(assemblySymbol)
             return results |> Seq.toList
         }
-    
-    
+
+    /// The type as C# writes it in short form, e.g. `Task<bool>` or `string?`.
+    let typeDisplay (t: ITypeSymbol) = t.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+
+    let private parameters (ps: IParameterSymbol seq) : Parameter list =
+        ps |> Seq.map (fun p -> ({ Name = p.Name; Type = typeDisplay p.Type } : Parameter)) |> Seq.toList
+
+    /// True when the method overrides one first declared on `System.Object` (`ToString`, `Equals`, `GetHashCode`).
+    let private overridesObject (m: IMethodSymbol) =
+        let rec root (m: IMethodSymbol) = if isNull m.OverriddenMethod then m else root m.OverriddenMethod
+        m.IsOverride && (root m).ContainingType.SpecialType = SpecialType.System_Object
+
+    /// The public constructors and the public members declared on a class (ADR017). Compiler-generated members (the
+    /// implicit constructor, record members, backing fields), accessors, operators, nested types and overrides of
+    /// `System.Object` are left out. Order is set by `ComponentDetail.normalise`.
+    let componentDetail (name: string) (source: string) (t: INamedTypeSymbol) : ComponentDetail =
+        let isPublic (s: ISymbol) = s.DeclaredAccessibility = Accessibility.Public && not s.IsImplicitlyDeclared
+        let constructors =
+            t.InstanceConstructors
+            |> Seq.filter isPublic
+            |> Seq.map (fun c -> parameters c.Parameters)
+            |> Seq.toList
+        let members : Member list =
+            t.GetMembers()
+            // an indexer is named `this[]`, which cannot be referenced by name
+            |> Seq.filter (fun m -> isPublic m && (m.CanBeReferencedByName || (match m with :? IPropertySymbol as p -> p.IsIndexer | _ -> false)))
+            |> Seq.choose (fun m ->
+                match m with
+                | :? IMethodSymbol as x when x.MethodKind = MethodKind.Ordinary && not (overridesObject x) ->
+                    Some { Name = x.Name; Kind = MemberKind.Method; Type = typeDisplay x.ReturnType; Parameters = parameters x.Parameters }
+                | :? IPropertySymbol as x ->
+                    Some { Name = x.Name; Kind = MemberKind.Property; Type = typeDisplay x.Type; Parameters = parameters x.Parameters }
+                | :? IFieldSymbol as x when isNull x.AssociatedSymbol ->
+                    Some { Name = x.Name; Kind = MemberKind.Field; Type = typeDisplay x.Type; Parameters = [] }
+                | :? IEventSymbol as x ->
+                    Some { Name = x.Name; Kind = MemberKind.Event; Type = typeDisplay x.Type; Parameters = [] }
+                | _ -> None)
+            |> Seq.toList
+        { Name = name; Source = source; Constructors = constructors; Members = members }

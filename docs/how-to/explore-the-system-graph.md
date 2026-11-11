@@ -21,7 +21,16 @@ haya diagram -f html --detail components -o system.html ./Example.sln
 ```
 
 `--detail systems` (the default) and `--detail apps` give the same page. The parts below marked *with `--detail components`*
-only appear on a page generated that way.
+only appear on a page generated that way (or with `--detail members`).
+
+To also see what each class takes in its constructor and what it offers, ask for members:
+
+```bash
+haya diagram -f html --detail members -o system.html ./Example.sln
+```
+
+The parts marked *with `--detail members`* only appear on such a page. Members make the page bigger, so leave them off
+unless you need them.
 
 To see one first, open the [live example](https://dburriss.github.io/haya-net/), built in CI from [examples/org-explorer](../../examples/org-explorer).
 
@@ -39,7 +48,7 @@ To see one first, open the [live example](https://dburriss.github.io/haya-net/),
   clickable. Click the background to clear the selection. A node shows its name and small glyphs: the
   kind, the tier and a lifecycle dot. The **Kind**, **Tier** and **Lifecycle** buttons at the top are the legend for those
   glyphs, and the **Legend** at the bottom left explains the rest.
-- An app with its own `[Meta]` lists its **Responsibilities**. *With `--detail components`* it also lists its **Components**:
+- An app with its own `[Meta]` lists its **Responsibilities**. *With `--detail components`* it also lists its **Components**, after its relationships:
   each class that carries a `[Responsibility]` or `[Collaborator]`, with the source file it is in.
 - A system or app lists its **Inbound** and **Outbound** relationships. A line lists what it carries as bullets,
   `Publish events [AMQP]`, under a header such as `Ordering → Billing`, or `Ordering ↔ Billing` with a list for each
@@ -56,6 +65,11 @@ To see one first, open the [live example](https://dburriss.github.io/haya-net/),
   and each line goes to the class the collaborator is on. A line to another of your apps goes to its classes that name this
   app back, or to the app's box when none do. Double-click again (or **Hide classes**) to close it. Click a class for its source
   file, responsibilities and relationships; the class names in an app's panel open it too.
+- *With `--detail members`*, a class's panel also has, after its relationships, **Constructor** (the parameters of each
+  public constructor), **Uses** (the other annotated classes of the app that a constructor takes: click one to select it) and
+  **Members** (its public methods, properties, fields and events with their types). Click a heading to fold it; it stays
+  folded as you move to other classes. **Uses** only matches a parameter whose type is exactly the
+  class name: an interface such as `IRepo` or a `List<Repo>` is not followed. See [ADR017](../adr/ADR017-member-detail.md).
 - **Double-click an app** without classes (every app, on a page without `--detail components`) to show the apps it connects to. The panel buttons do the same, and **Hide** removes one app.
 - **Search** finds an app or system by name, description, technology or owner, even if it is hidden, and shows just that app. Press **/** to jump to the search box from anywhere on the page (it is ignored while you are typing in a field), and **Esc** to leave it.
 - The **Kind, Tier and Lifecycle** buttons all start on. Switch one off to fade the apps that have that value (and the lines

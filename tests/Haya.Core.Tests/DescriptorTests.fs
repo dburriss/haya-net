@@ -106,11 +106,12 @@ let ``Multi-project: projects in the solution are analysed even when nothing ref
     Assert.Contains("Orphan.cs", r.ComponentSource)
 
 let private cmd format : Haya.Core.DescribeCommand =
-    { InputPaths = []; OutputPath = ""; Format = format; CurrentDirectory = "" }
+    { InputPaths = []; OutputPath = ""; Format = format; Detail = Detail.Apps; CurrentDirectory = "" }
 
 let private app name system (collaborators: (string * string * Relationship) list) : App =
     { Meta = Some { AppName = name; Description = $"{name} description"; System = system; Repository = ""; Owner = "Team"; Tech = ""; Kind = AppKind.Unspecified; Lifecycle = ""; Tier = "" }
       Language = Language.Unknown
+      Components = []
       Responsibilities = []
       Collaborators =
         collaborators
@@ -161,7 +162,7 @@ let ``Merge combines apps with the same system and name and warns on conflicts``
 
 [<Fact>]
 let ``Merge never merges apps without a meta`` () =
-    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [] }
+    let anon = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [] }
     let merged, _ = Haya.Core.Merge.apps [ anon; anon ]
     Assert.Equal(2, merged.Length)
 
@@ -197,7 +198,7 @@ let ``A class with both Responsibility and Collaborator yields one of each`` () 
 
 [<Fact>]
 let ``Backstage without a meta catalogues only the collaborators`` () =
-    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let anon = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
     let yaml = Haya.Core.Backstage.generateCatalog { InputPaths = []; OutputPath = ""; Format = Haya.Core.DataFormat.Yaml; CurrentDirectory = "" } [ anon ]
     Assert.Contains("visa-visa", yaml)
 
@@ -293,7 +294,7 @@ let ``Container diagram declares a collaborator in an own system without a meta,
 
 [<Fact>]
 let ``Container diagram skips apps without a meta`` () =
-    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let anon = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
     let text = Haya.Core.Diagram.sprintMermaidC4L2 [ anon ]
     Assert.DoesNotContain("Rel(", text)
     Assert.DoesNotContain("Container(", text)
@@ -382,7 +383,7 @@ let ``Describe round-trips tech and kind, leaves them out when unset, and reads 
     Assert.Contains("\"tech\": \"Bun\"", text)
     Assert.Contains("\"kind\": \"WebApp\"", text)
     Assert.Equal(1, text.Split("\"kind\"").Length - 1)
-    Assert.Contains("\"version\": \"0.4\"", text)
+    Assert.Contains("\"version\": \"0.5\"", text)
     match Haya.Core.Decode.apps "x.json" text with
     | Ok decoded -> Assert.True(([ set; unset ] = decoded))
     | Error e -> failwith e
@@ -518,11 +519,11 @@ let ``Datadog carries owner, lifecycle and tier, and a code location only for a 
 
 [<Fact>]
 let ``Datadog without a meta catalogues only the collaborators, and nothing for nothing`` () =
-    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let anon = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
     let yaml = Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Yaml) [ anon ]
     Assert.Contains("name: visa-visa", yaml)
     Assert.DoesNotContain("name: y-x", yaml)
-    let empty = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [] }
+    let empty = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = [] }
     Assert.Equal("", Haya.Core.Datadog.generateCatalog (datadogCmd Haya.Core.DataFormat.Yaml) [ empty ])
 
 [<Fact>]
@@ -578,7 +579,7 @@ let ``Graph prefers an app's own meta over a collaborator declaration, drops sel
 
 [<Fact>]
 let ``Graph skips apps without a meta`` () =
-    let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
+    let anon = { Components = []; Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
     let g = Haya.Core.Graph.ofApps Detail.Apps [ anon ]
     Assert.Empty(g.Nodes)
     Assert.Empty(g.Edges)

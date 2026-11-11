@@ -6,7 +6,14 @@ module CliText =
     let includeReferencesUsage = "Also read Haya attributes from public types in referenced packages/DLLs that reference Haya"
     let includeAssemblyUsage = "Also read referenced assemblies whose name matches this pattern (* and ? wildcards). Can be repeated"
     let verboseUsage = "Print the referenced assemblies and types that were included"
-    let detailUsage = "Level of detail. systems (systems and how they connect), apps (the apps inside their systems) or components (the classes inside the apps). With -f html, components adds the classes to the explorer (default: systems)"
+    let detailUsage = "Level of detail. systems (systems and how they connect), apps (the apps inside their systems), components (the classes inside the apps) or members (also each class's constructors and public members). With -f html, components adds the classes to the explorer and members their constructors and members; the Mermaid diagram is the same for components and members (default: systems)"
+    let describeDetailUsage = "Level of detail. apps (responsibilities, collaborators and meta), components (the same as apps today: classes are already named on each responsibility and collaborator) or members (adds each annotated class's constructors and public members) (default: apps)"
+
+/// The levels `describe` takes: it always holds the apps, so there is no `systems`.
+type DescribeDetail =
+    | Apps
+    | Components
+    | Members
 
 type CrcArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
@@ -29,6 +36,7 @@ type DescribeArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
     | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
     | [<AltCommandLine("-f")>] Format of format: DataFormat
+    | [<AltCommandLine("-d")>] Detail of DescribeDetail
     | [<CustomCommandLine("--include-references")>] IncludeReferences
     | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
     | [<AltCommandLine("-v")>] Verbose
@@ -38,6 +46,7 @@ type DescribeArgs =
             | IncludeReferences -> CliText.includeReferencesUsage
             | IncludeAssembly _ -> CliText.includeAssemblyUsage
             | Verbose -> CliText.verboseUsage
+            | Detail _ -> CliText.describeDetailUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./haya.json)"
             | Format _ -> "Output format. json | yaml (default: json)"
@@ -121,11 +130,12 @@ module Cli =
         | DataFormat.Json -> $"./{filename}.json"
         | DataFormat.Yaml -> $"./{filename}.yaml"
     
-    /// How a solution is analysed beyond its own source: which compiled references to read, and whether to report them.
-    type AnalysisOptions = { References: Roslyn.ReferenceOptions; Verbose: bool }
+    /// How a solution is analysed beyond its own source: which compiled references to read, whether to report them, and
+    /// whether to collect the constructors and members of the annotated classes (`Detail.Members`).
+    type AnalysisOptions = { References: Roslyn.ReferenceOptions; Verbose: bool; Members: bool }
 
     let analysisOptions (includeReferences: bool) (assemblyGlobs: string list) (verbose: bool) =
-        { References = { Include = includeReferences; AssemblyGlobs = assemblyGlobs }; Verbose = verbose }
+        { References = { Include = includeReferences; AssemblyGlobs = assemblyGlobs }; Verbose = verbose; Members = false }
 
     /// The apps of one input: a haya describe file (json/yaml) or an analysed solution (one app).
     let private loadOne (options: AnalysisOptions) (currentDirectory: string) (path: string) : Task<Result<App list, string>> = task {
@@ -134,11 +144,11 @@ module Cli =
             return Decode.apps path (IO.readAllText path)
         else
             let! sln = path |> Roslyn.openSolution
-            let! analysis = sln |> Descriptors.getAnalysisWith options.References currentDirectory Descriptors.attributeNames
+            let! analysis = sln |> Descriptors.getAnalysisWithMembers options.Members options.References currentDirectory Descriptors.attributeNames
             if options.Verbose then
                 for (assembly, typeName) in analysis.Referenced do
                     printfn "Including %s: %s" assembly typeName
-            return Ok [ App.ofDescriptors analysis.Descriptors |> App.withLanguage Language.DotNet ]
+            return Ok [ App.ofDescriptors analysis.Descriptors |> App.withLanguage Language.DotNet |> App.withComponents analysis.Components ]
     }
 
     /// Loads every input and merges them into one system (warnings about conflicts go to stderr).
@@ -169,11 +179,17 @@ module Cli =
             let format = pr.GetResult(DescribeArgs.Format, defaultValue = DataFormat.Json)
             //todo: check if output path is a file or a directory
             let outputPath: string = pr.TryGetResult(DescribeArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "haya")
+            let detail =
+                match pr.GetResult(DescribeArgs.Detail, defaultValue = DescribeDetail.Apps) with
+                | DescribeDetail.Apps -> Detail.Apps
+                | DescribeDetail.Components -> Detail.Components
+                | DescribeDetail.Members -> Detail.Members
             let options = analysisOptions (pr.Contains DescribeArgs.IncludeReferences) (pr.GetResults DescribeArgs.IncludeAssembly) (pr.Contains DescribeArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath
                     Format = format
-                    CurrentDirectory = currentDir }, options)
+                    Detail = detail
+                    CurrentDirectory = currentDir }, { options with Members = detail = Detail.Members })
         else None
            
     let execDescribeAsync (cmd: DescribeCommand, options: AnalysisOptions) = task {
@@ -283,7 +299,7 @@ module Cli =
                     OutputPath = outputPath
                     Detail = detail
                     DiagramFormat = diagramFormat
-                    CurrentDirectory = currentDir }, options)
+                    CurrentDirectory = currentDir }, { options with Members = detail = Detail.Members })
         else None
         
     let execDiagramAsync (cmd: DiagramCommand, options: AnalysisOptions) = task {

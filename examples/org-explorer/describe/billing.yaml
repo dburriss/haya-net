@@ -27,6 +27,64 @@ apps:
         componentSource: Billing/PaymentsApi/PaymentsApi.cs
         repository: ''
         owner: ''
+    components:
+      -
+        constructors:
+          -
+            -
+              name: paymentGateway
+              type: PaymentGatewayClient
+            -
+              name: visa
+              type: VisaClient
+        members:
+          -
+            kind: Method
+            name: TakePayment
+            type: Task<PaymentResult>
+            parameters:
+              -
+                name: orderId
+                type: string
+              -
+                name: amountInCents
+                type: long
+        name: PaymentsApi
+        source: Billing/PaymentsApi/PaymentsApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: Authorise
+            type: Task
+            parameters:
+              -
+                name: request
+                type: PaymentGatewayRequest
+        name: PaymentGatewayClient
+        source: Billing/PaymentsApi/PaymentsApi.cs
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: CardNetwork
+            type: Task
+            parameters:
+              -
+                name: request
+                type: VisaRequest
+        name: VisaClient
+        source: Billing/PaymentsApi/PaymentsApi.cs
     meta:
       appName: PaymentsApi
       description: Entry point for taking payments
@@ -84,6 +142,100 @@ apps:
         componentSource: Billing/PaymentGateway/PaymentGateway.java
         repository: shop/ledgerservice
         owner: Billing team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: stripe
+              type: StripeClient
+            -
+              name: visa
+              type: VisaClient
+            -
+              name: ledgerService
+              type: LedgerServiceClient
+        members:
+          -
+            kind: Method
+            name: authorise
+            type: CompletableFuture<Authorisation>
+            parameters:
+              -
+                name: orderId
+                type: String
+              -
+                name: amountInCents
+                type: long
+          -
+            kind: Method
+            name: capture
+            type: CompletableFuture<Charge>
+            parameters:
+              -
+                name: authorisationId
+                type: String
+          -
+            kind: Method
+            name: refund
+            type: CompletableFuture<Refund>
+            parameters:
+              -
+                name: chargeId
+                type: String
+        name: PaymentGateway
+        source: Billing/PaymentGateway/PaymentGateway.java
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: chargeCard
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: StripeRequest
+        name: StripeClient
+        source: Billing/PaymentGateway/PaymentGateway.java
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: cardNetwork
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: VisaRequest
+        name: VisaClient
+        source: Billing/PaymentGateway/PaymentGateway.java
+      -
+        constructors:
+          -
+            -
+              name: channel
+              type: ManagedChannel
+        members:
+          -
+            kind: Method
+            name: postEntry
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: LedgerServiceRequest
+        name: LedgerServiceClient
+        source: Billing/PaymentGateway/PaymentGateway.java
     meta:
       appName: PaymentGateway
       description: Talks to card networks and providers
@@ -118,6 +270,49 @@ apps:
         componentSource: Billing/LedgerService/LedgerService.java
         repository: shop/ledgerdb
         owner: Billing team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: ledgerDb
+              type: LedgerDbClient
+        members:
+          -
+            kind: Method
+            name: entriesFor
+            type: List<LedgerEntry>
+            parameters:
+              -
+                name: orderId
+                type: String
+          -
+            kind: Method
+            name: postEntry
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: entry
+                type: LedgerEntry
+        name: LedgerService
+        source: Billing/LedgerService/LedgerService.java
+      -
+        constructors:
+          -
+            -
+              name: dataSource
+              type: DataSource
+        members:
+          -
+            kind: Method
+            name: persistEntries
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: LedgerDbRequest
+        name: LedgerDbClient
+        source: Billing/LedgerService/LedgerService.java
     meta:
       appName: LedgerService
       description: Double-entry ledger
@@ -178,6 +373,64 @@ apps:
         componentSource: Billing/RefundService/RefundService.java
         repository: shop/ledgerservice
         owner: Billing team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: paymentGateway
+              type: PaymentGatewayClient
+            -
+              name: ledgerService
+              type: LedgerServiceClient
+        members:
+          -
+            kind: Method
+            name: refund
+            type: CompletableFuture<Refund>
+            parameters:
+              -
+                name: chargeId
+                type: String
+              -
+                name: reason
+                type: String
+        name: RefundService
+        source: Billing/RefundService/RefundService.java
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: refundCharge
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: PaymentGatewayRequest
+        name: PaymentGatewayClient
+        source: Billing/RefundService/RefundService.java
+      -
+        constructors:
+          -
+            -
+              name: channel
+              type: ManagedChannel
+        members:
+          -
+            kind: Method
+            name: postReversal
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: LedgerServiceRequest
+        name: LedgerServiceClient
+        source: Billing/RefundService/RefundService.java
     meta:
       appName: RefundService
       description: Coordinates refunds
@@ -208,6 +461,41 @@ apps:
         componentSource: Billing/FraudCheck/FraudCheck.py
         repository: shop/fraudmodel
         owner: Billing team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: fraud_model
+              type: FraudModelClient
+        members:
+          -
+            kind: Method
+            name: score
+            type: float
+            parameters:
+              -
+                name: order
+                type: Order
+        name: FraudCheck
+        source: Billing/FraudCheck/FraudCheck.py
+      -
+        constructors:
+          -
+            -
+              name: channel
+              type: grpc.Channel
+        members:
+          -
+            kind: Method
+            name: score
+            type: None
+            parameters:
+              -
+                name: request
+                type: FraudModelRequest
+        name: FraudModelClient
+        source: Billing/FraudCheck/FraudCheck.py
     meta:
       appName: FraudCheck
       description: Scores orders for fraud risk
@@ -225,6 +513,21 @@ apps:
         componentSource: Billing/FraudCheck/FraudCheck.py
   -
     collaborators: []
+    components:
+      -
+        constructors:
+          - []
+        members:
+          -
+            kind: Method
+            name: predict
+            type: float
+            parameters:
+              -
+                name: features
+                type: dict[str, float]
+        name: FraudModel
+        source: Billing/FraudModel/FraudModel.py
     meta:
       appName: FraudModel
       description: Machine learning model behind the fraud score
@@ -281,6 +584,81 @@ apps:
         componentSource: Billing/InvoiceWorker/InvoiceWorker.java
         repository: shop/emailgateway
         owner: Notifications team
+    components:
+      -
+        constructors:
+          -
+            -
+              name: orderEvents
+              type: OrderEventsClient
+            -
+              name: ledgerService
+              type: LedgerServiceClient
+            -
+              name: emailGateway
+              type: EmailGatewayClient
+        members:
+          -
+            kind: Method
+            name: onOrderPlaced
+            type: void
+            parameters:
+              -
+                name: event
+                type: OrderPlaced
+        name: InvoiceWorker
+        source: Billing/InvoiceWorker/InvoiceWorker.java
+      -
+        constructors:
+          -
+            -
+              name: config
+              type: Properties
+        members:
+          -
+            kind: Method
+            name: consumeOrders
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: OrderEventsRequest
+        name: OrderEventsClient
+        source: Billing/InvoiceWorker/InvoiceWorker.java
+      -
+        constructors:
+          -
+            -
+              name: channel
+              type: ManagedChannel
+        members:
+          -
+            kind: Method
+            name: readEntries
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: LedgerServiceRequest
+        name: LedgerServiceClient
+        source: Billing/InvoiceWorker/InvoiceWorker.java
+      -
+        constructors:
+          -
+            -
+              name: http
+              type: HttpClient
+        members:
+          -
+            kind: Method
+            name: sendInvoice
+            type: CompletableFuture<Void>
+            parameters:
+              -
+                name: request
+                type: EmailGatewayRequest
+        name: EmailGatewayClient
+        source: Billing/InvoiceWorker/InvoiceWorker.java
     meta:
       appName: InvoiceWorker
       description: Produces and sends invoices
@@ -300,4 +678,5 @@ apps:
         description: Emails invoices
         componentName: InvoiceWorker
         componentSource: Billing/InvoiceWorker/InvoiceWorker.java
-version: '0.3'
+detail: members
+version: '0.5'

@@ -119,9 +119,19 @@ module Descriptors =
     
     /// Descriptors of an analysed solution, and the compiled-reference types they were partly built from
     /// (assembly name, type name), so a caller can report them.
-    type Analysis = { Descriptors: Descriptor list; Referenced: (string * string) list }
+    /// `Components` holds the constructors and public members of the annotated classes, only when asked for.
+    type Analysis = { Descriptors: Descriptor list; Components: ComponentDetail list; Referenced: (string * string) list }
 
-    let getAnalysisWith (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =
+    /// The class carries a `[Responsibility]` or `[Collaborator]` (an assembly's `[Meta]` is not a class).
+    let private isAnnotatedClass (symbol: ISymbol) =
+        match symbol with
+        | :? INamedTypeSymbol as t ->
+            not (t.GetAttributes() |> Roslyn.filterAttributes [ typeof<ResponsibilityAttribute>.FullName; typeof<CollaboratorAttribute>.FullName ] |> List.isEmpty)
+        | _ -> false
+
+    /// Analyse the solution. With `members`, also collect each annotated class's constructors and public members
+    /// (`Detail.Members`); without, no extra work is done.
+    let getAnalysisWithMembers (members: bool) (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =
         task {
             let! classes = attributeNames
                            |> List.map (fun n -> Roslyn.findClassesWithAttribute n solution)
@@ -139,9 +149,19 @@ module Descriptors =
                 referenced |> Seq.concat |> Seq.distinctBy (fun (a, t) -> a.Name, t.ToDisplayString()) |> Seq.toList
             // Only the types: an assembly-level Meta of a package describes another app, so it is never read.
             let fromReferences = referencedTypes |> List.collect (fun (_, t) -> mapDescriptors rootPath t)
+            let components =
+                if not members then [] else
+                (classes |> Seq.concat |> Seq.toList) @ (referencedTypes |> List.map (fun (_, t) -> t :> ISymbol))
+                |> List.distinctBy (fun s -> s.ToDisplayString(), s.Kind)
+                |> List.filter isAnnotatedClass
+                |> List.map (fun s -> Roslyn.componentDetail s.Name (componentSource rootPath s) (s :?> INamedTypeSymbol))
             return { Descriptors = toDescriptors classes @ fromReferences @ toDescriptors meta
+                     Components = components
                      Referenced = referencedTypes |> List.map (fun (a, t) -> a.Name, t.ToDisplayString()) }
         }
+
+    let getAnalysisWith (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =
+        getAnalysisWithMembers false references rootPath attributeNames solution
 
     let getDescriptorsWith (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =
         task {

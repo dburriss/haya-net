@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { AnalysisError, analyse, type CollaboratorInfo, type DescriptorInfo } from "./analyser.ts";
+import { AnalysisError, analyse, analyseWithMembers, type CollaboratorInfo, type DescriptorInfo } from "./analyser.ts";
 
 const annotations = resolve(import.meta.dir, "../../Haya.TypeScript");
 const roots: string[] = [];
@@ -351,5 +351,65 @@ acmeMeta({ appName: "Shop" });`,
       "src/a.ts": imports + `export const Mine = (o: { appName: string }) => Collaborator({ appName: o.appName });\n@Mine({ appName: "X" })\nexport class A {}`,
     });
     expect(analyse(root, root)).toEqual([]);
+  });
+});
+
+describe("analyseWithMembers", () => {
+  const source =
+    imports +
+    `class Base { inherited(): void {} }
+export class Repo {}
+@Responsibility({ description: "Takes payments" })
+export class Payments extends Base {
+  constructor(repo: Repo, name: string);
+  constructor(repo: Repo);
+  constructor(private readonly repo: Repo, public label?: string) { super(); }
+  count = 0;
+  #secret = 1;
+  private hidden = 2;
+  protected guarded = 3;
+  static create(repo: Repo): Payments { return new Payments(repo); }
+  get total(): number { return 0; }
+  set total(v: number) {}
+  pay(id: string): void;
+  pay(order: Repo, amount: number): Promise<boolean>;
+  pay(a: unknown, b?: number): unknown { return a ?? b; }
+  async refund(id: string) { return id.length > 0; }
+  private quiet(): void {}
+  protected guardedMethod(): void {}
+  #hush(): void {}
+  toString(): string { return ""; }
+  valueOf(): number { return 0; }
+}
+export class NotAnnotated { constructor(repo: Repo) {} }`;
+
+  test("collects nothing without members", () => {
+    const root = project({ "src/a.ts": source });
+    expect(analyse(root, root).map((d) => d.kind)).toEqual(["responsibility"]);
+  });
+
+  test("collects public constructors and members of annotated classes only", () => {
+    const root = project({ "src/a.ts": source });
+    const { descriptors, components } = analyseWithMembers(root, root);
+    expect(descriptors.map((d) => d.kind)).toEqual(["responsibility"]);
+    expect(components.map((c) => c.name)).toEqual(["Payments"]);
+    const [p] = components;
+    expect(p.source).toBe("src/a.ts");
+    // the overloads, not the implementation; parameter properties are parameters
+    expect(p.constructors).toEqual([
+      [{ name: "repo", type: "Repo" }, { name: "name", type: "string" }],
+      [{ name: "repo", type: "Repo" }],
+    ]);
+    const members = p.members.map((m) => [m.kind, m.name, m.type, m.parameters.map((x) => `${x.name}: ${x.type}`).join(", ")]);
+    expect(members).toEqual([
+      ["Property", "count", "number", ""],
+      ["Property", "total", "number", ""],
+      ["Method", "create", "Payments", "repo: Repo"],
+      ["Method", "pay", "void", "id: string"],
+      ["Method", "pay", "Promise<boolean>", "order: Repo, amount: number"],
+      ["Method", "refund", "Promise<boolean>", "id: string"],
+      // a public parameter property is a property of the class
+      ["Property", "label", "string | undefined", ""],
+    ]);
   });
 });
