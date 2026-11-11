@@ -11,9 +11,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #bar { padding: 8px 16px; border-bottom: 1px solid var(--line); }
 /* heading left, search centred, buttons right */
 #bar-main { display: grid; grid-template-columns: 1fr minmax(240px, 520px) 1fr; align-items: center; gap: 8px 12px; }
+#bar-actions > a { color: inherit; text-decoration: none; }
 #bar-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-#bar-actions > button, .chip { border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 1px 8px; }
-#bar-actions > button:hover, .chip:hover { border-color: var(--accent); }
+#bar-actions > button, #bar-actions > a, .chip { border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 1px 8px; }
+#bar-actions > button:hover, #bar-actions > a:hover, .chip:hover { border-color: var(--accent); }
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 .chip[aria-pressed="false"] { opacity: .5; text-decoration: line-through; }
 .chip[aria-pressed="true"] { border-color: var(--muted); }
