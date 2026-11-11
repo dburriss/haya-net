@@ -9,14 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Breaking:** `haya diagram -t/--diagram-type c4system|c4container` is replaced by `-d/--detail systems|apps|components`
+  (default `systems`), in both CLIs. `--detail` picks the Mermaid level (systems, apps inside systems, classes inside apps),
+  and for `-f html` whether the explorer has the classes in it: they are only there with `--detail components`. See ADR016.
+
 ### Added
-- The explorer (`haya diagram -f html`) lists an app's components in its panel: each class that carries a `[Responsibility]`
+- With `--detail components`, the explorer (`haya diagram -f html`) lists an app's components in its panel: each class that carries a `[Responsibility]`
   or `[Collaborator]` (`@Responsibility`/`@Collaborator` in TypeScript), once, with its source file. Graph format `0.3` adds
   the optional `components` field to app nodes. Other outputs are unchanged. See ADR014.
-- `haya diagram -t c4component` writes a Mermaid C4 component diagram (level 3): each app's annotated classes inside its
+- `haya diagram --detail components` writes a Mermaid C4 component diagram (level 3): each app's annotated classes inside its
   boundary, with the technology of their source file (`.cs` is C#, `.ts` is TypeScript) and their responsibilities, and a
   relationship from the class each collaborator is on. See [Generate diagrams](docs/how-to/generate-diagrams.md) and ADR015.
-- In the explorer, double-click an app with annotated classes to open it: its classes are drawn inside it, the apps it connects
+- In the explorer with `--detail components`, double-click an app with annotated classes to open it: its classes are drawn inside it, the apps it connects
   to are shown, and lines go to the classes they are written on. Click a class for its source, responsibilities and
   relationships. Graph format `0.3` gives each component an `id` and edges `fromComponents`/`toComponents`.
 

@@ -2,6 +2,7 @@ module DescriptorTests
 
 open Example
 open Haya
+open Haya.Core
 open Haya.Core.Analysis
 open Haya.Roslyn
 open Xunit
@@ -541,7 +542,7 @@ let ``Graph makes own systems boundaries and other systems single nodes`` () =
     let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal; "Visa", "Visa", Relationship.External; "Shipping", "Logistics", Relationship.Internal ]
     let api = { api with Collaborators = api.Collaborators |> List.map (fun c -> { c with Protocol = "HTTPS" }) }
     let payments = app "Payments" "Billing" []
-    let g = Haya.Core.Graph.ofApps [ api; payments ]
+    let g = Haya.Core.Graph.ofApps Detail.Apps [ api; payments ]
     let node id = g.Nodes |> List.find (fun n -> n.Id = id)
     Assert.True((node "ordering").OwnSystem)
     Assert.True((node "billing").OwnSystem)
@@ -556,7 +557,7 @@ let ``Graph makes own systems boundaries and other systems single nodes`` () =
 let ``Graph declares a collaborator in an own system, flags it as without meta, and honours direction`` () =
     let api = app "Api" "Ordering" [ "Cache", "", Relationship.Internal ]
     let api = { api with Collaborators = api.Collaborators |> List.map (fun c -> { c with Direction = Direction.Upstream; Tech = "Redis"; Owner = "team-x" }) }
-    let g = Haya.Core.Graph.ofApps [ api ]
+    let g = Haya.Core.Graph.ofApps Detail.Apps [ api ]
     let cache = g.Nodes |> List.find (fun n -> n.Id = "ordering_cache")
     Assert.False(cache.HasMeta)
     Assert.Equal("Redis", cache.Tech)
@@ -568,7 +569,7 @@ let ``Graph declares a collaborator in an own system, flags it as without meta, 
 let ``Graph prefers an app's own meta over a collaborator declaration, drops self edges and is ordered by id`` () =
     let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Api", "Ordering", Relationship.Internal ]
     let payments = app "Payments" "Ordering" [] |> withMeta (fun m -> { m with Description = "from meta"; Tech = "PostgreSQL" })
-    let g = Haya.Core.Graph.ofApps [ api; payments ]
+    let g = Haya.Core.Graph.ofApps Detail.Apps [ api; payments ]
     let p = g.Nodes |> List.find (fun n -> n.Id = "ordering_payments")
     Assert.True(p.HasMeta)
     Assert.Equal("from meta", p.Description)
@@ -578,7 +579,7 @@ let ``Graph prefers an app's own meta over a collaborator declaration, drops sel
 [<Fact>]
 let ``Graph skips apps without a meta`` () =
     let anon = { Meta = None; Language = Language.Unknown; Responsibilities = []; Collaborators = (app "X" "Y" [ "Visa", "Visa", Relationship.External ]).Collaborators }
-    let g = Haya.Core.Graph.ofApps [ anon ]
+    let g = Haya.Core.Graph.ofApps Detail.Apps [ anon ]
     Assert.Empty(g.Nodes)
     Assert.Empty(g.Edges)
 
@@ -586,7 +587,7 @@ let ``Graph skips apps without a meta`` () =
 let ``Graph json lists nodes and edges, leaves out empty values and is valid json`` () =
     let api = app "Api" "Ordering" [ "Payments", "Billing", Relationship.Internal ]
     let api = { api with Collaborators = api.Collaborators |> List.map (fun c -> { c with Protocol = "HTTPS" }) }
-    let json = Haya.Core.Graph.ofApps [ api; app "Payments" "Billing" [] ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    let json = Haya.Core.Graph.ofApps Detail.Apps [ api; app "Payments" "Billing" [] ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
     use doc = System.Text.Json.JsonDocument.Parse json
     let root = doc.RootElement
     Assert.Equal(Haya.Core.Encode.GraphVersion, root.GetProperty("version").GetString())
@@ -623,7 +624,7 @@ let private withComponents (api: App) =
 [<Fact>]
 let ``Graph lists each class of an app once, sorted by name then source`` () =
     let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Visa", "Visa", Relationship.External; "Shipping", "Logistics", Relationship.Internal ] |> withComponents
-    let g = Haya.Core.Graph.ofApps [ api ]
+    let g = Haya.Core.Graph.ofApps Detail.Components [ api ]
     let node id = g.Nodes |> List.find (fun n -> n.Id = id)
     let components = (node "ordering_api").Components |> List.map (fun c -> c.Name, c.Source)
     Assert.Equal<(string * string) list>(
@@ -644,7 +645,7 @@ let ``Graph gives classes ids and puts them at the ends of edges, naming back wh
         { a with Collaborators = a.Collaborators |> List.map (fun c -> { c with ComponentName = name; ComponentSource = source }) }
     let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Db", "Ordering", Relationship.Internal ] |> classes "Client" "a.cs"
     let payments = app "Payments" "Ordering" [ "Api", "Ordering", Relationship.Internal ] |> classes "Callback" "b.cs"
-    let g = Haya.Core.Graph.ofApps [ api; payments ]
+    let g = Haya.Core.Graph.ofApps Detail.Components [ api; payments ]
     let node id = g.Nodes |> List.find (fun n -> n.Id = id)
     Assert.Equal<string list>([ "ordering_api__client" ], (node "ordering_api").Components |> List.map (_.Id))
     let edge from to_ = g.Edges |> List.find (fun e -> e.From = from && e.To = to_)
@@ -657,7 +658,7 @@ let ``Graph gives classes ids and puts them at the ends of edges, naming back wh
 [<Fact>]
 let ``Graph json lists components with name and source, and leaves out empty ones`` () =
     let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Visa", "Visa", Relationship.External ] |> withComponents
-    let json = Haya.Core.Graph.ofApps [ api ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    let json = Haya.Core.Graph.ofApps Detail.Components [ api ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
     use doc = System.Text.Json.JsonDocument.Parse json
     let nodes = doc.RootElement.GetProperty("nodes").EnumerateArray() |> Seq.toList
     let byId id = nodes |> List.find (fun n -> n.GetProperty("id").GetString() = id)
@@ -674,11 +675,48 @@ let ``Graph json lists components with name and source, and leaves out empty one
     Assert.Equal("ordering_api__usecase", (toPayments.GetProperty("fromComponents").EnumerateArray() |> Seq.head).GetString())
     Assert.False(toPayments.TryGetProperty("toComponents", &ignored)) // the other end has no classes
 
+[<Theory>]
+[<InlineData("apps")>]
+[<InlineData("systems")>]
+let ``Graph leaves out the classes below Detail.Components`` (level: string) =
+    let detail = if level = "apps" then Detail.Apps else Detail.Systems
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Visa", "Visa", Relationship.External ] |> withComponents
+    let payments = app "Payments" "Ordering" [ "Api", "Ordering", Relationship.Internal ] |> withComponents
+    let g = Haya.Core.Graph.ofApps detail [ api; payments ]
+    Assert.All(g.Nodes, fun n -> Assert.Empty(n.Components))
+    Assert.All(g.Edges, fun e -> Assert.Empty(e.FromComponents); Assert.Empty(e.ToComponents))
+    // the same nodes and edges as with classes, only without them
+    let full = Haya.Core.Graph.ofApps Detail.Components [ api; payments ]
+    Assert.Equal<string list>(full.Nodes |> List.map (_.Id), g.Nodes |> List.map (_.Id))
+    Assert.Equal<(string * string) list>(full.Edges |> List.map (fun e -> e.From, e.To), g.Edges |> List.map (fun e -> e.From, e.To))
+    let json = g |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    Assert.DoesNotContain("\"components\"", json)
+    Assert.DoesNotContain("fromComponents", json)
+    Assert.DoesNotContain("toComponents", json)
+
+[<Fact>]
+let ``Explore page has classes only at Detail.Components`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal ] |> withComponents
+    Assert.DoesNotContain("ordering_api__usecase", Haya.Core.Explore.sprintHtml Detail.Apps [ api ])
+    Assert.Contains("ordering_api__usecase", Haya.Core.Explore.sprintHtml Detail.Components [ api ])
+
+[<Fact>]
+let ``Diagram detail picks the mermaid diagram, and html is the explorer at that detail`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal ] |> withComponents
+    let gen detail format =
+        Haya.Core.Diagram.generateDiagram
+            { InputPaths = []; OutputPath = ""; Detail = detail; DiagramFormat = format; CurrentDirectory = "" } [ api ]
+    Assert.StartsWith("C4Context", gen Detail.Systems DiagramFormat.Mermaid)
+    Assert.StartsWith("C4Container", gen Detail.Apps DiagramFormat.Mermaid)
+    Assert.StartsWith("C4Component", gen Detail.Components DiagramFormat.Mermaid)
+    Assert.Equal(Haya.Core.Explore.sprintHtml Detail.Components [ api ], gen Detail.Components DiagramFormat.Html)
+    Assert.Equal(Haya.Core.Explore.sprintHtml Detail.Systems [ api ], gen Detail.Systems DiagramFormat.Html)
+
 [<Fact>]
 let ``Graph json is safe inside a script element`` () =
     let nasty = "</script><!-- \"q\" &    "
     let api = app "Api" "Ordering" [] |> withMeta (fun m -> { m with Description = nasty })
-    let json = Haya.Core.Graph.ofApps [ api ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    let json = Haya.Core.Graph.ofApps Detail.Apps [ api ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
     Assert.DoesNotContain("<", json)
     Assert.DoesNotContain(" ", json)
     Assert.DoesNotContain(" ", json)
@@ -691,7 +729,7 @@ let ``Graph json is safe inside a script element`` () =
 [<Fact>]
 let ``Explore page embeds the graph once, escapes the title and keeps the viewer`` () =
     let api = app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ] |> withMeta (fun m -> { m with Description = "</script><b>" })
-    let html = Haya.Core.Explore.render "T <&> \"x\"" (Haya.Core.Graph.ofApps [ api ])
+    let html = Haya.Core.Explore.render "T <&> \"x\"" (Haya.Core.Graph.ofApps Detail.Apps [ api ])
     Assert.StartsWith("<!doctype html>", html)
     Assert.Contains("<title>T &lt;&amp;&gt; &quot;x&quot;</title>", html)
     Assert.Equal(1, html.Split("id=\"haya-data\"").Length - 1)
@@ -704,7 +742,7 @@ let ``Explore page embeds the graph once, escapes the title and keeps the viewer
 
 [<Fact>]
 let ``Explore page has a short fixed title however many systems there are`` () =
-    let html = Haya.Core.Explore.sprintHtml [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
+    let html = Haya.Core.Explore.sprintHtml Detail.Apps [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
     Assert.Contains("<title>Haya Explorer</title>", html)
     Assert.DoesNotContain("Billing", html.Substring(0, html.IndexOf "</title>"))
 
@@ -750,7 +788,7 @@ let ``Decode reads a collaborator without a relationship as internal`` () =
 let ``Graph draws a person once by name, with no parent, and edges in the direction of use`` () =
     let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ]
     let api = appWithPeople "Api" "Shop" [ "customer", Relationship.External, Direction.Upstream; "Pager", Relationship.Internal, Direction.Downstream ]
-    let g = Haya.Core.Graph.ofApps [ web; api ]
+    let g = Haya.Core.Graph.ofApps Detail.Apps [ web; api ]
     let customer = g.Nodes |> List.find (fun n -> n.Id = "person_customer")
     Assert.Equal(Haya.Core.Graph.NodeKind.Person, customer.Kind)
     Assert.Equal(None, customer.Parent)
@@ -767,14 +805,14 @@ let ``Graph draws a person once by name, with no parent, and edges in the direct
 let ``Graph ignores the system of a person and skips one without a name`` () =
     let web = appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream; "", Relationship.External, Direction.Upstream ]
     let web = { web with Collaborators = web.Collaborators |> List.map (fun c -> { c with System = "Elsewhere" }) }
-    let g = Haya.Core.Graph.ofApps [ web ]
+    let g = Haya.Core.Graph.ofApps Detail.Apps [ web ]
     Assert.DoesNotContain(g.Nodes, fun n -> n.Id = "elsewhere") // no system node from the person
     Assert.Equal(1, g.Nodes |> List.filter (fun n -> n.Kind = Haya.Core.Graph.NodeKind.Person) |> List.length)
     Assert.Equal(1, g.Edges.Length)
 
 [<Fact>]
 let ``Graph json marks a person with the person kind and no hasMeta`` () =
-    let json = Haya.Core.Graph.ofApps [ appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ] ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    let json = Haya.Core.Graph.ofApps Detail.Apps [ appWithPeople "Web" "Shop" [ "Customer", Relationship.External, Direction.Upstream ] ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
     use doc = System.Text.Json.JsonDocument.Parse json
     let person = doc.RootElement.GetProperty("nodes").EnumerateArray() |> Seq.find (fun n -> n.GetProperty("id").GetString() = "person_customer")
     Assert.Equal("person", person.GetProperty("kind").GetString())

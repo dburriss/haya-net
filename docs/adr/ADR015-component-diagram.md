@@ -1,7 +1,7 @@
 # ADR015: C4 component diagram and opening apps in the explorer
 
 Date: 2026-11-11  
-Status: Accepted  
+Status: Accepted, extended by ADR016 (`-t c4component` is now `--detail components`)  
 Author: dburriss
 
 ### Context

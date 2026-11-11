@@ -33,12 +33,14 @@ type DatadogCommand = {
     CurrentDirectory: string
 }
 
-type DiagramType = | C4System | C4Container | C4Component
+/// How much of the graph a diagram shows: systems, the apps inside them, or the classes inside the apps.
+/// `Members` (constructor parameters and public members per class) is the planned next level (ADR016).
+type Detail = | Systems | Apps | Components
 type DiagramFormat = | Mermaid | Html
 type DiagramCommand = {
     InputPaths: string list
     OutputPath: string
-    DiagramType: DiagramType
+    Detail: Detail
     DiagramFormat: DiagramFormat
     CurrentDirectory: string
 }

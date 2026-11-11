@@ -1,7 +1,7 @@
 # ADR014: Components in the explorer panel
 
 Date: 2026-11-11  
-Status: Accepted, extended by ADR015  
+Status: Accepted, extended by ADR015 and ADR016  
 Author: dburriss
 
 ### Context

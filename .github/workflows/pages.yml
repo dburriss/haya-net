@@ -42,7 +42,7 @@ jobs:
       - name: Generate explorer
         run: |
           mkdir -p _site
-          dotnet run --no-build --configuration Release --project src/Haya.Tool -- diagram -f html -o _site/index.html examples/org-explorer/describe/*
+          dotnet run --no-build --configuration Release --project src/Haya.Tool -- diagram -f html --detail components -o _site/index.html examples/org-explorer/describe/*
 
       - name: Smoke test
         run: |

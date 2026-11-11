@@ -6,6 +6,7 @@ module CliText =
     let includeReferencesUsage = "Also read Haya attributes from public types in referenced packages/DLLs that reference Haya"
     let includeAssemblyUsage = "Also read referenced assemblies whose name matches this pattern (* and ? wildcards). Can be repeated"
     let verboseUsage = "Print the referenced assemblies and types that were included"
+    let detailUsage = "Level of detail. systems (systems and how they connect), apps (the apps inside their systems) or components (the classes inside the apps). With -f html, components adds the classes to the explorer (default: systems)"
 
 type CrcArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
@@ -61,7 +62,7 @@ type BackstageArgs =
 type DiagramArgs =
     | [<MainCommand; Last>] InputPath of input_path: string list
     | [<AltCommandLine("-o"); Unique>] OutputPath of output_path: string
-    | [<AltCommandLine("-t")>] DiagramType of DiagramType
+    | [<AltCommandLine("-d")>] Detail of Detail
     | [<AltCommandLine("-f")>] DiagramFormat of DiagramFormat
     | [<CustomCommandLine("--include-references")>] IncludeReferences
     | [<CustomCommandLine("--include-assembly")>] IncludeAssembly of assembly_glob: string
@@ -74,7 +75,7 @@ type DiagramArgs =
             | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid, or ./diagram.html for -f html)"
-            | DiagramType _ -> "Diagram type. c4system (system context), c4container (apps inside their systems) or c4component (the classes inside the apps) (default: c4system). Ignored by -f html"
+            | Detail _ -> CliText.detailUsage
             | DiagramFormat _ -> "Output format. mermaid | html (interactive explorer, a self-contained page) (default: mermaid)"
 
 type DatadogArgs =
@@ -273,14 +274,14 @@ module Cli =
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Diagram)
             let sln = inputList (pr.GetResults(DiagramArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let diagramType = pr.GetResult(DiagramArgs.DiagramType, defaultValue = DiagramType.C4System)
+            let detail = pr.GetResult(DiagramArgs.Detail, defaultValue = Detail.Systems)
             let diagramFormat = pr.GetResult(DiagramArgs.DiagramFormat, defaultValue = DiagramFormat.Mermaid)
             let defaultOutput = match diagramFormat with | DiagramFormat.Html -> "./diagram.html" | DiagramFormat.Mermaid -> "./c4-system-context.mermaid"
             let outputPath: string = pr.TryGetResult(DiagramArgs.OutputPath) |> Option.defaultValue defaultOutput
             let options = analysisOptions (pr.Contains DiagramArgs.IncludeReferences) (pr.GetResults DiagramArgs.IncludeAssembly) (pr.Contains DiagramArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath
-                    DiagramType = diagramType
+                    Detail = detail
                     DiagramFormat = diagramFormat
                     CurrentDirectory = currentDir }, options)
         else None

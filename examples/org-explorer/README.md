@@ -21,6 +21,13 @@ here. For the how-to, see [Document several systems together](../../docs/how-to/
 It builds `Haya.Tool` and writes `output/explorer.html` (git-ignored; open it in a browser), plus the static
 `system.mermaid` and `containers.mermaid` for comparison.
 
+With [mise](https://mise.jdx.dev), from anywhere in the repository:
+
+```bash
+mise run org-explorer:generate   # same as ./generate.sh
+mise run org-explorer:open       # opens output/explorer.html in your default browser
+```
+
 ## What to try
 
 - Open **Catalog**: double-click it to open the system into its apps.

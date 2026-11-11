@@ -1,0 +1,9 @@
+[tasks."org-explorer:generate"]
+description = "Regenerate the org-explorer example (output/explorer.html and the static mermaid diagrams)"
+run = "./examples/org-explorer/generate.sh"
+
+[tasks."org-explorer:open"]
+description = "Open the org-explorer page in the default browser; run org-explorer:generate first"
+dir = "examples/org-explorer/output"
+run = 'if [ "$(uname)" = Darwin ]; then open explorer.html; else xdg-open explorer.html; fi'
+run_windows = 'cmd /c start "" explorer.html'

@@ -17,7 +17,7 @@ import {
   DescribeCommand,
   DiagramCommand,
   DiagramFormat,
-  DiagramType,
+  Detail,
 } from "./fable_output/Haya.Core/Types.ts";
 import { IO_write, IO_readAllText } from "./fable_output/Haya.Core/IO.ts";
 import { apps as decodeApps, isDescribeFile } from "./fable_output/Haya.Core/Decode.ts";
@@ -30,7 +30,10 @@ import { generateCatalog as generateDatadogCatalog } from "./fable_output/Haya.C
 
 type Format = "json" | "yaml";
 
-const diagramTypes = { c4system: DiagramType.C4System, c4container: DiagramType.C4Container, c4component: DiagramType.C4Component } as const;
+const details = { systems: Detail.Systems, apps: Detail.Apps, components: Detail.Components } as const;
+// Same text as CliText.detailUsage in src/Haya.Tool/Cli.fs
+const detailUsage =
+  "Level of detail. systems (systems and how they connect), apps (the apps inside their systems) or components (the classes inside the apps). With -f html, components adds the classes to the explorer (default: systems)";
 const dataFormat = (f: Format) => (f === "yaml" ? DataFormat_Yaml() : DataFormat_Json());
 const defaultFile = (format: Format, name: string) => `./${name}.${format}`;
 
@@ -135,12 +138,12 @@ await yargs(hideBin(Bun.argv))
     (y) =>
       inputPath(y)
         .option("output-path", { alias: "o", type: "string", describe: "Path to output folder or file (default: ./c4-system-context.mermaid, or ./diagram.html for -f html)" })
-        .option("diagram-type", { alias: "t", choices: ["c4system", "c4container", "c4component"] as const, default: "c4system" as const, describe: "Diagram type" })
+        .option("detail", { alias: "d", choices: ["systems", "apps", "components"] as const, default: "systems" as const, describe: detailUsage })
         .option("diagram-format", { alias: "f", choices: ["mermaid", "html"] as const, default: "mermaid" as const, describe: "Diagram format. html is an interactive explorer (a self-contained page)" }),
     (argv) => {
       const html = argv["diagram-format"] === "html";
       const out = argv["output-path"] ?? (html ? "./diagram.html" : "./c4-system-context.mermaid");
-      const cmd = new DiagramCommand(ofArray(argv.inputPaths), out, diagramTypes[argv["diagram-type"]], html ? DiagramFormat.Html : DiagramFormat.Mermaid, process.cwd());
+      const cmd = new DiagramCommand(ofArray(argv.inputPaths), out, details[argv.detail], html ? DiagramFormat.Html : DiagramFormat.Mermaid, process.cwd());
       exec("Diagram", Array.from(cmd.InputPaths), cmd.OutputPath, (ds) => generateDiagram(cmd, ds));
     },
   )

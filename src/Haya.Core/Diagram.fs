@@ -204,7 +204,7 @@ module Diagram =
     /// A collaborator is a relationship from its class, to the classes at the other end (`Graph.Edge.ToComponents`); when an
     /// end with classes has none of them, to a container for that app inside its boundary.
     let sprintMermaidC4L3 (apps: App list) =
-        let g = Graph.ofApps apps
+        let g = Graph.ofApps Detail.Components apps
         let node id = g.Nodes |> List.find (fun n -> n.Id = id)
         let hasClasses (n: Graph.Node) = n.Kind = Graph.NodeKind.App && not n.Components.IsEmpty
 
@@ -292,9 +292,9 @@ module Diagram =
         |> SB.toString
 
     let generateDiagram (cmd: DiagramCommand) (apps: App list) =
-        match (cmd.DiagramType, cmd.DiagramFormat) with
-        | C4System, Mermaid -> sprintMermaidC4L1 apps
-        | C4Container, Mermaid -> sprintMermaidC4L2 apps
-        | C4Component, Mermaid -> sprintMermaidC4L3 apps
-        // the explorer shows the whole graph, so the diagram type does not apply
-        | _, Html -> Explore.sprintHtml apps
+        match (cmd.Detail, cmd.DiagramFormat) with
+        | Systems, Mermaid -> sprintMermaidC4L1 apps
+        | Apps, Mermaid -> sprintMermaidC4L2 apps
+        | Components, Mermaid -> sprintMermaidC4L3 apps
+        // the explorer always shows systems and apps; the detail only decides whether the classes are in it
+        | detail, Html -> Explore.sprintHtml detail apps

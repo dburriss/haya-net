@@ -48,7 +48,7 @@ Nodes are sorted by `id`; edges keep the order in which the apps and collaborato
 | `relationship` | `Owned`, `Shared`, `Internal` or `External`. For a node known only from a collaborator, what that collaborator said. |
 | `description`, `tech`, `owner`, `repository`, `tier`, `lifecycle` | From the app's `Meta`; for a node known only from a collaborator, from that collaborator. |
 | `responsibilities` | Apps with a `Meta` only: the description of each responsibility. |
-| `components` | Apps with a `Meta` only: each class that carries a responsibility or collaborator, once, as `{ "id", "name", "source", "responsibilities" }`, sorted by name then source. `id` is the app id, `__` and the class name (`_2`, `_3` for a second class of the same name in the app), the same alias as in the component diagram. `source` is relative to the analysed root, or `Assembly::Namespace.Type` for a referenced assembly. `source` and `responsibilities` are left out when empty. Added in `0.3` ([ADR014](../adr/ADR014-components-in-the-explorer-panel.md)). |
+| `components` | Only with `diagram --detail components`, and on apps with a `Meta` only: each class that carries a responsibility or collaborator, once, as `{ "id", "name", "source", "responsibilities" }`, sorted by name then source. `id` is the app id, `__` and the class name (`_2`, `_3` for a second class of the same name in the app), the same alias as in the component diagram. `source` is relative to the analysed root, or `Assembly::Namespace.Type` for a referenced assembly. `source` and `responsibilities` are left out when empty. Added in `0.3` ([ADR014](../adr/ADR014-components-in-the-explorer-panel.md)). |
 
 Language is not part of the graph.
 
@@ -60,7 +60,7 @@ Language is not part of the graph.
 | `direction` | `Upstream` or `Downstream`, as written on the collaborator. |
 | `protocol` | The collaborator's `Protocol`. |
 | `label` | The collaborator's `DataDescription`. |
-| `fromComponents`, `toComponents` | The class ids at each end, left out when empty. The end with the collaborator: the class it is on. The other end, when it is one of our apps: its classes whose collaborators name this app back. Empty means the node as a whole. The viewer draws lines to these when an app is opened. Added in `0.3`. |
+| `fromComponents`, `toComponents` | The class ids at each end, left out when empty. The end with the collaborator: the class it is on. The other end, when it is one of our apps: its classes whose collaborators name this app back. Empty means the node as a whole. The viewer draws lines to these when an app is opened. Only with `diagram --detail components`. Added in `0.3`. |
 
 An edge goes to the app when the collaborator names an app in one of our systems, and to the system when it is in another system.
 A collaborator that points at its own app is left out. The viewer draws one line per pair of nodes however many edges there are.

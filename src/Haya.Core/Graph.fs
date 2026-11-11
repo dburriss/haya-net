@@ -72,7 +72,8 @@ module Graph =
     let private sameKey (system: string) (appName: string) = String.toLower system + "/" + String.toLower appName
 
     /// Resolve the apps into nodes and edges. Output is ordered by id (nodes) and by first appearance (edges) so it is deterministic.
-    let ofApps (apps: App list) : Graph =
+    /// The classes of the apps (`Node.Components`, `Edge.FromComponents`/`ToComponents`) are only filled at `Detail.Components`.
+    let ofApps (detail: Detail) (apps: App list) : Graph =
         let apps = apps |> List.map App.withDefaultSystems
         // apps without a meta (or app name) have no identity, so they cannot be a node
         let ownApps =
@@ -102,6 +103,7 @@ module Graph =
 
         // one entry per class, however many attributes it carries; a descriptor without a class name is not one
         let componentsOf ((m: MetaDescriptor), (a: App)) =
+            if detail <> Detail.Components then [] else
             (a.Responsibilities |> List.map (fun r -> r.ComponentName, r.ComponentSource))
             @ (a.Collaborators |> List.map (fun c -> c.ComponentName, c.ComponentSource))
             |> List.filter (fun (name, _) -> name <> "")
