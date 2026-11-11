@@ -2,6 +2,7 @@ C4Context
 title C4 System Diagram for Analytics, Billing, Catalog, Identity, Notifications, Ordering, Shipping, Storefront, Warehouse
 
 Enterprise_Boundary(Enterprise, Enterprise, "The enterprise boundary") {
+  Person(person_picker, Picker, "Picks and packs orders on the warehouse floor")
   System(analytics, Analytics, "Collects business events for analysis")
   System(billing, Billing, "Entry point for taking payments")
   System(catalog, Catalog, "Serves product data")
@@ -12,6 +13,7 @@ Enterprise_Boundary(Enterprise, Enterprise, "The enterprise boundary") {
   System(storefront, Storefront, "The customer-facing web shop")
   System(warehouse, Warehouse, "Holds stock for orders")
 }
+Person_Ext(person_customer, Customer, "Shops for products")
 System_Ext(visa, Visa, "Card network")
 System_Ext(stripe, Stripe, "Card payment provider")
 System_Ext(sendgrid, SendGrid, "Email delivery provider")
@@ -41,6 +43,8 @@ Rel(storefront, catalog, "Search products")
 Rel(storefront, ordering, "Manage basket")
 Rel(storefront, ordering, "Place order")
 Rel(storefront, identity, "Sign in")
+Rel(person_customer, storefront, "Browses and buys")
 Rel(storefront, catalog, "Product data")
 Rel(storefront, shipping, "Track parcel")
 Rel(warehouse, shipping, "Confirm picked")
+Rel(person_picker, warehouse, "Picks orders")

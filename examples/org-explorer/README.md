@@ -1,7 +1,8 @@
 # Org-wide explorer example
 
 Nine systems of an imaginary company (Storefront, Ordering, Billing, Catalog, Warehouse, Shipping, Notifications, Identity
-and Analytics) shown as one graph. It is too big for a readable level 2 Mermaid diagram, which is what the
+and Analytics) shown as one graph, with the people who use them: a customer of the storefront and a picker in the
+warehouse (collaborators with `kind: Person`). It is too big for a readable level 2 Mermaid diagram, which is what the
 [interactive explorer](https://dburriss.github.io/haya-net/) is for.
 
 Each team publishes the describe file for its own system (`haya describe -o describe/orders.yaml Orders/Orders.sln` in its
@@ -24,5 +25,6 @@ It builds `Haya.Tool` and writes `output/explorer.html` (git-ignored; open it in
 
 - Open **Catalog**: double-click it to open the system into its apps.
 - Search for `legacy` to reveal the hidden `LegacyErp` app and what talks to it.
+- Select **Customer** (a person outside the organisation, dashed) to see the apps it uses; double-click to show them.
 - Switch a **Kind**, **Tier** or **Lifecycle** filter off and watch matching apps fade.
 - Press **/** to jump to search, and **r** to reset the view.

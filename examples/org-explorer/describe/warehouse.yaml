@@ -104,6 +104,20 @@ apps:
         componentSource: Warehouse/PickingApp/PickingApp.ts
         repository: shop/shipmentapi
         owner: Shipping team
+      -
+        direction: Upstream
+        tech: ''
+        protocol: ''
+        dataDescription: Picks orders
+        description: Picks and packs orders on the warehouse floor
+        appName: Picker
+        system: ''
+        relationship: Internal
+        componentName: PickingScreen
+        componentSource: Warehouse/PickingApp/PickingApp.ts
+        repository: ''
+        owner: ''
+        kind: Person
     meta:
       appName: PickingApp
       description: Used by pickers on the warehouse floor

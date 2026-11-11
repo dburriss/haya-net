@@ -71,6 +71,21 @@
           "componentSource": "Storefront/WebShop/WebShop.ts",
           "repository": "shop/authapi",
           "owner": "Identity team"
+        },
+        {
+          "direction": "Upstream",
+          "tech": "",
+          "protocol": "",
+          "dataDescription": "Browses and buys",
+          "description": "Shops for products",
+          "appName": "Customer",
+          "system": "",
+          "relationship": "External",
+          "componentName": "Customer",
+          "componentSource": "Storefront/WebShop/WebShop.ts",
+          "repository": "",
+          "owner": "",
+          "kind": "Person"
         }
       ],
       "meta": {
@@ -155,6 +170,21 @@
           "componentSource": "Storefront/MobileBff/MobileBff.ts",
           "repository": "shop/ordertracking",
           "owner": "Shipping team"
+        },
+        {
+          "direction": "Upstream",
+          "tech": "",
+          "protocol": "",
+          "dataDescription": "Browses and buys",
+          "description": "Shops for products",
+          "appName": "Customer",
+          "system": "",
+          "relationship": "External",
+          "componentName": "Customer",
+          "componentSource": "Storefront/MobileBff/MobileBff.ts",
+          "repository": "",
+          "owner": "",
+          "kind": "Person"
         }
       ],
       "meta": {
