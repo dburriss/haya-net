@@ -398,6 +398,8 @@ function applyFocus() {
   if (!focus.size) return;
   cy.edges().forEach((e) => { if (!focus.has(e.source().id()) && !focus.has(e.target().id())) e.addClass("muted"); });
   cy.nodes().forEach((el) => { if (!focus.has(el.id()) && !el.connectedEdges().some((e) => !e.hasClass("muted"))) el.addClass("muted"); });
+  // an app that an unmuted line reaches keeps its system boundary lit too (a compound is not touched by lines drawn to its apps)
+  cy.nodes().forEach((el) => { if (!el.hasClass("muted")) el.ancestors().removeClass("muted"); });
 }
 // the chips are the legend for kind, tier and lifecycle: glyph and name, pressed = shown
 function renderFilters() {
