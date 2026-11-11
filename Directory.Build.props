@@ -2,8 +2,15 @@
 <Project>
   <PropertyGroup>
     <!-- One version for every package; scripts/publish.fsx rewrites these two. The release tag overrides Version in CI. -->
-    <Version>0.0.6-beta1</Version>
-    <PackageReleaseNotes>Releases are tag-driven: pushing a `v*` tag publishes `Haya`, `Haya.Core`, `Haya.Roslyn` and `Haya.Tool` to NuGet with
+    <Version>0.0.6</Version>
+    <PackageReleaseNotes>**Breaking:** `Relationship.InternalUser` and `ExternalUser` are removed (C#, TypeScript and describe files). Use a
+Releases are tag-driven: pushing a `v*` tag publishes `Haya` and `Haya.Tool` to NuGet with
+People: a collaborator with `Kind = AppKind.Person` (C#; `kind: AppKind.Person` in TypeScript) is a user rather than an
+The interactive explorer is published to GitHub Pages at &lt;https://dburriss.github.io/haya-net/&gt;, built in CI from `examples/org-explorer` (nine systems, JSON and YAML describe files); no HTML is committed.
+`haya diagram -f html` writes an interactive graph explorer: one self-contained page (no network, works from a file)
+`haya datadog` writes Datadog Software Catalog entities (`entity.datadog.yaml`, schema v3) on both the .NET tool and
+`Lifecycle` and `Tier` on `Meta` (C# attributes and TypeScript `meta()`), written to the Datadog entity.
+Describe format `0.3`: optional `meta.lifecycle`, `meta.tier` and an app-level `language` (`dotnet` or `javascript`)
 `--include-references` and `--include-assembly &lt;glob&gt;` (with `--verbose`) read Haya attributes from public types in
 Custom TypeScript annotations with defaults: `defineResponsibility`, `defineCollaborator` and `defineMeta` in
 Custom C# attributes with defaults: derive from `ResponsibilityAttribute`, `CollaboratorAttribute` or `MetaAttribute` and

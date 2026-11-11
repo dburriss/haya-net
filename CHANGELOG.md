@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-11-11
+
 ### Changed
 - **Breaking:** `Relationship.InternalUser` and `ExternalUser` are removed (C#, TypeScript and describe files). Use a
   collaborator with `Kind = AppKind.Person` and `Relationship.Internal` or `External`. A describe file that still uses them, or
