@@ -139,13 +139,16 @@ let private detail name (ctor: (string * string) list) : ComponentDetail =
       Constructors = if ctor.IsEmpty then [] else [ ctor |> List.map (fun (n, t) -> { Name = n; Type = t }) ]
       Members =
         [ { Name = "Run"; Kind = MemberKind.Method; Type = "Task<bool>"; Parameters = [ { Name = "id"; Type = "string" } ] }
-          { Name = "Size"; Kind = MemberKind.Property; Type = "int"; Parameters = [] } ] }
+          { Name = "Size"; Kind = MemberKind.Property; Type = "int"; Parameters = [] } ]
+      Dependencies = [] }
+
+let private dependsOn name via : ComponentDependency = { Name = name; Source = "src/x.cs"; Via = via }
 
 let private shopApp =
     App.ofDescriptors [ Meta meta; Responsibility (responsibility "Controller"); Responsibility (responsibility "Usecase"); Responsibility (responsibility "Repo") ]
     |> App.withComponents
-        [ detail "Controller" [ "usecase", "Usecase"; "self", "Controller" ]
-          detail "Usecase" [ "repo", "Repo"; "repos", "IRepo"; "list", "List<Repo>"; "again", "Repo" ]
+        [ { detail "Controller" [ "usecase", "Usecase"; "self", "Controller" ] with Dependencies = [ dependsOn "Usecase" [] ] }
+          { detail "Usecase" [ "repo", "IRepo" ] with Dependencies = [ dependsOn "Repo" [ "IRepo"; "SqlRepo" ]; dependsOn "Missing" [] ] }
           detail "Repo" [] ]
 
 let private describe format detail apps =
@@ -165,7 +168,7 @@ let ``Describe at members round-trips the classes`` (file: string) =
 let ``Describe writes detail and leaves the classes out below members`` () =
     let apps = describe DataFormat.Json Detail.Apps [ shopApp ]
     Assert.Contains("\"detail\": \"apps\"", apps)
-    Assert.Contains("\"version\": \"0.5\"", apps)
+    Assert.Contains("\"version\": \"0.6\"", apps)
     Assert.DoesNotContain("\"components\"", apps)
     Assert.Contains("\"detail\": \"components\"", describe DataFormat.Json Detail.Components [ shopApp ])
     let members = describe DataFormat.Json Detail.Members [ shopApp ]
@@ -196,13 +199,16 @@ let private componentsAt detail =
     (Graph.ofApps detail [ shopApp ]).Nodes |> List.collect (_.Components)
 
 [<Fact>]
-let ``Uses is an exact match on a constructor parameter type, not self, once`` () =
+let ``DependsOn resolves to the classes of the app and UsedBy is its inverse`` () =
     let cs = componentsAt Detail.Members
-    let usesOf name = (cs |> List.find (fun c -> c.Name = name)).Uses
-    Assert.Equal<string list>([ "shop_api__usecase" ], usesOf "Controller")
-    // `IRepo` and `List<Repo>` do not match `Repo`; `Repo` twice is one use
-    Assert.Equal<string list>([ "shop_api__repo" ], usesOf "Usecase")
-    Assert.Empty(usesOf "Repo")
+    let get name = cs |> List.find (fun c -> c.Name = name)
+    Assert.Equal<Graph.ComponentLink list>([ ({ Id = "shop_api__usecase"; Via = [] } : Graph.ComponentLink) ], (get "Controller").DependsOn)
+    // a dependency on a class that is not a component of the app is dropped
+    Assert.Equal<Graph.ComponentLink list>([ ({ Id = "shop_api__repo"; Via = [ "IRepo"; "SqlRepo" ] } : Graph.ComponentLink) ], (get "Usecase").DependsOn)
+    Assert.Empty((get "Repo").DependsOn)
+    Assert.Equal<string list>([ "shop_api__usecase" ], (get "Repo").UsedBy)
+    Assert.Equal<string list>([ "shop_api__controller" ], (get "Usecase").UsedBy)
+    Assert.Empty((get "Controller").UsedBy)
 
 [<Fact>]
 let ``Graph fills classes from components and their members only at members`` () =
@@ -213,23 +219,31 @@ let ``Graph fills classes from components and their members only at members`` ()
     Assert.All(components, fun c ->
         Assert.Empty(c.Constructors)
         Assert.Empty(c.Members)
-        Assert.Empty(c.Uses))
+        Assert.Empty(c.DependsOn)
+        Assert.Empty(c.UsedBy))
     let members = componentsAt Detail.Members
     Assert.Equal(3, members.Length)
     Assert.All(members, fun c -> Assert.Equal(2, c.Members.Length))
 
 [<Fact>]
-let ``Graph document carries constructors, uses and members only at members`` () =
+let ``Graph document carries constructors, dependencies and members only at members`` () =
     let json detail = Graph.ofApps detail [ shopApp ] |> Encode.graph |> Serializer.toScriptSafeJson
     Assert.DoesNotContain("\"members\"", json Detail.Components)
-    Assert.DoesNotContain("\"uses\"", json Detail.Components)
+    Assert.DoesNotContain("\"dependsOn\"", json Detail.Components)
+    Assert.DoesNotContain("\"usedBy\"", json Detail.Components)
     let full = json Detail.Members
     Assert.Contains("\"members\"", full)
     Assert.Contains("\"constructors\"", full)
-    Assert.Contains("\"uses\"", full)
-    Assert.Contains("\"version\": \"0.4\"", full)
+    Assert.Contains("\"dependsOn\"", full)
+    Assert.Contains("\"usedBy\"", full)
+    Assert.Contains("\"version\": \"0.5\"", full)
 
 [<Fact>]
-let ``The component diagram is the same at components and members`` () =
+let ``The component diagram draws dependencies between classes only at members`` () =
     let gen detail = Diagram.generateDiagram { InputPaths = []; OutputPath = ""; Detail = detail; DiagramFormat = DiagramFormat.Mermaid; CurrentDirectory = "" } [ shopApp ]
-    Assert.Equal(gen Detail.Components, gen Detail.Members)
+    let uses = [ "Rel(shop_api__controller, shop_api__usecase, \"uses\")"; "Rel(shop_api__usecase, shop_api__repo, \"uses\")" ]
+    Assert.DoesNotContain("\"uses\"", gen Detail.Components)
+    let members = gen Detail.Members
+    for line in uses do Assert.Contains(line, members)
+    // nothing else changes
+    Assert.Equal(gen Detail.Components, members.Split('\n') |> Array.filter (fun l -> not (List.contains l uses)) |> String.concat "\n")

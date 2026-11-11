@@ -15,14 +15,47 @@ meta({
 @Responsibility({ description: "Handles order processing" })
 export class CreditCardPaymentUsecase {
   constructor(
-    private readonly visa: VisaPaymentService,
+    private readonly gateway: CardGateway,
     private readonly shipping: ShippingService,
   ) {}
 
   async pay(orderId: string, cardToken: string, amountInCents: number): Promise<boolean> {
-    const paid = await this.visa.charge(cardToken, amountInCents);
+    const paid = await this.gateway.charge(cardToken, amountInCents);
     if (paid) await this.shipping.ship(orderId);
     return paid;
+  }
+}
+
+// Not annotated: walked through when tracing dependencies between annotated classes (ADR018).
+export class PaymentService {
+  constructor(private readonly gateway: CardGateway) {}
+
+  authorise(cardToken: string, amountInCents: number): Promise<boolean> {
+    return this.gateway.charge(cardToken, amountInCents);
+  }
+}
+
+export class CardGateway {
+  constructor(private readonly visa: VisaPaymentService) {}
+
+  charge(cardToken: string, amountInCents: number): Promise<boolean> {
+    return this.visa.charge(cardToken, amountInCents);
+  }
+
+  retryWith(service: PaymentService, cardToken: string, amountInCents: number): Promise<boolean> {
+    return service.authorise(cardToken, amountInCents);
+  }
+}
+
+export interface IPaymentFlow {
+  start(orderId: string, cardToken: string, amountInCents: number): Promise<boolean>;
+}
+
+export class CardPaymentFlow implements IPaymentFlow {
+  constructor(private readonly usecase: CreditCardPaymentUsecase) {}
+
+  start(orderId: string, cardToken: string, amountInCents: number): Promise<boolean> {
+    return this.usecase.pay(orderId, cardToken, amountInCents);
   }
 }
 
@@ -39,10 +72,17 @@ export class CreditCardPaymentUsecase {
   owner: "Checkout Team",
 })
 export class PaymentsController {
-  constructor(private readonly usecase: CreditCardPaymentUsecase) {}
+  constructor(
+    private readonly usecase: CreditCardPaymentUsecase,
+    private readonly payments: PaymentService,
+  ) {}
 
   post(orderId: string, cardToken: string, amountInCents: number): Promise<boolean> {
     return this.usecase.pay(orderId, cardToken, amountInCents);
+  }
+
+  authorise(cardToken: string, amountInCents: number): Promise<boolean> {
+    return this.payments.authorise(cardToken, amountInCents);
   }
 }
 
@@ -91,4 +131,10 @@ export class ShippingService {
   description: "Pays for the items in their cart",
   dataDescription: "Pays for an order",
 })
-export class CustomerPayment {}
+export class CustomerPayment {
+  constructor(private readonly flow: IPaymentFlow) {}
+
+  pay(orderId: string, cardToken: string, amountInCents: number): Promise<boolean> {
+    return this.flow.start(orderId, cardToken, amountInCents);
+  }
+}

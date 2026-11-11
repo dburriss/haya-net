@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { AnalysisError, analyse, analyseWithMembers, type CollaboratorInfo, type DescriptorInfo } from "./analyser.ts";
+import { toFableApp } from "./bridge.ts";
 
 const annotations = resolve(import.meta.dir, "../../Haya.TypeScript");
 const roots: string[] = [];
@@ -410,6 +411,89 @@ export class NotAnnotated { constructor(repo: Repo) {} }`;
       ["Method", "refund", "Promise<boolean>", "id: string"],
       // a public parameter property is a property of the class
       ["Property", "label", "string | undefined", ""],
+    ]);
+  });
+});
+
+// ADR018: the type graph is built here, the walk is Haya.Core's (`Dependencies.attach`), shared with .NET.
+describe("dependencies", () => {
+  /** Each component's dependencies as `from -> to [via]`, after the shared walk. */
+  const depsOf = (root: string): string[] => {
+    const a = analyseWithMembers(root, root);
+    const app = toFableApp(a.descriptors, a.components, a.typeGraph);
+    return Array.from(app.Components).flatMap((c) =>
+      Array.from(c.Dependencies).map((d) => `${c.Name} -> ${d.Name} [${Array.from(d.Via).join(", ")}]`),
+    );
+  };
+  const r = (name: string) => `@Responsibility({ description: "${name}" })\n`;
+
+  test("no type graph without members", () => {
+    const root = project({ "src/a.ts": imports + r("A") + "export class A { b?: B }\n" + r("B") + "export class B {}" });
+    const a = analyseWithMembers(root, root);
+    expect(a.typeGraph.nodes.length).toBeGreaterThan(0);
+    // `analyse` (below members) does no type graph work: it has no place to put one
+    expect(analyse(root, root).length).toBe(2);
+  });
+
+  test("direct, through unannotated classes, and stopping at the first annotated class", () => {
+    const root = project({
+      "src/a.ts":
+        imports +
+        r("Controller") + "export class Controller { constructor(private s: PaymentService) {} }\n" +
+        "export class PaymentService { constructor(private g: CardGateway) {} retry(): void {} }\n" +
+        "export class CardGateway { constructor(private v: Visa) {} again(s: PaymentService): void { s.retry(); } }\n" +
+        r("Visa") + "export class Visa { constructor(private b: Bank) {} }\n" +
+        r("Bank") + "export class Bank {}",
+    });
+    expect(depsOf(root)).toEqual(["Controller -> Visa [PaymentService, CardGateway]", "Visa -> Bank []"]);
+  });
+
+  test("an interface reaches its implementation; implementing it does not link siblings", () => {
+    const root = project({
+      "src/a.ts":
+        imports +
+        r("Entry") + "export class Entry { constructor(private f: IFlow) {} run() { return this.f.start(); } }\n" +
+        "export interface IFlow { start(): void }\n" +
+        r("CardFlow") + "export class CardFlow implements IFlow { constructor(private u: Usecase) {} start() {} }\n" +
+        "export class CashFlow implements IFlow { constructor(private t: Till) {} start() {} }\n" +
+        r("Usecase") + "export class Usecase {}\n" +
+        r("Till") + "export class Till {}",
+    });
+    expect(depsOf(root).sort()).toEqual(["CardFlow -> Usecase []", "Entry -> CardFlow [IFlow]", "Entry -> Till [IFlow, CashFlow]"]);
+  });
+
+  test("new, static calls, generic arguments, returns and member access; never itself; decorators and lib types ignored", () => {
+    const root = project({
+      "src/a.ts":
+        imports +
+        r("A") +
+        "export class A {\n" +
+        "  self?: A;\n" +
+        "  list: Map<string, ByGeneric> = new Map();\n" +
+        "  make() { return new ByNew(); }\n" +
+        "  go() { ByStatic.go(); }\n" +
+        "  get(): Promise<ByReturn> { return Promise.reject(); }\n" +
+        "  call(h: Holder) { h.inner.hit(); }\n" +
+        "}\n" +
+        "export class ByGeneric {}\nexport class ByNew {}\nexport class ByStatic { static go() {} }\nexport class ByReturn {}\n" +
+        "export class Holder { inner = new Inner(); }\nexport class Inner { hit() {} }\n" +
+        r("Lib") + "export class Lib { p: Promise<void> = Promise.resolve(); }",
+    });
+    const a = analyseWithMembers(root, root);
+    const nodeName = new Map(a.typeGraph.nodes.map((n) => [n.key, n.name]));
+    const fromA = a.typeGraph.edges.filter((e) => nodeName.get(e.from) === "A").map((e) => nodeName.get(e.to)).filter((x) => x !== undefined);
+    for (const t of ["ByGeneric", "ByNew", "ByStatic", "ByReturn", "Holder", "Inner"]) expect(fromA).toContain(t);
+    expect(depsOf(root)).toEqual([]);
+  });
+
+  test("the example's dependencies match the .NET example", () => {
+    const root = resolve(import.meta.dir, "../../../examples/typescript/example");
+    expect(depsOf(root).sort()).toEqual([
+      "CreditCardPaymentUsecase -> ShippingService []",
+      "CreditCardPaymentUsecase -> VisaPaymentService [CardGateway]",
+      "CustomerPayment -> CreditCardPaymentUsecase [IPaymentFlow, CardPaymentFlow]",
+      "PaymentsController -> CreditCardPaymentUsecase []",
+      "PaymentsController -> VisaPaymentService [PaymentService, CardGateway]",
     ]);
   });
 });

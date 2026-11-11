@@ -16,6 +16,7 @@
         <Compile Include="CustomAttributeTests.fs" />
         <Compile Include="ReferencedAttributeTests.fs" />
         <Compile Include="MemberTests.fs" />
+        <Compile Include="DependencyTests.fs" />
     </ItemGroup>
 
     <ItemGroup>

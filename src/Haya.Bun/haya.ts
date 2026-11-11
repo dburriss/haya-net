@@ -33,10 +33,10 @@ type Format = "json" | "yaml";
 const details = { systems: Detail.Systems, apps: Detail.Apps, components: Detail.Components, members: Detail.Members } as const;
 // Same text as CliText.detailUsage in src/Haya.Tool/Cli.fs
 const detailUsage =
-  "Level of detail. systems (systems and how they connect), apps (the apps inside their systems), components (the classes inside the apps) or members (also each class's constructors and public members). With -f html, components adds the classes to the explorer and members their constructors and members; the Mermaid diagram is the same for components and members (default: systems)";
+  "Level of detail. systems (systems and how they connect), apps (the apps inside their systems), components (the classes inside the apps) or members (also each class's constructors, public members and dependencies). With -f html, components adds the classes to the explorer and members their constructors, members and dependencies; in the Mermaid diagram, members also draws the dependencies between classes (default: systems)";
 // Same text as CliText.describeDetailUsage in src/Haya.Tool/Cli.fs
 const describeDetailUsage =
-  "Level of detail. apps (responsibilities, collaborators and meta), components (the same as apps today: classes are already named on each responsibility and collaborator) or members (adds each annotated class's constructors and public members) (default: apps)";
+  "Level of detail. apps (responsibilities, collaborators and meta), components (the same as apps today: classes are already named on each responsibility and collaborator) or members (adds each annotated class's constructors, public members and dependencies) (default: apps)";
 const dataFormat = (f: Format) => (f === "yaml" ? DataFormat_Yaml() : DataFormat_Json());
 const defaultFile = (format: Format, name: string) => `./${name}.${format}`;
 
@@ -53,7 +53,7 @@ const loadOne = (inputPath: string, members: boolean): App[] => {
   }
   if (!members) return [toFableApp(analyse(inputPath, process.cwd()))];
   const analysis = analyseWithMembers(inputPath, process.cwd());
-  return [toFableApp(analysis.descriptors, analysis.components)];
+  return [toFableApp(analysis.descriptors, analysis.components, analysis.typeGraph)];
 };
 
 /** Loads every input and merges them into one system; conflicts between inputs are warned about on stderr. */

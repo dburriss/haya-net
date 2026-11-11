@@ -40,6 +40,18 @@ its boundary. Applications without annotated classes, and ones known only from a
 Level 3 grows with the number of classes, so it reads best for one system or a few applications. The explorer lists the
 same classes in each application's panel when you ask for them: `-f html --detail components`.
 
+## Show which classes use which (level 3 with members)
+
+```bash
+haya diagram --detail members -o components.mermaid ./Example.sln
+```
+
+`--detail members` draws the same diagram as `components`, plus a `uses` relationship between two classes of one application
+when one reaches the other in code: directly, or through classes and interfaces without a Haya attribute (a controller that
+calls an unannotated service that calls an annotated gateway is drawn as controller `uses` gateway). It is best effort:
+dependency injection registrations, reflection, message handlers and TypeScript free functions are not followed. See
+[ADR018](../adr/ADR018-component-dependencies.md).
+
 ## Show the people who use a system
 
 Add a collaborator with `Kind = AppKind.Person` for each kind of user, `Upstream` when they use the application. Every

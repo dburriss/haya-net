@@ -2,7 +2,7 @@
 
 The output of `haya describe` and an accepted input to every command. JSON or YAML with the same shape.
 
-## Version 0.5 (current)
+## Version 0.6 (current)
 
 ```json
 {
@@ -34,6 +34,10 @@ The output of `haya describe` and an accepted input to every command. JSON or YA
         {
           "name": "OrderService", "source": "Orders/Orders.cs",
           "constructors": [ [ { "name": "payments", "type": "PaymentsClient" } ] ],
+          "dependencies": [
+            { "name": "PaymentsClient", "source": "Orders/Orders.cs", "via": [] },
+            { "name": "StockClient", "source": "Orders/Stock.cs", "via": [ "ReservationService", "IStockApi" ] }
+          ],
           "members": [
             { "kind": "Method", "name": "Place", "type": "Task<bool>", "parameters": [ { "name": "orderId", "type": "string" } ] },
             { "kind": "Property", "name": "Name", "type": "string" }
@@ -44,7 +48,7 @@ The output of `haya describe` and an accepted input to every command. JSON or YA
     }
   ],
   "detail": "members",
-  "version": "0.5"
+  "version": "0.6"
 }
 ```
 
@@ -55,12 +59,13 @@ The output of `haya describe` and an accepted input to every command. JSON or YA
 | `language` | What the analyser that wrote the file analysed: `dotnet` (`Haya.Tool`) or `javascript` (`Haya.Bun`). Left out when unknown, e.g. in a file written by hand. |
 | `responsibilities[]` | `description`, plus the class (`componentName`) and file (`componentSource`, relative to where `haya` ran). |
 | `collaborators[]` | From `Collaborator`, plus `componentName`/`componentSource`. `direction` is `Upstream`/`Downstream`; `relationship` is one of `Owned`, `Shared`, `Internal`, `External` (a missing one reads as `Internal`). `kind` is `Person` for a person and is left out otherwise: a person is named by `appName` and has no `system`. |
-| `components[]` | Only with `describe --detail members`, left out when empty: each class with a responsibility or collaborator, by `name` and `source` (as `componentName`/`componentSource`). `constructors` holds each public constructor's parameters in order. `members` holds the public members declared on the class: `kind` (`Method`, `Property`, `Field` or `Event`), `name`, `type`, and `parameters` for methods (and C# indexers). Types are as the language writes them (`Task<bool>` in C#, `Promise<boolean>` in TypeScript). See [ADR017](../adr/ADR017-member-detail.md) for what is left out. |
+| `components[]` | Only with `describe --detail members`, left out when empty: each class with a responsibility or collaborator, by `name` and `source` (as `componentName`/`componentSource`). `constructors` holds each public constructor's parameters in order. `members` holds the public members declared on the class: `kind` (`Method`, `Property`, `Field` or `Event`), `name`, `type`, and `parameters` for methods (and C# indexers). Types are as the language writes them (`Task<bool>` in C#, `Promise<boolean>` in TypeScript). See [ADR017](../adr/ADR017-member-detail.md) for what is left out. `dependencies`, left out when empty: the other annotated classes of the same app that this class reaches in code, by `name` then `source`, with `via` the unannotated types in between along the shortest chain (`[]` when direct). Best effort: see [ADR018](../adr/ADR018-component-dependencies.md) for what is followed and what is not. |
 | `detail` | What the document was asked to hold: `apps` (the default), `components` (the same as `apps` today) or `members` (adds `components[]`). Tells "not asked for" apart from "none". |
-| `version` | `"0.5"`. |
+| `version` | `"0.6"`. |
 
 ## Older versions (still read)
 
+- `0.5`: same without `components[].dependencies` (read as none).
 - `0.4`: same without `detail` and `components[]`.
 - `0.3`: same without `collaborators[].kind`. The `relationship` values `InternalUser` and `ExternalUser` that earlier
   versions allowed are no longer read (an error): write `"kind": "Person"` with `Internal` or `External` instead.

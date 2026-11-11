@@ -203,8 +203,10 @@ module Diagram =
     /// the container diagram. A class is drawn with the technology of its source file and its responsibilities.
     /// A collaborator is a relationship from its class, to the classes at the other end (`Graph.Edge.ToComponents`); when an
     /// end with classes has none of them, to a container for that app inside its boundary.
-    let sprintMermaidC4L3 (apps: App list) =
-        let g = Graph.ofApps Detail.Components apps
+    /// At `Detail.Members`, each dependency between two classes of one app is a `uses` relationship (ADR018).
+    let sprintMermaidC4L3 (detail: Detail) (apps: App list) =
+        let detail = if Detail.atLeast Detail.Members detail then Detail.Members else Detail.Components
+        let g = Graph.ofApps detail apps
         let node id = g.Nodes |> List.find (fun n -> n.Id = id)
         let hasClasses (n: Graph.Node) = n.Kind = Graph.NodeKind.App && not n.Components.IsEmpty
 
@@ -227,6 +229,11 @@ module Diagram =
                 if e.Protocol = "" then $"Rel({from}, {to_}, \"{e.Label}\")"
                 else $"Rel({from}, {to_}, \"{e.Label}\", \"{e.Protocol}\")")
             |> List.distinct
+        // only at members: the code dependencies between the classes of one app, in component order
+        let dependencies =
+            g.Nodes
+            |> List.collect (fun n -> n.Components)
+            |> List.collect (fun c -> c.DependsOn |> List.map (fun l -> $"Rel({c.Id}, {l.Id}, \"uses\")"))
         // the app containers that a relationship needs
         let appContainers =
             ends
@@ -289,14 +296,15 @@ module Diagram =
         |> SB.lines persons
         |> SB.emptyLine
         |> SB.lines relationships
+        |> SB.lines dependencies
         |> SB.toString
 
     let generateDiagram (cmd: DiagramCommand) (apps: App list) =
         match (cmd.Detail, cmd.DiagramFormat) with
         | Systems, Mermaid -> sprintMermaidC4L1 apps
         | Apps, Mermaid -> sprintMermaidC4L2 apps
-        // the component diagram does not draw members (yet)
+        // the component diagram; at members it also draws the dependencies between classes
         | Components, Mermaid
-        | Members, Mermaid -> sprintMermaidC4L3 apps
+        | Members, Mermaid -> sprintMermaidC4L3 cmd.Detail apps
         // the explorer always shows systems and apps; the detail only decides whether the classes are in it
         | detail, Html -> Explore.sprintHtml detail apps

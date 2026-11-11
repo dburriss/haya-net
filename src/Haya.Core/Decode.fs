@@ -122,7 +122,11 @@ module Decode =
               |> List.map (fun c -> match c with
                                     | JsonValue.Array ps -> ps |> Array.toList |> List.map parameter
                                     | _ -> [])
-          Members = items "members" v |> List.map classMember }
+          Members = items "members" v |> List.map classMember
+          // 0.6; missing (and in 0.5) means none
+          Dependencies =
+              items "dependencies" v
+              |> List.map (fun d -> { Name = str "name" d; Source = str "source" d; Via = items "via" d |> List.map (fun x -> match x with JsonValue.String s -> s | _ -> "") }) }
 
     let private isApp (doc: JsonValue) =
         match doc with

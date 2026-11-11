@@ -20,4 +20,5 @@ Why Haya is built the way it is. Each record is one decision; newer records can 
 | [ADR014](ADR014-components-in-the-explorer-panel.md) | Components (classes and their source) listed in the explorer panel, graph format 0.3 | Component diagram added in ADR015; opt-in with `--detail components` in ADR016 |
 | [ADR015](ADR015-component-diagram.md) | C4 component diagram (`diagram -t c4component`) and opening apps into their classes in the explorer | `-t` replaced by `--detail` in ADR016 |
 | [ADR016](ADR016-diagram-detail.md) | One `--detail systems\|apps\|components` level for diagrams; classes in the explorer opt-in | Extended with `members` in ADR017 |
-| [ADR017](ADR017-member-detail.md) | A `members` detail level: constructors, public members and `Uses` per class, describe format 0.5, graph format 0.4 | |
+| [ADR017](ADR017-member-detail.md) | A `members` detail level: constructors, public members and `Uses` per class, describe format 0.5, graph format 0.4 | `Uses` replaced by dependencies in ADR018 |
+| [ADR018](ADR018-component-dependencies.md) | Dependencies between annotated classes, walked through unannotated types, under `members`; describe format 0.6, graph format 0.5 | |

@@ -1,7 +1,7 @@
 # ADR017: A `members` detail level: constructors and public members per class, opt-in
 
 Date: 2026-11-11  
-Status: Accepted  
+Status: Accepted, extended by [ADR018](ADR018-component-dependencies.md) (`Uses` replaced by dependencies)  
 Author: dburriss
 
 ### Context

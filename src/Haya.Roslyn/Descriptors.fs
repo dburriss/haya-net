@@ -120,7 +120,12 @@ module Descriptors =
     /// Descriptors of an analysed solution, and the compiled-reference types they were partly built from
     /// (assembly name, type name), so a caller can report them.
     /// `Components` holds the constructors and public members of the annotated classes, only when asked for.
-    type Analysis = { Descriptors: Descriptor list; Components: ComponentDetail list; Referenced: (string * string) list }
+    /// `Dependencies`: with members, the size of the type graph and the time spent building and walking it (ADR018).
+    type Analysis =
+        { Descriptors: Descriptor list
+          Components: ComponentDetail list
+          Referenced: (string * string) list
+          Dependencies: {| Types: int; Edges: int; Milliseconds: int64 |} option }
 
     /// The class carries a `[Responsibility]` or `[Collaborator]` (an assembly's `[Meta]` is not a class).
     let private isAnnotatedClass (symbol: ISymbol) =
@@ -155,9 +160,19 @@ module Descriptors =
                 |> List.distinctBy (fun s -> s.ToDisplayString(), s.Kind)
                 |> List.filter isAnnotatedClass
                 |> List.map (fun s -> Roslyn.componentDetail s.Name (componentSource rootPath s) (s :?> INamedTypeSymbol))
+            // ADR018: the annotated classes each class reaches, walked over every type declared in the source
+            let! components, stats =
+                if not members then Task.FromResult (components, None) else
+                task {
+                    let watch = Diagnostics.Stopwatch.StartNew()
+                    let! nodes, edges = Roslyn.typeGraph (fun t -> isAnnotatedClass t) (componentSource rootPath) solution
+                    let result = Dependencies.attach nodes edges components
+                    return result, Some {| Types = nodes.Length; Edges = edges.Length; Milliseconds = watch.ElapsedMilliseconds |}
+                }
             return { Descriptors = toDescriptors classes @ fromReferences @ toDescriptors meta
                      Components = components
-                     Referenced = referencedTypes |> List.map (fun (a, t) -> a.Name, t.ToDisplayString()) }
+                     Referenced = referencedTypes |> List.map (fun (a, t) -> a.Name, t.ToDisplayString())
+                     Dependencies = stats }
         }
 
     let getAnalysisWith (references: Roslyn.ReferenceOptions) (rootPath: string) (attributeNames: string list) (solution: Solution) =

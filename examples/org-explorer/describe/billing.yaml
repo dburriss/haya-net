@@ -37,6 +37,15 @@ apps:
             -
               name: visa
               type: VisaClient
+        dependencies:
+          -
+            name: PaymentGatewayClient
+            source: Billing/PaymentsApi/PaymentsApi.cs
+            via: []
+          -
+            name: VisaClient
+            source: Billing/PaymentsApi/PaymentsApi.cs
+            via: []
         members:
           -
             kind: Method
@@ -147,14 +156,26 @@ apps:
         constructors:
           -
             -
-              name: stripe
-              type: StripeClient
-            -
-              name: visa
-              type: VisaClient
+              name: router
+              type: CardRouter
             -
               name: ledgerService
               type: LedgerServiceClient
+        dependencies:
+          -
+            name: LedgerServiceClient
+            source: Billing/PaymentGateway/PaymentGateway.cs
+            via: []
+          -
+            name: StripeClient
+            source: Billing/PaymentGateway/PaymentGateway.cs
+            via:
+              - CardRouter
+          -
+            name: VisaClient
+            source: Billing/PaymentGateway/PaymentGateway.cs
+            via:
+              - CardRouter
         members:
           -
             kind: Method
@@ -278,6 +299,11 @@ apps:
             -
               name: ledgerDb
               type: LedgerDbClient
+        dependencies:
+          -
+            name: LedgerDbClient
+            source: Billing/LedgerService/LedgerService.cs
+            via: []
         members:
           -
             kind: Method
@@ -385,6 +411,15 @@ apps:
             -
               name: ledgerService
               type: LedgerServiceClient
+        dependencies:
+          -
+            name: LedgerServiceClient
+            source: Billing/RefundService/RefundService.cs
+            via: []
+          -
+            name: PaymentGatewayClient
+            source: Billing/RefundService/RefundService.cs
+            via: []
         members:
           -
             kind: Method
@@ -471,6 +506,11 @@ apps:
             -
               name: fraudModel
               type: FraudModelClient
+        dependencies:
+          -
+            name: FraudModelClient
+            source: Billing/FraudCheck/FraudCheck.ts
+            via: []
         members:
           -
             kind: Method
@@ -600,8 +640,22 @@ apps:
               name: ledgerService
               type: LedgerServiceClient
             -
-              name: emailGateway
-              type: EmailGatewayClient
+              name: mailer
+              type: InvoiceMailer
+        dependencies:
+          -
+            name: EmailGatewayClient
+            source: Billing/InvoiceWorker/InvoiceWorker.cs
+            via:
+              - InvoiceMailer
+          -
+            name: LedgerServiceClient
+            source: Billing/InvoiceWorker/InvoiceWorker.cs
+            via: []
+          -
+            name: OrderEventsClient
+            source: Billing/InvoiceWorker/InvoiceWorker.cs
+            via: []
         members:
           -
             kind: Method
@@ -685,4 +739,4 @@ apps:
         componentSource: Billing/InvoiceWorker/InvoiceWorker.cs
     language: dotnet
 detail: members
-version: '0.5'
+version: '0.6'

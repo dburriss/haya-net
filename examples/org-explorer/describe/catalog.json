@@ -54,14 +54,32 @@
                 "type": "CatalogDbClient"
               },
               {
-                "name": "pricingService",
-                "type": "PricingServiceClient"
-              },
-              {
-                "name": "stockLevels",
-                "type": "StockLevelsClient"
+                "name": "products",
+                "type": "ProductQuery"
               }
             ]
+          ],
+          "dependencies": [
+            {
+              "name": "CatalogDbClient",
+              "source": "Catalog/CatalogApi/CatalogApi.ts",
+              "via": []
+            },
+            {
+              "name": "PricingServiceClient",
+              "source": "Catalog/CatalogApi/CatalogApi.ts",
+              "via": [
+                "ProductQuery"
+              ]
+            },
+            {
+              "name": "StockLevelsClient",
+              "source": "Catalog/CatalogApi/CatalogApi.ts",
+              "via": [
+                "ProductQuery",
+                "AvailabilityService"
+              ]
+            }
           ],
           "members": [
             {
@@ -234,6 +252,13 @@
               }
             ]
           ],
+          "dependencies": [
+            {
+              "name": "PricingRulesClient",
+              "source": "Catalog/PricingService/PricingService.ts",
+              "via": []
+            }
+          ],
           "members": [
             {
               "kind": "Method",
@@ -362,6 +387,13 @@
               }
             ]
           ],
+          "dependencies": [
+            {
+              "name": "SearchIndexerClient",
+              "source": "Catalog/SearchApi/SearchApi.cs",
+              "via": []
+            }
+          ],
           "members": [
             {
               "kind": "Method",
@@ -453,6 +485,13 @@
                 "type": "CatalogEventsClient"
               }
             ]
+          ],
+          "dependencies": [
+            {
+              "name": "CatalogEventsClient",
+              "source": "Catalog/SearchIndexer/SearchIndexer.ts",
+              "via": []
+            }
           ],
           "members": [
             {
@@ -563,6 +602,13 @@
                 "type": "ImageStoreClient"
               }
             ]
+          ],
+          "dependencies": [
+            {
+              "name": "ImageStoreClient",
+              "source": "Catalog/ImageService/ImageService.ts",
+              "via": []
+            }
           ],
           "members": [
             {
@@ -695,6 +741,18 @@
                 "type": "SupplierFeedClient"
               }
             ]
+          ],
+          "dependencies": [
+            {
+              "name": "CatalogDbClient",
+              "source": "Catalog/ProductImporter/ProductImporter.ts",
+              "via": []
+            },
+            {
+              "name": "SupplierFeedClient",
+              "source": "Catalog/ProductImporter/ProductImporter.ts",
+              "via": []
+            }
           ],
           "members": [
             {
@@ -854,6 +912,13 @@
               }
             ]
           ],
+          "dependencies": [
+            {
+              "name": "ReviewsDbClient",
+              "source": "Catalog/ReviewsApi/ReviewsApi.ts",
+              "via": []
+            }
+          ],
           "members": [
             {
               "kind": "Method",
@@ -950,5 +1015,5 @@
     }
   ],
   "detail": "members",
-  "version": "0.5"
+  "version": "0.6"
 }

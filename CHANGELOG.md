@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** `--detail members` records **dependencies** between annotated classes instead of `Uses`. When an annotated
+  class reaches another annotated class of its app in code, directly or through any number of classes and interfaces without
+  a Haya attribute, that is a dependency, with the unannotated types in between (`via`). The walk stops at the first annotated
+  class; using an interface or abstract class also reaches its implementations in the source; framework, package and
+  referenced-assembly types are never walked. Best effort: DI registrations, reflection, messaging and TypeScript free
+  functions are not followed. Describe format `0.6` adds an optional per-component `dependencies: [{ name, source, via }]`
+  (`0.0` to `0.5` still read). Graph format `0.5` replaces `uses` with `dependsOn: [{ id, via }]` and `usedBy`. The explorer's
+  class panel shows **Depends on** and **Used by**, and an opened app draws a thin dashed line per dependency between its
+  classes. `diagram --detail members -f mermaid` adds a `uses` relationship per dependency. `--verbose` (.NET) prints the size
+  of the type graph and the time it took. Default output differs only in the describe and graph version strings. See ADR018.
 - `haya describe` writes describe format `0.5`: every document has a top-level `"detail"` (`"apps"` by default), so default
   output differs from before in the version and that one line. Files from `0.0` to `0.4` are still read. The graph in
   `haya diagram -f html` is format `0.4`; the default page differs in that version string and the viewer code only. See ADR017.
@@ -24,9 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Compiler-generated, inherited, non-public and `Object` override members are left out. Describe gains an optional per-app
   `components` array; `describe --detail apps|components|members` (default `apps`; `components` is the same as `apps` today).
   `crc`, `backstage` and `datadog` ignore it. See ADR017.
-- With `--detail members`, the explorer's class panel shows **Constructor**, **Uses** and **Members**. **Uses** links to the
-  other annotated classes of the app that a constructor takes, matched exactly by class name (graph format `0.4` adds
-  `constructors`, `members` and `uses` to a component). `--detail members -f mermaid` is the component diagram.
+- With `--detail members`, the explorer's class panel shows **Constructor** and **Members** (graph format `0.4` adds
+  `constructors` and `members` to a component). The exact-match **Uses** that came with them is replaced by dependencies
+  (see Changed, ADR018).
 - The org-explorer example (and its [live page](https://dburriss.github.io/haya-net/)) is built with `--detail members`: the
   Ordering, Billing and Catalog describe files now hold their classes' constructors and members. Its apps are all C# or
   TypeScript now (sources, `tech` and `language`), the languages Haya analyses; Go, Java, Kotlin and Python are gone.

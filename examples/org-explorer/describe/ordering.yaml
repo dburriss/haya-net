@@ -37,6 +37,15 @@ apps:
             -
               name: basketCache
               type: BasketCacheClient
+        dependencies:
+          -
+            name: BasketCacheClient
+            source: Ordering/BasketApi/BasketApi.cs
+            via: []
+          -
+            name: PricingServiceClient
+            source: Ordering/BasketApi/BasketApi.cs
+            via: []
         members:
           -
             kind: Method
@@ -178,11 +187,24 @@ apps:
               name: orderService
               type: OrderServiceClient
             -
-              name: paymentsApi
-              type: PaymentsApiClient
-            -
-              name: fraudCheck
-              type: FraudCheckClient
+              name: checkout
+              type: CheckoutHandler
+        dependencies:
+          -
+            name: FraudCheckClient
+            source: Ordering/CheckoutApi/CheckoutApi.cs
+            via:
+              - CheckoutHandler
+          -
+            name: OrderServiceClient
+            source: Ordering/CheckoutApi/CheckoutApi.cs
+            via: []
+          -
+            name: PaymentsApiClient
+            source: Ordering/CheckoutApi/CheckoutApi.cs
+            via:
+              - CheckoutHandler
+              - IPaymentPort
         members:
           -
             kind: Method
@@ -333,11 +355,30 @@ apps:
               name: orderEvents
               type: OrderEventsClient
             -
-              name: stockReservation
-              type: StockReservationClient
+              name: stockReservations
+              type: IStockReservations
             -
-              name: taxEngine
-              type: TaxEngineClient
+              name: pricing
+              type: PricingCalculator
+        dependencies:
+          -
+            name: OrderEventsClient
+            source: Ordering/OrderService/OrderService.cs
+            via: []
+          -
+            name: OrdersDbClient
+            source: Ordering/OrderService/OrderService.cs
+            via: []
+          -
+            name: StockReservationClient
+            source: Ordering/OrderService/OrderService.cs
+            via:
+              - IStockReservations
+          -
+            name: TaxEngineClient
+            source: Ordering/OrderService/OrderService.cs
+            via:
+              - PricingCalculator
         members:
           -
             kind: Method
@@ -521,6 +562,15 @@ apps:
             -
               name: ordersViewDb
               type: OrdersViewDbClient
+        dependencies:
+          -
+            name: OrderEventsClient
+            source: Ordering/OrderReadModel/OrderReadModel.cs
+            via: []
+          -
+            name: OrdersViewDbClient
+            source: Ordering/OrderReadModel/OrderReadModel.cs
+            via: []
         members:
           -
             kind: Method
@@ -653,6 +703,19 @@ apps:
             -
               name: legacyErp
               type: LegacyErpClient
+        dependencies:
+          -
+            name: LegacyErpClient
+            source: Ordering/ReturnsApi/ReturnsApi.cs
+            via: []
+          -
+            name: OrderServiceClient
+            source: Ordering/ReturnsApi/ReturnsApi.cs
+            via: []
+          -
+            name: RefundServiceClient
+            source: Ordering/ReturnsApi/ReturnsApi.cs
+            via: []
         members:
           -
             kind: Method
@@ -739,4 +802,4 @@ apps:
         componentSource: Ordering/ReturnsApi/ReturnsApi.cs
     language: dotnet
 detail: members
-version: '0.5'
+version: '0.6'

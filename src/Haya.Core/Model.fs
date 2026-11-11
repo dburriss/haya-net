@@ -87,14 +87,25 @@ type Member = {
     Parameters: Parameter list
 }
 
+/// Another annotated class of the same app that a class reaches in code (ADR018): directly, or through unannotated types.
+type ComponentDependency = {
+    /// The class reached.
+    Name: string
+    Source: string
+    /// The names of the unannotated types between, in order along the shortest chain. Empty when direct.
+    Via: string list
+}
+
 /// The constructors and public members of a class that carries a Haya attribute. Keyed like the descriptors by
-/// `ComponentName` and `ComponentSource`. Only collected at `Detail.Members` (ADR017).
+/// `ComponentName` and `ComponentSource`. Only collected at `Detail.Members` (ADR017, ADR018).
 type ComponentDetail = {
     Name: string
     Source: string
     /// Each public constructor's parameters, in order.
     Constructors: Parameter list list
     Members: Member list
+    /// The annotated classes of the same app this class reaches (ADR018), by name then source.
+    Dependencies: ComponentDependency list
 }
 
 module ComponentDetail =
@@ -105,7 +116,8 @@ module ComponentDetail =
     let normalise (c: ComponentDetail) =
         { c with
             Constructors = c.Constructors |> List.sortBy (fun ps -> List.length ps, signature ps)
-            Members = c.Members |> List.sortBy (fun m -> int m.Kind, m.Name, signature m.Parameters + " -> " + m.Type) }
+            Members = c.Members |> List.sortBy (fun m -> int m.Kind, m.Name, signature m.Parameters + " -> " + m.Type)
+            Dependencies = c.Dependencies |> List.sortBy (fun d -> d.Name, d.Source) }
 
 /// One application: what a single describe file (or one analysed solution) holds.
 type App = {

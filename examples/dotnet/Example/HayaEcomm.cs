@@ -13,14 +13,37 @@
 namespace Example;
 
 [Responsibility(Description = "Handles order processing")]
-public class CreditCardPaymentUsecase(VisaPaymentService visa, ShippingService shipping)
+public class CreditCardPaymentUsecase(CardGateway gateway, ShippingService shipping)
 {
     public async Task<bool> Pay(string orderId, string cardToken, int amountInCents)
     {
-        var paid = await visa.Charge(cardToken, amountInCents);
+        var paid = await gateway.Charge(cardToken, amountInCents);
         if (paid) await shipping.Ship(orderId);
         return paid;
     }
+}
+
+// Not annotated: walked through when tracing dependencies between annotated classes (ADR018).
+public class PaymentService(CardGateway gateway)
+{
+    public Task<bool> Authorise(string cardToken, int amountInCents) => gateway.Charge(cardToken, amountInCents);
+}
+
+public class CardGateway(VisaPaymentService visa)
+{
+    public Task<bool> Charge(string cardToken, int amountInCents) => visa.Charge(cardToken, amountInCents);
+
+    public Task<bool> RetryWith(PaymentService service, string cardToken, int amountInCents) => service.Authorise(cardToken, amountInCents);
+}
+
+public interface IPaymentFlow
+{
+    Task<bool> Start(string orderId, string cardToken, int amountInCents);
+}
+
+public class CardPaymentFlow(CreditCardPaymentUsecase usecase) : IPaymentFlow
+{
+    public Task<bool> Start(string orderId, string cardToken, int amountInCents) => usecase.Pay(orderId, cardToken, amountInCents);
 }
 
 [Collaborator(AppName = "Checkout",
@@ -33,9 +56,11 @@ public class CreditCardPaymentUsecase(VisaPaymentService visa, ShippingService s
     DataDescription = "Request payment",
     Repository = "org/checkout-api",
     Owner = "Checkout Team")]
-public class PaymentsController(CreditCardPaymentUsecase usecase)
+public class PaymentsController(CreditCardPaymentUsecase usecase, PaymentService payments)
 {
     public Task<bool> Post(string orderId, string cardToken, int amountInCents) => usecase.Pay(orderId, cardToken, amountInCents);
+
+    public Task<bool> Authorise(string cardToken, int amountInCents) => payments.Authorise(cardToken, amountInCents);
 }
 
 [Collaborator(AppName = "Visa Payment Provider",
@@ -75,5 +100,7 @@ public class ShippingService
     Direction = Direction.Upstream,
     Description = "Pays for the items in their cart",
     DataDescription = "Pays for an order")]
-public class CustomerPayment
-{ }
+public class CustomerPayment(IPaymentFlow flow)
+{
+    public Task<bool> Pay(string orderId, string cardToken, int amountInCents) => flow.Start(orderId, cardToken, amountInCents);
+}

@@ -15,6 +15,9 @@ module Graph =
         /// A person who uses (or is used by) our apps. Known only from collaborators: no app, no system, no `[Meta]`.
         | Person = 3
 
+    /// A dependency of a class on another class of its app (ADR018): its id, and the unannotated types in between.
+    type ComponentLink = { Id: string; Via: string list }
+
     /// A class of an app that carries a `[Responsibility]` or `[Collaborator]`: its name and the source it was found in
     /// (relative to the analysed root; `Assembly::Namespace.Type` for a type from a referenced assembly).
     type Component =
@@ -28,8 +31,10 @@ module Graph =
           Constructors: Parameter list list
           /// `Detail.Members` only: the public members declared on the class.
           Members: Member list
-          /// `Detail.Members` only: the ids of the other classes of the same app that a constructor takes (see `uses`).
-          Uses: string list }
+          /// `Detail.Members` only: the other classes of the same app this class reaches in code, by name then source.
+          DependsOn: ComponentLink list
+          /// `Detail.Members` only: the ids of the classes of the same app that depend on this one, in component order.
+          UsedBy: string list }
 
     type Node =
         { Id: string
@@ -77,18 +82,30 @@ module Graph =
     let private systemId (system: string) = Naming.mermaidId system
     let private sameKey (system: string) (appName: string) = String.toLower system + "/" + String.toLower appName
 
-    /// The ids of the components (of one app) that `c` takes in a constructor: a parameter's type is exactly the
-    /// class name of another component. No generics, nullability or interface-prefix matching (ADR017).
-    let uses (components: Component list) (c: Component) =
-        c.Constructors
-        |> List.concat
-        |> List.choose (fun p -> components |> List.tryFind (fun x -> x.Id <> c.Id && x.Name = p.Type))
-        |> List.map (_.Id)
-        |> List.distinct
+    /// Resolve each class's dependencies (by name and source) to the ids of the other components of its app, and fill
+    /// `UsedBy` as their inverse. A dependency on a class that is not a component of the app is dropped.
+    let private linkDependencies (details: ComponentDetail list) (components: Component list) =
+        let idOf name source = components |> List.tryFind (fun x -> x.Name = name && x.Source = source) |> Option.map (_.Id)
+        let linked =
+            components
+            |> List.map (fun c ->
+                let deps =
+                    details
+                    |> List.tryFind (fun d -> d.Name = c.Name && d.Source = c.Source)
+                    |> Option.map (_.Dependencies)
+                    |> Option.defaultValue []
+                { c with
+                    DependsOn =
+                        deps
+                        |> List.choose (fun d -> idOf d.Name d.Source |> Option.filter (fun id -> id <> c.Id) |> Option.map (fun id -> { Id = id; Via = d.Via }))
+                        |> List.distinctBy (_.Id) })
+        linked
+        |> List.map (fun c ->
+            { c with UsedBy = linked |> List.filter (fun x -> x.DependsOn |> List.exists (fun l -> l.Id = c.Id)) |> List.map (_.Id) })
 
     /// Resolve the apps into nodes and edges. Output is ordered by id (nodes) and by first appearance (edges) so it is deterministic.
     /// The classes of the apps (`Node.Components`, `Edge.FromComponents`/`ToComponents`) are only filled from `Detail.Components`,
-    /// and their constructors, members and uses only at `Detail.Members`.
+    /// and their constructors, members and dependencies only at `Detail.Members`.
     let ofApps (detail: Detail) (apps: App list) : Graph =
         let apps = apps |> List.map App.withDefaultSystems
         // apps without a meta (or app name) have no identity, so they cannot be a node
@@ -144,8 +161,9 @@ module Graph =
                           |> List.map (_.Description)
                       Constructors = detailOf name source |> Option.map (_.Constructors) |> Option.defaultValue []
                       Members = detailOf name source |> Option.map (_.Members) |> Option.defaultValue []
-                      Uses = [] })
-                |> fun cs -> cs |> List.map (fun c -> { c with Uses = uses cs c })
+                      DependsOn = []
+                      UsedBy = [] })
+                |> fun cs -> if Detail.atLeast Detail.Members detail then linkDependencies a.Components cs else cs
 
         let parentOf (system: string) = if system = "" then None else Some (systemId system)
 

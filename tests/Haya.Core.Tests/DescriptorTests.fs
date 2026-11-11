@@ -312,7 +312,7 @@ let ``Component diagram draws each app's classes in its boundary with the techno
         { (app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ]) with
             Responsibilities = [ { Description = "Takes orders"; ComponentName = ""; ComponentSource = "" }; { Description = "Checks stock"; ComponentName = ""; ComponentSource = "" } ] }
         |> onClass "OrdersController" "src/Orders.cs"
-    let text = Haya.Core.Diagram.sprintMermaidC4L3 [ api ]
+    let text = Haya.Core.Diagram.sprintMermaidC4L3 Detail.Components [ api ]
     Assert.StartsWith("C4Component", text)
     Assert.Contains("title C4 Component Diagram for Api", text)
     Assert.Contains("System_Boundary(ordering, \"Ordering\") {", text)
@@ -328,7 +328,7 @@ let ``Component diagram links classes that name each other, and falls back to th
     let payments = app "Payments" "Ordering" [ "Api", "Ordering", Relationship.Internal ] |> onClass "ApiCallback" "Lib::Payments.ApiCallback"
     let db = app "Db" "Ordering" [] |> withMeta (fun m -> { m with Kind = AppKind.Database; Tech = "PostgreSQL" })
     let lonely = app "Lonely" "Ordering" [ "Api", "Ordering", Relationship.Internal ] // no class names: falls back on both ends
-    let text = Haya.Core.Diagram.sprintMermaidC4L3 [ api; payments; db; lonely ]
+    let text = Haya.Core.Diagram.sprintMermaidC4L3 Detail.Components [ api; payments; db; lonely ]
     Assert.Contains("title C4 Component Diagram for Ordering", text)
     Assert.Contains("Component(ordering_api__payments_client, \"PaymentsClient\", \"TypeScript\",", text)
     Assert.Contains("Component(ordering_payments__api_callback, \"ApiCallback\", \"\",", text) // referenced type: no technology
@@ -348,7 +348,7 @@ let ``Component diagram numbers classes of the same name in one app`` () =
             Responsibilities =
                 [ { Description = "one"; ComponentName = "Handler"; ComponentSource = "a/Handler.cs" }
                   { Description = "two"; ComponentName = "Handler"; ComponentSource = "b/Handler.cs" } ] }
-    let text = Haya.Core.Diagram.sprintMermaidC4L3 [ a ]
+    let text = Haya.Core.Diagram.sprintMermaidC4L3 Detail.Components [ a ]
     Assert.Contains("Component(ordering_api__handler, \"Handler\", \"C#\", \"one\")", text)
     Assert.Contains("Component(ordering_api__handler_2, \"Handler\", \"C#\", \"two\")", text)
 
@@ -383,7 +383,7 @@ let ``Describe round-trips tech and kind, leaves them out when unset, and reads 
     Assert.Contains("\"tech\": \"Bun\"", text)
     Assert.Contains("\"kind\": \"WebApp\"", text)
     Assert.Equal(1, text.Split("\"kind\"").Length - 1)
-    Assert.Contains("\"version\": \"0.5\"", text)
+    Assert.Contains("\"version\": \"0.6\"", text)
     match Haya.Core.Decode.apps "x.json" text with
     | Ok decoded -> Assert.True(([ set; unset ] = decoded))
     | Error e -> failwith e

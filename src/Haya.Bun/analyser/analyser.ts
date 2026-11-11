@@ -83,10 +83,29 @@ export interface ComponentInfo {
   members: MemberInfo[];
 }
 
+/** A class or interface declared in the analysed source: a node of the type graph (ADR018). */
+export interface TypeNodeInfo {
+  /** Unique within one analysis; only joins nodes and edges. */
+  key: string;
+  name: string;
+  source: string;
+  /** An interface or abstract class. */
+  abstract: boolean;
+}
+
+/** Code in `from` refers to `to`; `inherits` when `to` is in an `extends` or `implements` clause of `from`. */
+export interface TypeEdgeInfo {
+  from: string;
+  to: string;
+  inherits: boolean;
+}
+
 /** What a project analysed with members holds. */
 export interface Analysis {
   descriptors: DescriptorInfo[];
   components: ComponentInfo[];
+  /** The type graph the dependencies between annotated classes are walked over in Haya.Core (ADR018). Empty without members. */
+  typeGraph: { nodes: TypeNodeInfo[]; edges: TypeEdgeInfo[] };
 }
 
 export interface Problem {
@@ -190,6 +209,9 @@ export const analyseWithMembers = (inputPath: string, cwd: string): Analysis => 
 
 /** Names the C# side leaves out as overrides of `System.Object`; their TypeScript counterparts. */
 const OBJECT_MEMBERS = new Set(["toString", "valueOf"]);
+
+type TypeDecl = ts.ClassDeclaration | ts.InterfaceDeclaration;
+const isTypeDecl = (n: ts.Node): n is TypeDecl => ts.isClassDeclaration(n) || ts.isInterfaceDeclaration(n);
 
 const analyseProject = (inputPath: string, cwd: string, withMembers: boolean): Analysis => {
   const configPath = path.resolve(cwd, findConfig(path.resolve(cwd, inputPath)));
@@ -401,7 +423,89 @@ const analyseProject = (inputPath: string, cwd: string, withMembers: boolean): A
     return { name, source, constructors: ctors.map((c) => parametersOf(c.parameters)), members };
   };
 
+  /**
+   * The type graph of the source (ADR018), the counterpart of `Roslyn.typeGraph`: one node per class or interface, and an
+   * edge for each type its code refers to: `extends`/`implements` (`inherits`), and every other identifier that resolves
+   * to a class or interface, or to a member declared on one (types, generic arguments, `new`, calls, member access).
+   * Decorators are left out. A nested type belongs to its enclosing type unless it is annotated. Free functions, type
+   * aliases, enums and class expressions are not nodes. Edges to types that are not nodes (lib, node_modules) are dropped
+   * by `Dependencies.attach` in Haya.Core.
+   */
+  const typeGraphOf = (decls: TypeDecl[], annotated: Set<ts.Node>): Analysis["typeGraph"] => {
+    const realPaths = new Map<string, string>();
+    const realPath = (f: string): string => {
+      let r = realPaths.get(f);
+      if (r === undefined) {
+        try { r = fs.realpathSync(f); } catch { r = f; }
+        realPaths.set(f, r);
+      }
+      return r;
+    };
+    // merged declarations (interface + interface, class + interface) are one type: keyed by the first of them
+    const keyOf = (d: TypeDecl): string => {
+      const sym = d.name ? checker.getSymbolAtLocation(d.name) : undefined;
+      const first = sym?.declarations?.find(isTypeDecl) ?? d;
+      return `${realPath(first.getSourceFile().fileName)}:${first.pos}`;
+    };
+    const owner = (d: TypeDecl): TypeDecl => {
+      if (annotated.has(d)) return d;
+      let result = d;
+      for (let p: ts.Node | undefined = d.parent; p; p = p.parent) {
+        if (isTypeDecl(p)) {
+          result = p;
+          if (annotated.has(p)) return p;
+        }
+      }
+      return result;
+    };
+    // the type a symbol belongs to: a class or interface itself, or the one that declares a method, property or accessor
+    const MEMBER = ts.SymbolFlags.Method | ts.SymbolFlags.Property | ts.SymbolFlags.GetAccessor | ts.SymbolFlags.SetAccessor;
+    const typeOfSymbol = (sym: ts.Symbol): TypeDecl | undefined => {
+      for (const decl of sym.declarations ?? []) {
+        if (sym.flags & (ts.SymbolFlags.Class | ts.SymbolFlags.Interface) && isTypeDecl(decl)) return decl;
+        if (sym.flags & MEMBER) {
+          // a parameter property (`constructor(private x: X)`) is declared on the constructor
+          const holder = ts.isParameter(decl) && ts.isConstructorDeclaration(decl.parent) ? decl.parent.parent : decl.parent;
+          if (holder && isTypeDecl(holder)) return holder;
+        }
+      }
+      return undefined;
+    };
+    const nodes = new Map<string, TypeNodeInfo>();
+    const edges: TypeEdgeInfo[] = [];
+    for (const d of decls) {
+      const from = owner(d);
+      const fromKey = keyOf(from);
+      if (from === d && !nodes.has(fromKey)) {
+        nodes.set(fromKey, {
+          key: fromKey,
+          name: d.name?.text ?? "default",
+          source: makeRelativePath(cwd, d.getSourceFile().fileName),
+          abstract: ts.isInterfaceDeclaration(d) || (ts.getCombinedModifierFlags(d) & ts.ModifierFlags.Abstract) !== 0,
+        });
+      }
+      const edgeTo = (sym: ts.Symbol | undefined, inherits: boolean): void => {
+        const t = sym && typeOfSymbol(sym);
+        if (t) edges.push({ from: fromKey, to: keyOf(owner(t)), inherits });
+      };
+      for (const clause of d.heritageClauses ?? []) {
+        for (const t of clause.types) edgeTo(resolveSymbol(ts.isPropertyAccessExpression(t.expression) ? t.expression.name : t.expression), true);
+      }
+      // the body: not decorators, the heritage clauses (above) or nested types (walked on their own)
+      const walk = (n: ts.Node): void => {
+        if (ts.isDecorator(n) || ts.isHeritageClause(n) || isTypeDecl(n)) return;
+        if (ts.isIdentifier(n)) edgeTo(resolveSymbol(n), false);
+        ts.forEachChild(n, walk);
+      };
+      ts.forEachChild(d, walk);
+    }
+    return { nodes: [...nodes.values()], edges };
+  };
+
   const components: ComponentInfo[] = [];
+  // with members: every class and interface declared in the source, and the annotated classes among them (ADR018)
+  const typeDecls: TypeDecl[] = [];
+  const annotatedDecls = new Set<ts.Node>();
   const responsibilities: ResponsibilityInfo[] = [];
   const collaborators: CollaboratorInfo[] = [];
   const metas: { node: ts.Node; info: MetaInfo }[] = [];
@@ -449,6 +553,10 @@ const analyseProject = (inputPath: string, cwd: string, withMembers: boolean): A
         }
       }
       if (withMembers && annotated) components.push(componentOf(node, componentName, componentSource));
+      if (withMembers) typeDecls.push(node);
+      if (withMembers && annotated) annotatedDecls.add(node);
+    } else if (withMembers && ts.isInterfaceDeclaration(node)) {
+      typeDecls.push(node);
     } else if (ts.isCallExpression(node) && annotationOf(node.expression)?.name === "meta") {
       const annotation = annotationOf(node.expression)!;
       const written = calleeName(node.expression)?.text ?? "meta";
@@ -501,5 +609,6 @@ const analyseProject = (inputPath: string, cwd: string, withMembers: boolean): A
   }
   if (problems.length > 0) throw new AnalysisError(problems);
 
-  return { descriptors: [...responsibilities, ...collaborators, ...metas.map((m) => m.info)], components };
+  const typeGraph = withMembers ? typeGraphOf(typeDecls, annotatedDecls) : { nodes: [], edges: [] };
+  return { descriptors: [...responsibilities, ...collaborators, ...metas.map((m) => m.info)], components, typeGraph };
 };

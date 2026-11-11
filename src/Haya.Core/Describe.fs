@@ -12,7 +12,7 @@ module Describe =
     /// 0.5 added the top-level `detail` (`apps`, `components` or `members`) and, at `members`, the optional per-app
     /// `components` array: each annotated class's constructors and public members.
     [<Literal>]
-    let Version = "0.5"
+    let Version = "0.6"
 
     let serialize (cmd: DescribeCommand) (apps: App list) =
         let data = Encode.description Version cmd.Detail apps

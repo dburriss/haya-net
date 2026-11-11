@@ -1,7 +1,7 @@
 # Graph format
 
 The graph that `haya diagram -f html` embeds in the page and the viewer reads. It is resolved from the apps by `Graph.ofApps`
-in `Haya.Core`, written by `Encode.graph`, and identical on both stacks. The current version is `0.4`. It is an internal
+in `Haya.Core`, written by `Encode.graph`, and identical on both stacks. The current version is `0.5`. It is an internal
 format for the page: it may change between versions, so read the [describe format](describe-format.md) if you need data
 to consume.
 
@@ -28,7 +28,7 @@ values are written as `\u` escapes, so the document is still valid JSON and no v
       "components": [ { "id": "ordering_payments_api__payments_controller", "name": "PaymentsController", "source": "HayaEcomm.cs" } ]
     }
   ],
-  "version": "0.4"
+  "version": "0.5"
 }
 ```
 
@@ -50,12 +50,13 @@ Nodes are sorted by `id`; edges keep the order in which the apps and collaborato
 | `responsibilities` | Apps with a `Meta` only: the description of each responsibility. |
 | `components` | Only with `diagram --detail components`, and on apps with a `Meta` only: each class that carries a responsibility or collaborator, once, as `{ "id", "name", "source", "responsibilities" }`, sorted by name then source. `id` is the app id, `__` and the class name (`_2`, `_3` for a second class of the same name in the app), the same alias as in the component diagram. `source` is relative to the analysed root, or `Assembly::Namespace.Type` for a referenced assembly. `source` and `responsibilities` are left out when empty. Added in `0.3` ([ADR014](../adr/ADR014-components-in-the-explorer-panel.md)). |
 
-With `diagram --detail members` a component may also have, each left out when empty (added in `0.4`, [ADR017](../adr/ADR017-member-detail.md)):
+With `diagram --detail members` a component may also have, each left out when empty (added in `0.4`, [ADR017](../adr/ADR017-member-detail.md); `dependsOn` and `usedBy` replaced `uses` in `0.5`, [ADR018](../adr/ADR018-component-dependencies.md)):
 
 | Field | Notes |
 | --- | --- |
 | `constructors` | Each public constructor's parameters in order, as `[ { "name", "type" } ]`. |
-| `uses` | The `id`s of the other components of the same app whose class name is exactly the type of a constructor parameter. Exact match only: `IRepo` or `List<Repo>` do not match `Repo`. |
+| `dependsOn` | The other components of the same app this class reaches in code, directly or through unannotated types, as `{ "id", "via" }`: `via` is the names of the unannotated types in between along the shortest chain, `[]` when direct. In the order of the class's dependencies (name, then source). |
+| `usedBy` | The `id`s of the components of the same app whose `dependsOn` names this one, in component order. |
 | `members` | The public members declared on the class: `{ "kind", "name", "type", "parameters" }`, `kind` being `Method`, `Property`, `Field` or `Event`. `parameters` only for methods (and C# indexers). Types are as the language writes them. |
 
 Language is not part of the graph.

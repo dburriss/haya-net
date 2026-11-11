@@ -22,5 +22,5 @@ module Explore =
         before + json + after
 
     /// The page for the apps. The title is short on purpose: the systems are in the graph itself.
-    /// The classes are on the page from `Detail.Components`; their constructors, members and uses at `Detail.Members`.
+    /// The classes are on the page from `Detail.Components`; their constructors, members and dependencies at `Detail.Members`.
     let sprintHtml (detail: Detail) (apps: App list) = render "Haya Explorer" (Graph.ofApps detail apps)

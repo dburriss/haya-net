@@ -103,10 +103,16 @@ module Encode =
             if not x.Parameters.IsEmpty || x.Kind = MemberKind.Method then "parameters", x.Parameters |> array parameter
         ]
 
-    /// The constructors and public members of one annotated class (`describe --detail members`).
+    /// A dependency of a class on another annotated class of its app (ADR018). `via` is `[]` when direct.
+    let dependency (x: ComponentDependency) =
+        record [ "name", str x.Name; "source", str x.Source; "via", x.Via |> array str ]
+
+    /// The constructors, public members and dependencies of one annotated class (`describe --detail members`).
     let componentDetail (x: ComponentDetail) =
         record [
             "constructors", constructors x.Constructors
+            // optional: left out when the class reaches no other annotated class
+            if not x.Dependencies.IsEmpty then "dependencies", x.Dependencies |> array dependency
             "members", x.Members |> array classMember
             "name", str x.Name
             "source", str x.Source
@@ -138,7 +144,7 @@ module Encode =
 
     /// Version of the graph document embedded in the interactive html diagram.
     [<Literal>]
-    let GraphVersion = "0.4"
+    let GraphVersion = "0.5"
 
     /// The resolved graph the html explorer reads: `{ edges: [...], nodes: [...], version }`. Empty strings and lists
     /// are left out. `Language` is deliberately not part of it.
@@ -177,7 +183,10 @@ module Encode =
                             if not c.Responsibilities.IsEmpty then yield "responsibilities", strings c.Responsibilities
                             // optional: only at `--detail members`
                             if not c.Constructors.IsEmpty then yield "constructors", constructors c.Constructors
-                            if not c.Uses.IsEmpty then yield "uses", strings c.Uses
+                            if not c.DependsOn.IsEmpty then
+                                let link (l: Graph.ComponentLink) = record [ "id", str l.Id; "via", l.Via |> array str ]
+                                yield "dependsOn", c.DependsOn |> array link
+                            if not c.UsedBy.IsEmpty then yield "usedBy", strings c.UsedBy
                             if not c.Members.IsEmpty then yield "members", c.Members |> array classMember
                         ]
                     yield "components", n.Components |> List.map comp |> List.toArray |> JsonValue.Array

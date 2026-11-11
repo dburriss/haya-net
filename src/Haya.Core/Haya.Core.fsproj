@@ -32,6 +32,7 @@
     <ItemGroup>
         <Compile Include="Types.fs" />
         <Compile Include="Model.fs" />
+        <Compile Include="Dependencies.fs" />
         <Compile Include="String.fs" />
         <Compile Include="Naming.fs" />
         <Compile Include="IO.fs" />

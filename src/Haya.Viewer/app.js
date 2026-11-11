@@ -245,6 +245,8 @@ const styleFor = () => {
       "text-background-opacity": 1, "text-background-padding": 2, "text-background-shape": "roundrectangle", "overlay-padding": 6 } },
     { selector: "edge[heat]", style: { "line-color": "data(heat)", "target-arrow-color": "data(heat)", "source-arrow-color": "data(heat)" } },
     { selector: "edge[?both]", style: { "source-arrow-shape": "triangle" } },
+    // a code dependency between two classes of an opened app: thin, dashed, no label, not selectable
+    { selector: "edge.dependency", style: { width: 1, "line-style": "dashed", label: "", "arrow-scale": 0.7, events: "no" } },
     { selector: ".sel", style: { "border-color": accent, "border-width": 3, "line-color": accent, "target-arrow-color": accent, "source-arrow-color": accent } },
     { selector: ".muted", style: { opacity: 0.22 } },
     { selector: ".dim", style: { opacity: 0.18, events: "no" } },
@@ -260,7 +262,7 @@ const redrawSoon = () => { clearTimeout(redrawTimer); redrawTimer = setTimeout((
 new ResizeObserver(redrawSoon).observe(document.getElementById("graph"));
 
 const desired = () => {
-  const want = { nodes: new Map(), edges: new Map() };
+  const want = { nodes: new Map(), edges: new Map(), deps: new Map() };
   for (const n of data.nodes) if (n.kind === "system" || n.kind === "person" || shown.has(n.id)) want.nodes.set(n.id, n); // people are always drawn
   for (const a of opened) if (shown.has(a)) for (const c of classesOf.get(a) || []) want.nodes.set(c, nodes.get(c));
   // one line per pair of drawn nodes, whichever way the relationships go; an opened app's end is its classes, when it has any there
@@ -272,6 +274,10 @@ const desired = () => {
     if (!want.edges.has(key)) want.edges.set(key, { source: f, target: t, fwd: [], back: [] });
     const g = want.edges.get(key), list = f === g.source ? g.fwd : g.back;
     if (!list.includes(e)) list.push(e);
+  }
+  // `--detail members`: a thin line per code dependency between the drawn classes of an opened app (ADR018)
+  for (const a of opened) if (shown.has(a)) for (const c of classesOf.get(a) || []) for (const l of nodes.get(c).dependsOn || []) {
+    if (want.nodes.has(l.id)) want.deps.set("dep:" + c + ">" + l.id, { source: c, target: l.id });
   }
   return want;
 };
@@ -297,7 +303,7 @@ const classOf = (n) =>
 /** Bring the drawn graph in line with the state. `seeds` maps a node id to where to start it (else beside its system). */
 const sync = (seeds = new Map()) => {
   const want = desired();
-  const gone = cy.elements().filter((el) => !(el.isNode() ? want.nodes.has(el.id()) : want.edges.has(el.id())));
+  const gone = cy.elements().filter((el) => !(el.isNode() ? want.nodes.has(el.id()) : want.edges.has(el.id()) || want.deps.has(el.id())));
   cy.remove(gone);
   const fresh = [];
   cy.batch(() => {
@@ -320,6 +326,7 @@ const sync = (seeds = new Map()) => {
       if (cur.nonempty()) cur.data(d);
       else cy.add({ group: "edges", data: { id: key, source: g.source, target: g.target, ...d } });
     }
+    for (const [key, g] of want.deps) if (cy.getElementById(key).empty()) cy.add({ group: "edges", data: { id: key, source: g.source, target: g.target }, classes: "dependency" });
   });
   applyFilters();
   applySelection();
@@ -587,10 +594,13 @@ function nodePanel(n) {
     const row = (e) => h("li", {}, goto(other(e)), " · " + note(e));
     kids.push(section("Inbound", mine.filter((e) => (e.toComponents || []).includes(n.id)).map(row)));
     kids.push(section("Outbound", mine.filter((e) => (e.fromComponents || []).includes(n.id)).map(row)));
-    // `--detail members` only, after the relationships: what the class takes, the classes of its app it uses, and what it offers
+    // `--detail members` only, after the relationships: what the class takes, the classes of its app it reaches in code (and
+    // through which unannotated types), the classes that reach it, and what it offers
     const params = (ps) => "(" + (ps || []).map((p) => `${p.name}: ${p.type}`).join(", ") + ")";
     kids.push(foldable("Constructor", (n.constructors || []).map((ps) => h("li", { class: "code" }, params(ps)))));
-    kids.push(foldable("Uses", (n.uses || []).filter((id) => nodes.has(id)).map((id) => h("li", {}, goto(id)))));
+    const via = (l) => (l.via && l.via.length ? h("span", { class: "muted" }, " via " + l.via.join(" → ")) : null);
+    kids.push(foldable("Depends on", (n.dependsOn || []).filter((l) => nodes.has(l.id)).map((l) => h("li", {}, goto(l.id), via(l)))));
+    kids.push(foldable("Used by", (n.usedBy || []).filter((id) => nodes.has(id)).map((id) => h("li", {}, goto(id)))));
     kids.push(foldable("Members", (n.members || []).map((m) =>
       h("li", { class: "code" }, h("span", { class: "muted" }, m.kind.toLowerCase() + " "),
         m.kind === "Method" ? `${m.name}${params(m.parameters)}: ${m.type}` : `${m.name}: ${m.type}`))));

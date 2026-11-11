@@ -16,8 +16,9 @@ import {
   ResponsibilityDescriptor,
   type Descriptor_$union,
 } from "../fable_output/Haya.Core/Model.ts";
-import { ofArray, type FSharpList } from "../fable_output/fable_modules/fable-library-ts.5.27.0/List.ts";
-import type { AppKind, ComponentInfo, Direction, DescriptorInfo, MemberKind, ParameterInfo, Relationship } from "./analyser.ts";
+import { Dependencies_attach, TypeEdge, TypeNode } from "../fable_output/Haya.Core/Dependencies.ts";
+import { empty, ofArray, type FSharpList } from "../fable_output/fable_modules/fable-library-ts.5.27.0/List.ts";
+import type { Analysis, AppKind, ComponentInfo, Direction, DescriptorInfo, MemberKind, ParameterInfo, Relationship } from "./analyser.ts";
 
 const DIRECTION: Record<Direction, number> = { Upstream: 1, Downstream: 2 };
 const RELATIONSHIP: Record<Relationship, number> = {
@@ -79,16 +80,27 @@ export const toFableComponent = (c: ComponentInfo): ComponentDetail =>
     c.source,
     ofArray(c.constructors.map(toFableParameters)),
     ofArray(c.members.map((m) => new Member(m.name, MEMBER_KIND[m.kind], m.type, toFableParameters(m.parameters)))),
+    empty(),
   );
+
+/** Fill each component's dependencies from the type graph, with the walk shared with .NET (`Dependencies.attach`, ADR018). */
+const withDependencies = (components: ComponentInfo[], graph: Analysis["typeGraph"] | undefined): FSharpList<ComponentDetail> => {
+  const cs = ofArray(components.map(toFableComponent));
+  if (!graph) return cs;
+  const nodes = ofArray(graph.nodes.map((n) => new TypeNode(n.key, n.name, n.source, n.abstract)));
+  const edges = ofArray(graph.edges.map((e) => new TypeEdge(e.from, e.to, e.inherits)));
+  return Dependencies_attach(nodes, edges, cs);
+};
 
 export const toFableDescriptors = (ds: DescriptorInfo[]): FSharpList<Descriptor_$union> => ofArray(ds.map(toFableDescriptor));
 
 /**
  * One analysed project becomes one app (the counterpart of `App.ofDescriptors` on the .NET side). `components` holds
- * the classes' constructors and members, only at `--detail members`; Haya.Core puts them in order.
+ * the classes' constructors and members, and `typeGraph` what their dependencies are walked over, only at
+ * `--detail members`; Haya.Core puts them in order.
  */
-export const toFableApp = (ds: DescriptorInfo[], components: ComponentInfo[] = []): App =>
+export const toFableApp = (ds: DescriptorInfo[], components: ComponentInfo[] = [], typeGraph?: Analysis["typeGraph"]): App =>
   AppModule_withComponents(
-    ofArray(components.map(toFableComponent)),
+    withDependencies(components, typeGraph),
     AppModule_withLanguage(LANGUAGE_JAVASCRIPT, AppModule_ofDescriptors(toFableDescriptors(ds))),
   );

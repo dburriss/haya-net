@@ -5,9 +5,9 @@ open Haya.Core
 module CliText =
     let includeReferencesUsage = "Also read Haya attributes from public types in referenced packages/DLLs that reference Haya"
     let includeAssemblyUsage = "Also read referenced assemblies whose name matches this pattern (* and ? wildcards). Can be repeated"
-    let verboseUsage = "Print the referenced assemblies and types that were included"
-    let detailUsage = "Level of detail. systems (systems and how they connect), apps (the apps inside their systems), components (the classes inside the apps) or members (also each class's constructors and public members). With -f html, components adds the classes to the explorer and members their constructors and members; the Mermaid diagram is the same for components and members (default: systems)"
-    let describeDetailUsage = "Level of detail. apps (responsibilities, collaborators and meta), components (the same as apps today: classes are already named on each responsibility and collaborator) or members (adds each annotated class's constructors and public members) (default: apps)"
+    let verboseUsage = "Print the referenced assemblies and types that were included, and at members the size of the type graph and the time spent on dependencies"
+    let detailUsage = "Level of detail. systems (systems and how they connect), apps (the apps inside their systems), components (the classes inside the apps) or members (also each class's constructors, public members and dependencies). With -f html, components adds the classes to the explorer and members their constructors, members and dependencies; in the Mermaid diagram, members also draws the dependencies between classes (default: systems)"
+    let describeDetailUsage = "Level of detail. apps (responsibilities, collaborators and meta), components (the same as apps today: classes are already named on each responsibility and collaborator) or members (adds each annotated class's constructors, public members and dependencies) (default: apps)"
 
 /// The levels `describe` takes: it always holds the apps, so there is no `systems`.
 type DescribeDetail =
@@ -148,6 +148,9 @@ module Cli =
             if options.Verbose then
                 for (assembly, typeName) in analysis.Referenced do
                     printfn "Including %s: %s" assembly typeName
+                match analysis.Dependencies with
+                | Some d -> printfn "Dependencies: %d types, %d edges in %d ms" d.Types d.Edges d.Milliseconds
+                | None -> ()
             return Ok [ App.ofDescriptors analysis.Descriptors |> App.withLanguage Language.DotNet |> App.withComponents analysis.Components ]
     }
 
