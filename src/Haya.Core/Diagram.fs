@@ -183,9 +183,118 @@ module Diagram =
         |> SB.lines relationships
         |> SB.toString
 
+    /// The technology of a class, from the extension of its source file. A type from a referenced assembly
+    /// (`Assembly::Namespace.Type`), or an unknown extension, has none.
+    let componentTech (source: string) =
+        let file = source.Substring(source.LastIndexOf('/') + 1)
+        let dot = file.LastIndexOf('.')
+        if source.Contains("::") || dot < 0 then ""
+        else
+            match String.toLower (file.Substring dot) with
+            | ".cs" -> "C#"
+            | ".fs" -> "F#"
+            | ".vb" -> "Visual Basic"
+            | ".ts" | ".tsx" | ".mts" | ".cts" -> "TypeScript"
+            | ".js" | ".jsx" | ".mjs" | ".cjs" -> "JavaScript"
+            | _ -> ""
+
+    /// C4 component diagram for all the apps. Each app (with a meta) that has classes is a boundary around them, inside
+    /// the boundary of its system; an app without classes, or one known only from a collaborator, is a container as in
+    /// the container diagram. A class is drawn with the technology of its source file and its responsibilities.
+    /// A collaborator is a relationship from its class, to the classes at the other end (`Graph.Edge.ToComponents`); when an
+    /// end with classes has none of them, to a container for that app inside its boundary.
+    let sprintMermaidC4L3 (apps: App list) =
+        let g = Graph.ofApps apps
+        let node id = g.Nodes |> List.find (fun n -> n.Id = id)
+        let hasClasses (n: Graph.Node) = n.Kind = Graph.NodeKind.App && not n.Components.IsEmpty
+
+        // the container that stands for an app with classes when a relationship cannot name one of them
+        let appContainerId (app: string) = app + "__app"
+        // the drawn ends of one end of an edge: its classes, or the node (its stand-in container when it has classes)
+        let endOf (id: string) (classes: string list) =
+            if not classes.IsEmpty then classes
+            elif hasClasses (node id) then [ appContainerId id ]
+            else [ id ]
+        let ends =
+            g.Edges
+            |> List.collect (fun e ->
+                [ for f in endOf e.From e.FromComponents do
+                    for t in endOf e.To e.ToComponents do
+                        yield e, f, t ])
+        let relationships =
+            ends
+            |> List.map (fun (e, from, to_) ->
+                if e.Protocol = "" then $"Rel({from}, {to_}, \"{e.Label}\")"
+                else $"Rel({from}, {to_}, \"{e.Label}\", \"{e.Protocol}\")")
+            |> List.distinct
+        // the app containers that a relationship needs
+        let appContainers =
+            ends
+            |> List.collect (fun (_, a, b) -> [ a; b ])
+            |> List.filter (fun id -> id.EndsWith "__app")
+            |> List.distinct
+
+        let container (n: Graph.Node) =
+            let shape =
+                match n.AppKind with
+                | AppKind.Database -> "ContainerDb"
+                | AppKind.Queue -> "ContainerQueue"
+                | _ -> "Container"
+            $"{shape}({n.Id}, \"{n.Name}\", \"{n.Tech}\", \"{n.Description}\")"
+        let appElements (n: Graph.Node) =
+            if hasClasses n then
+                [ yield $"Container_Boundary({n.Id}, \"{n.Name}\") {{"
+                  if List.contains (appContainerId n.Id) appContainers then
+                      yield $"  Container({appContainerId n.Id}, \"{n.Name}\", \"{n.Tech}\", \"{n.Description}\")"
+                  for c in n.Components do
+                      let responsibilities = String.concat "; " c.Responsibilities
+                      yield $"  Component({c.Id}, \"{c.Name}\", \"{componentTech c.Source}\", \"{responsibilities}\")"
+                  yield "}" ]
+            else [ container n ]
+        let appsIn (parent: string option) =
+            g.Nodes |> List.filter (fun n -> n.Kind = Graph.NodeKind.App && n.Parent = parent) |> List.collect appElements
+
+        let ownSystems = g.Nodes |> List.filter (fun n -> n.Kind = Graph.NodeKind.System && n.OwnSystem)
+        let boundaries =
+            ownSystems
+            |> List.collect (fun s ->
+                [ yield $"System_Boundary({s.Id}, \"{s.Name}\") {{"
+                  yield! appsIn (Some s.Id) |> List.map (fun x -> "  " + x)
+                  yield "}" ])
+        let otherSystems =
+            g.Nodes
+            |> List.filter (fun n -> n.Kind = Graph.NodeKind.System && not n.OwnSystem)
+            |> List.map (fun n ->
+                let shape = if n.Relationship = Relationship.External then "System_Ext" else "System"
+                $"{shape}({n.Id}, \"{n.Name}\", \"{n.Description}\")")
+        let persons =
+            g.Nodes
+            |> List.filter (fun n -> n.Kind = Graph.NodeKind.Person)
+            |> List.map (fun n ->
+                let shape = if n.Relationship = Relationship.External then "Person_Ext" else "Person"
+                $"{shape}({n.Id}, \"{n.Name}\", \"{n.Description}\")")
+
+        // one app: its name; several: their systems, as in the container diagram
+        let title =
+            match g.Nodes |> List.filter (fun n -> n.Kind = Graph.NodeKind.App && n.HasMeta) with
+            | [ app ] -> app.Name
+            | _ -> ownSystems |> List.map (_.Name) |> String.concat ", "
+        SB.create "C4Component"
+        |> SB.emptyLine
+        |> SB.line $"title C4 Component Diagram for {title}"
+        |> SB.emptyLine
+        |> SB.lines boundaries
+        |> SB.lines (appsIn None)
+        |> SB.lines otherSystems
+        |> SB.lines persons
+        |> SB.emptyLine
+        |> SB.lines relationships
+        |> SB.toString
+
     let generateDiagram (cmd: DiagramCommand) (apps: App list) =
         match (cmd.DiagramType, cmd.DiagramFormat) with
         | C4System, Mermaid -> sprintMermaidC4L1 apps
         | C4Container, Mermaid -> sprintMermaidC4L2 apps
+        | C4Component, Mermaid -> sprintMermaidC4L3 apps
         // the explorer shows the whole graph, so the diagram type does not apply
         | _, Html -> Explore.sprintHtml apps

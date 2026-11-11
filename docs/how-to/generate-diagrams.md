@@ -16,9 +16,10 @@ haya crc -cc ./Example.sln   # level 1 and level 2: applications inside each sys
 ```bash
 haya diagram -t c4system    -o system.mermaid     ./Example.sln   # level 1 (default)
 haya diagram -t c4container -o containers.mermaid ./Example.sln   # level 2
+haya diagram -t c4component -o components.mermaid ./Example.sln   # level 3
 ```
 
-The default output file is `./c4-system-context.mermaid` for both types, so pass `-o` when you generate both.
+The default output file is `./c4-system-context.mermaid` for every type, so pass `-o` when you generate more than one.
 
 ## Make level 2 useful
 
@@ -26,10 +27,22 @@ Level 2 draws each application inside its system, labelled with the `Technology`
 `Kind` (`Service`, `WebApp`, `Api`, `Worker`, `Database`, `Queue`). Set both on `Meta`; see the
 [attribute reference](../reference/attributes.md). Collaborator `Technology` and `Protocol` label the relationships.
 
+## Draw the classes inside each application (level 3)
+
+`-t c4component` draws each application that has annotated classes as a boundary around them. A class is every class with
+a `[Responsibility]` or `[Collaborator]` (`@Responsibility`/`@Collaborator` in TypeScript); it shows the technology of its
+source file (`.cs` is C#, `.ts` is TypeScript; a type from a referenced assembly has none) and its responsibilities. Each
+collaborator is a relationship from the class it is on. Between two of your applications, the line joins the classes that
+name each other; when the other application has no class that names this one, it goes to a box for that application inside
+its boundary. Applications without annotated classes, and ones known only from a collaborator, are drawn as at level 2.
+
+Level 3 grows with the number of classes, so it reads best for one system or a few applications. The explorer
+(`-f html`) lists the same classes in each application's panel.
+
 ## Show the people who use a system
 
-Add a collaborator with `Kind = AppKind.Person` for each kind of user, `Upstream` when they use the application. Level 1 and
-level 2 draw it as a person, outside the boundary when its `Relationship` is `External`, with a relationship to the system
+Add a collaborator with `Kind = AppKind.Person` for each kind of user, `Upstream` when they use the application. Every
+level draws it as a person, outside the boundary when its `Relationship` is `External`, with a relationship to the system
 (level 1) or the application (level 2). See [People](../reference/attributes.md#people).
 
 ## Explore a large system interactively

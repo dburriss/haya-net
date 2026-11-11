@@ -32,6 +32,8 @@ To see one first, open the [live example](https://dburriss.github.io/haya-net/),
   clickable. Click the background to clear the selection. A node shows its name and small glyphs: the
   kind, the tier and a lifecycle dot. The **Kind**, **Tier** and **Lifecycle** buttons at the top are the legend for those
   glyphs, and the **Legend** at the bottom left explains the rest.
+- An app with its own `[Meta]` lists its **Responsibilities** and its **Components**: each class that carries a
+  `[Responsibility]` or `[Collaborator]`, with the source file it is in.
 - A system or app lists its **Inbound** and **Outbound** relationships. A line lists what it carries as bullets,
   `Publish events [AMQP]`, under a header such as `Ordering → Billing`, or `Ordering ↔ Billing` with a list for each
   direction.
@@ -41,9 +43,13 @@ To see one first, open the [live example](https://dburriss.github.io/haya-net/),
   but not drawn yet has a **closed eye** instead. Click its name to add just that app (screen readers announce it as "hidden").
 - **Esc** deselects, so the panel returns to the overview and the muting that came from the selection lifts. In the search box
   Esc closes the search first. Esc does not collapse systems: while one is open, the rest stays muted until you collapse it or press **r**.
-- **Enter or Space** does the same as a double-click on the selected node: open or collapse a system, or show the apps an app
-  connects to. It is ignored while a button, link or text field has focus, so those keep their usual keys.
-- **Double-click an app** to show the apps it connects to. The panel buttons do the same, and **Hide** removes one app.
+- **Enter or Space** does the same as a double-click on the selected node: open or collapse a system, open or close an app,
+  or show the apps an app connects to. It is ignored while a button, link or text field has focus, so those keep their usual keys.
+- **Double-click an app** with annotated classes to open it: its classes are drawn inside it, the apps it connects to are shown,
+  and each line goes to the class the collaborator is on. A line to another of your apps goes to its classes that name this
+  app back, or to the app's box when none do. Double-click again (or **Hide classes**) to close it. Click a class for its source
+  file, responsibilities and relationships; the class names in an app's panel open it too.
+- **Double-click an app** without classes to show the apps it connects to. The panel buttons do the same, and **Hide** removes one app.
 - **Search** finds an app or system by name, description, technology or owner, even if it is hidden, and shows just that app. Press **/** to jump to the search box from anywhere on the page (it is ignored while you are typing in a field), and **Esc** to leave it.
 - The **Kind, Tier and Lifecycle** buttons all start on. Switch one off to fade the apps that have that value (and the lines
   to them); switch it back on to restore them. **Fit** zooms to everything and **Reset** (or **r**) starts over.

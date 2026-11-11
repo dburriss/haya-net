@@ -102,10 +102,10 @@ module Encode =
 
     /// Version of the graph document embedded in the interactive html diagram.
     [<Literal>]
-    let GraphVersion = "0.2"
+    let GraphVersion = "0.3"
 
     /// The resolved graph the html explorer reads: `{ edges: [...], nodes: [...], version }`. Empty strings and lists
-    /// are left out. `Language` and component sources are deliberately not part of it.
+    /// are left out. `Language` is deliberately not part of it.
     let graph (g: Graph.Graph) =
         let optional (name: string) (value: string) = if value = "" then [] else [ name, str value ]
         let node (n: Graph.Node) =
@@ -132,6 +132,15 @@ module Encode =
                 yield! optional "tier" n.Tier
                 yield! optional "lifecycle" n.Lifecycle
                 if not n.Responsibilities.IsEmpty then yield "responsibilities", strings n.Responsibilities
+                if not n.Components.IsEmpty then
+                    let comp (c: Graph.Component) =
+                        record [
+                            yield "id", str c.Id
+                            yield "name", str c.Name
+                            yield! optional "source" c.Source
+                            if not c.Responsibilities.IsEmpty then yield "responsibilities", strings c.Responsibilities
+                        ]
+                    yield "components", n.Components |> List.map comp |> List.toArray |> JsonValue.Array
             ]
         let edge (e: Graph.Edge) =
             record [
@@ -140,6 +149,8 @@ module Encode =
                 yield "direction", str (direction e.Direction)
                 yield! optional "protocol" e.Protocol
                 yield! optional "label" e.Label
+                if not e.FromComponents.IsEmpty then yield "fromComponents", strings e.FromComponents
+                if not e.ToComponents.IsEmpty then yield "toComponents", strings e.ToComponents
             ]
         record [
             "edges", g.Edges |> List.map edge |> List.toArray |> JsonValue.Array

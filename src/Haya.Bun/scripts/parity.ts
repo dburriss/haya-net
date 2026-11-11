@@ -25,6 +25,7 @@ const cases: { file: string; args: string[] }[] = [
   { file: "crc-cc.md", args: ["crc", "-cc", "-o", "crc-cc.md"] },
   { file: "diagram.mermaid", args: ["diagram", "-o", "diagram.mermaid"] },
   { file: "diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "diagram-l2.mermaid"] },
+  { file: "diagram-l3.mermaid", args: ["diagram", "-t", "c4component", "-o", "diagram-l3.mermaid"] },
   { file: "diagram.html", args: ["diagram", "-f", "html", "-o", "diagram.html"] },
   { file: "backstage.yaml", args: ["backstage", "-o", "backstage.yaml"] },
   { file: "backstage.json", args: ["backstage", "-f", "json", "-o", "backstage.json"] },
@@ -51,6 +52,7 @@ const multiCases: { file: string; args: string[] }[] = [
   { file: "multi-crc-cc.md", args: ["crc", "-cc", "-o", "multi-crc-cc.md"] },
   { file: "multi-diagram.mermaid", args: ["diagram", "-o", "multi-diagram.mermaid"] },
   { file: "multi-diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "multi-diagram-l2.mermaid"] },
+  { file: "multi-diagram-l3.mermaid", args: ["diagram", "-t", "c4component", "-o", "multi-diagram-l3.mermaid"] },
   { file: "multi-diagram.html", args: ["diagram", "-f", "html", "-o", "multi-diagram.html"] },
   { file: "multi-backstage.yaml", args: ["backstage", "-o", "multi-backstage.yaml"] },
   { file: "multi-datadog.yaml", args: ["datadog", "-o", "multi-datadog.yaml"] },
@@ -64,6 +66,7 @@ const orgCases: { file: string; args: string[] }[] = [
   { file: "org-crc-cc.md", args: ["crc", "-cc", "-o", "org-crc-cc.md"] },
   { file: "org-diagram.mermaid", args: ["diagram", "-o", "org-diagram.mermaid"] },
   { file: "org-diagram-l2.mermaid", args: ["diagram", "-t", "c4container", "-o", "org-diagram-l2.mermaid"] },
+  { file: "org-diagram-l3.mermaid", args: ["diagram", "-t", "c4component", "-o", "org-diagram-l3.mermaid"] },
   { file: "org-diagram.html", args: ["diagram", "-f", "html", "-o", "org-diagram.html"] },
   { file: "org-backstage.yaml", args: ["backstage", "-o", "org-backstage.yaml"] },
   { file: "org-datadog.yaml", args: ["datadog", "-o", "org-datadog.yaml"] },
@@ -105,7 +108,9 @@ const sameLanguage = (text: string) =>
     .replaceAll('"language": "javascript"', '"language": "dotnet"')
     .replaceAll("language: javascript", "language: dotnet")
     .replace(/("languages": \[\s*)"js"/g, '$1"dotnet"')
-    .replace(/(languages:\n\s+- )js\n/g, "$1dotnet\n");
+    .replace(/(languages:\n\s+- )js\n/g, "$1dotnet\n")
+    // a class's technology comes from its file extension in the component diagram: .ts against .cs
+    .replace(/^(\s*Component\([^,]+, "[^"]*", )"TypeScript"/gm, '$1"C#"');
 // The same comparison on a pair of example projects. `tsPath` -> `netPath` and the language are the only substitutions.
 const compareExamples = (prefix: string, dotnetDir: string, sln: string, tsDir: string, tsPath: string, netPath: string) => {
   for (const { file, args } of cases) {

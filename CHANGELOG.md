@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The explorer (`haya diagram -f html`) lists an app's components in its panel: each class that carries a `[Responsibility]`
+  or `[Collaborator]` (`@Responsibility`/`@Collaborator` in TypeScript), once, with its source file. Graph format `0.3` adds
+  the optional `components` field to app nodes. Other outputs are unchanged. See ADR014.
+- `haya diagram -t c4component` writes a Mermaid C4 component diagram (level 3): each app's annotated classes inside its
+  boundary, with the technology of their source file (`.cs` is C#, `.ts` is TypeScript) and their responsibilities, and a
+  relationship from the class each collaborator is on. See [Generate diagrams](docs/how-to/generate-diagrams.md) and ADR015.
+- In the explorer, double-click an app with annotated classes to open it: its classes are drawn inside it, the apps it connects
+  to are shown, and lines go to the classes they are written on. Click a class for its source, responsibilities and
+  relationships. Graph format `0.3` gives each component an `id` and edges `fromComponents`/`toComponents`.
+
 ## [0.0.6] - 2026-11-11
 
 ### Changed

@@ -74,7 +74,7 @@ type DiagramArgs =
             | Verbose -> CliText.verboseUsage
             | InputPath _ -> "Path(s) to a solution or haya describe file (json/yaml). Several can be given to build one system"
             | OutputPath _ -> "Path to output folder or file (default: ./c4-system-context.mermaid, or ./diagram.html for -f html)"
-            | DiagramType _ -> "Diagram type. c4system (system context) or c4container (apps inside their systems) (default: c4system). Ignored by -f html"
+            | DiagramType _ -> "Diagram type. c4system (system context), c4container (apps inside their systems) or c4component (the classes inside the apps) (default: c4system). Ignored by -f html"
             | DiagramFormat _ -> "Output format. mermaid | html (interactive explorer, a self-contained page) (default: mermaid)"
 
 type DatadogArgs =

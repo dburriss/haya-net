@@ -33,7 +33,7 @@ type DatadogCommand = {
     CurrentDirectory: string
 }
 
-type DiagramType = | C4System | C4Container
+type DiagramType = | C4System | C4Container | C4Component
 type DiagramFormat = | Mermaid | Html
 type DiagramCommand = {
     InputPaths: string list

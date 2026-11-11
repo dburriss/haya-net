@@ -21,6 +21,24 @@ for (const e of data.edges) for (const id of [e.from, e.to]) {
   if (!touching.has(id)) touching.set(id, []);
   touching.get(id).push(e);
 }
+// The classes of an app (components), drawn inside it when it is opened. They are nodes of the model too, so names, the panel
+// and selection work the same; `kind` is "component" and `parent` the app.
+const classesOf = new Map(); // app id -> class ids
+for (const n of data.nodes) for (const c of n.components || []) {
+  nodes.set(c.id, { ...c, kind: "component", parent: n.id });
+  if (!classesOf.has(n.id)) classesOf.set(n.id, []);
+  classesOf.get(n.id).push(c.id);
+}
+const classTouching = new Map(); // class id -> model edges whose end is that class
+for (const e of data.edges) for (const id of [...(e.fromComponents || []), ...(e.toComponents || [])]) {
+  if (!classTouching.has(id)) classTouching.set(id, []);
+  if (!classTouching.get(id).includes(e)) classTouching.get(id).push(e);
+}
+/** True when `ancestor` is the parent of `id`, or its parent's parent. */
+const within = (id, ancestor) => {
+  for (let p = nodes.get(id).parent; p; p = nodes.get(p).parent) if (p === ancestor) return true;
+  return false;
+};
 
 // Heat: a count is coloured by a ramp with four stops. Below the first stop it is plain; the first stop is where yellow starts,
 // the second is full yellow (fading to orange from there), the third is orange (fading to red from there) and the fourth is the
@@ -75,6 +93,7 @@ for (const [k, c] of pairTotal) { const colour = heat(linkStops, c); if (colour)
 // What is visible follows from `shown` (the apps drawn): a system with shown apps is a boundary around them, one
 // without is a single box. Systems are always drawn; edges between hidden apps roll up to their systems.
 let shown = new Set();
+let opened = new Set(); // apps drawn with their classes inside (only while the app is shown)
 let selected = null; // { kind: "node" | "edge", id }
 // every filter value starts enabled; switching one off fades the apps that have it
 const valuesOf = (key, of) => [...new Set(data.nodes.filter((n) => n.kind === "app").map(of))].sort();
@@ -88,6 +107,7 @@ const enableAll = () => { for (const f of FILTERS) enabled[f.key] = new Set(valu
 enableAll();
 const resetShown = () => { shown = new Set(data.nodes.filter((n) => n.kind === "app" && !n.parent).map((n) => n.id)); };
 const isOpen = (systemId) => (appsOf.get(systemId) || []).some((a) => shown.has(a));
+const isOpenApp = (id) => opened.has(id) && shown.has(id);
 const rep = (id) => {
   const n = nodes.get(id);
   return n.kind === "system" || shown.has(id) ? id : n.parent || id;
@@ -151,6 +171,8 @@ const nodeImage = (n) => {
       const t = String(count), w = Math.max(18, t.length * 7 + 10);
       parts.push(`<rect x="${W - w - 7}" y="${(HEIGHT - 16) / 2}" width="${w}" height="16" rx="8" fill="${GREY}"/><text x="${W - 7 - w / 2}" y="${HEIGHT / 2 + 3.7}" font-size="10.5" font-family="system-ui,sans-serif" font-weight="600" fill="#fff" text-anchor="middle">${t}</text>`);
     }
+  } else if (n.kind === "component") {
+    // a class: its name is the label, nothing else to show
   } else if (n.kind === "person") {
     // a person is known only from collaborators, so there is no meta to be missing: no "undocumented" mark
     parts.push(glyphG("Person", kindColor("Person"), 9, (HEIGHT - 12) / 2));
@@ -170,6 +192,7 @@ const nodeImage = (n) => {
 const factPills = (n) => {
   const out = [];
   const pill = (text, color, glyph) => h("span", { class: "pill" }, glyph, text);
+  if (n.kind === "component") return out; // a class says what it is in its panel
   if (n.kind === "system") {
     out.push(pill(n.ownSystem ? `${(appsOf.get(n.id) || []).length} apps` : n.relationship === "External" ? "external" : "other system", GREY, glyphImg(n.ownSystem ? "System" : "External", GREY, 12)));
   } else if (n.kind === "person") {
@@ -207,6 +230,7 @@ const styleFor = () => {
       "text-max-width": 112, "text-margin-x": -9, shape: "round-rectangle", width: W, height: HEIGHT, "background-color": card,
       "border-width": 1, "border-color": line, "background-image": "data(img)", "background-fit": "contain", "background-clip": "node" } },
     { selector: "node.system", style: { "border-width": 2, "border-color": muted } },
+    { selector: "node.component", style: { "text-margin-x": 0, "text-max-width": W - 16, "border-style": "solid", "background-image": "none" } },
     { selector: "node.person", style: { shape: "round-rectangle", "corner-radius": 15 } },
     { selector: "node.external", style: { "border-style": "dashed" } },
     { selector: "node.undoc", style: { "border-style": "dashed", "border-color": "#d69e2e" } },
@@ -238,15 +262,16 @@ new ResizeObserver(redrawSoon).observe(document.getElementById("graph"));
 const desired = () => {
   const want = { nodes: new Map(), edges: new Map() };
   for (const n of data.nodes) if (n.kind === "system" || n.kind === "person" || shown.has(n.id)) want.nodes.set(n.id, n); // people are always drawn
-  // one line per pair of drawn nodes, whichever way the relationships go
-  for (const e of data.edges) {
-    const f = rep(e.from), t = rep(e.to);
-    // inside one box, or between a boundary and an app in it: nothing to draw
-    if (f === t || nodes.get(f).parent === t || nodes.get(t).parent === f) continue;
+  for (const a of opened) if (shown.has(a)) for (const c of classesOf.get(a) || []) want.nodes.set(c, nodes.get(c));
+  // one line per pair of drawn nodes, whichever way the relationships go; an opened app's end is its classes, when it has any there
+  const ends = (id, classes) => (isOpenApp(id) && classes && classes.length ? classes : [rep(id)]);
+  for (const e of data.edges) for (const f of ends(e.from, e.fromComponents)) for (const t of ends(e.to, e.toComponents)) {
+    // inside one box, or between a boundary and something in it: nothing to draw
+    if (f === t || within(f, t) || within(t, f)) continue;
     const key = f < t ? f + "|" + t : t + "|" + f;
     if (!want.edges.has(key)) want.edges.set(key, { source: f, target: t, fwd: [], back: [] });
-    const g = want.edges.get(key);
-    (f === g.source ? g.fwd : g.back).push(e);
+    const g = want.edges.get(key), list = f === g.source ? g.fwd : g.back;
+    if (!list.includes(e)) list.push(e);
   }
   return want;
 };
@@ -258,13 +283,14 @@ const nodeData = (n, includeParent) => {
     const total = appsOf.get(n.id).length, now = appsOf.get(n.id).filter((a) => shown.has(a)).length;
     if (now < total) label += ` (${now} of ${total} apps)`;
   }
-  const d = { id: n.id, label, img: n.kind === "system" && open ? "none" : nodeImage(n) };
-  if (includeParent && n.kind === "app" && n.parent) d.parent = n.parent; // a parent key on an existing node would move it
+  const d = { id: n.id, label, img: (n.kind === "system" && open) || isOpenApp(n.id) ? "none" : nodeImage(n) };
+  if (includeParent && (n.kind === "app" || n.kind === "component") && n.parent) d.parent = n.parent; // a parent key on an existing node would move it
   if (heatOf.has(n.id)) d.heat = heatOf.get(n.id);
   return d;
 };
 const classOf = (n) =>
   n.kind === "system" ? "system" + (n.ownSystem ? "" : " external")
+  : n.kind === "component" ? "component"
   : n.kind === "person" ? "person" + (n.relationship === "External" ? " external" : "")
   : "app" + (n.hasMeta ? "" : " undoc");
 
@@ -275,7 +301,7 @@ const sync = (seeds = new Map()) => {
   cy.remove(gone);
   const fresh = [];
   cy.batch(() => {
-    for (const kind of ["system", "person", "app"]) for (const n of want.nodes.values()) {
+    for (const kind of ["system", "person", "app", "component"]) for (const n of want.nodes.values()) {
       if (n.kind !== kind) continue;
       const cur = cy.getElementById(n.id);
       if (cur.nonempty()) { cur.data(nodeData(n, false)); continue; }
@@ -324,10 +350,11 @@ const openSystem = (id) => {
   update(seeds);
 };
 const collapseSystem = (id) => {
-  for (const a of appsOf.get(id) || []) { shown.delete(a); if (selected && selected.id === a) selected = { kind: "node", id }; }
+  for (const a of appsOf.get(id) || []) { shown.delete(a); opened.delete(a); }
+  if (selected && selected.id !== id && within(selected.id, id)) selected = { kind: "node", id };
   update();
 };
-const hideApp = (id) => { shown.delete(id); if (selected && selected.id === id) selected = { kind: "node", id: nodes.get(id).parent }; update(); };
+const hideApp = (id) => { shown.delete(id); opened.delete(id); if (selected && selected.id === id) selected = { kind: "node", id: nodes.get(id).parent }; update(); };
 const neighboursOf = (id) => {
   const out = new Set();
   for (const e of touching.get(id) || []) { const o = e.from === id ? e.to : e.from; if (nodes.get(o).kind === "app" && !shown.has(o)) out.add(o); }
@@ -339,17 +366,34 @@ const expandNeighbours = (id) => {
   for (const o of neighboursOf(id)) { shown.add(o); if (at) seeds.set(o, at); }
   update(seeds);
 };
-/** Make a node visible (showing just that app inside its boundary), select it and bring it into view. */
+/** Open an app to show its classes inside it, and show the apps it connects to so its lines have somewhere to go. */
+const openApp = (id) => {
+  const at = posOf(id), seeds = new Map();
+  shown.add(id);
+  opened.add(id);
+  for (const c of classesOf.get(id) || []) if (at) seeds.set(c, at);
+  for (const o of neighboursOf(id)) { shown.add(o); if (at) seeds.set(o, at); }
+  update(seeds);
+};
+const closeApp = (id) => {
+  opened.delete(id);
+  if (selected && selected.id !== id && within(selected.id, id)) selected = { kind: "node", id };
+  update();
+};
+/** Make a node visible (showing just that app inside its boundary, or opening the app of a class), select it and bring it into view. */
 const reveal = (id) => {
   const n = nodes.get(id);
-  if (n.kind === "app" && !shown.has(id)) {
-    shown.add(id);
-    selected = { kind: "node", id };
-    const at = posOf(n.parent), seeds = new Map();
-    if (at) seeds.set(id, at);
+  const app = n.kind === "component" ? n.parent : n.kind === "app" ? id : null;
+  const hidden = app && (!shown.has(app) || (n.kind === "component" && !opened.has(app)));
+  selected = { kind: "node", id };
+  if (hidden) {
+    shown.add(app);
+    if (n.kind === "component") opened.add(app);
+    const at = posOf(app) || posOf(nodes.get(app).parent), seeds = new Map();
+    if (at) { seeds.set(app, at); for (const c of classesOf.get(app) || []) seeds.set(c, at); }
     const fresh = sync(seeds);
     layout(false, fresh);
-  } else selected = { kind: "node", id };
+  }
   applySelection();
   renderPanel();
   setTimeout(() => { const el = cy.getElementById(id); if (el.nonempty()) cy.animate({ center: { eles: el }, duration: 250 }); }, 350);
@@ -361,7 +405,7 @@ const applySelection = () => {
   applyFocus();
 };
 const reset = () => {
-  resetShown(); selected = null; enableAll();
+  resetShown(); opened = new Set(); selected = null; enableAll();
   document.getElementById("search").value = ""; closeResults(); renderFilters();
   cy.elements().remove(); sync(); layout(true); renderPanel();
 };
@@ -369,10 +413,13 @@ const reset = () => {
 cy.on("tap", "node", (e) => select({ kind: "node", id: e.target.id() }));
 cy.on("tap", "edge", (e) => select({ kind: "edge", id: e.target.id() }));
 cy.on("tap", (e) => { if (e.target === cy) select(null); });
-// what double-click and Enter/Space do: open or collapse a system, or show the apps an app connects to
+// what double-click and Enter/Space do: open or collapse a system, open or close an app with classes, or show the apps any
+// other app (or a person) connects to. A class has nothing to open.
 const toggleExpand = (id) => {
-  if (nodes.get(id).kind === "system") isOpen(id) ? collapseSystem(id) : openSystem(id);
-  else expandNeighbours(id);
+  const n = nodes.get(id);
+  if (n.kind === "system") isOpen(id) ? collapseSystem(id) : openSystem(id);
+  else if (n.kind === "app" && classesOf.has(id)) isOpenApp(id) ? closeApp(id) : openApp(id);
+  else if (n.kind !== "component") expandNeighbours(id);
 };
 cy.on("dbltap", "node", (e) => toggleExpand(e.target.id()));
 
@@ -381,6 +428,7 @@ const matches = (n) => FILTERS.every((f) => enabled[f.key].has(f.of(n)));
 function applyFilters() {
   cy.elements().removeClass("dim");
   cy.nodes().forEach((el) => { const n = nodes.get(el.id()); if (n.kind === "app" && !matches(n)) el.addClass("dim"); });
+  cy.nodes(".component").forEach((el) => { if (el.parent().hasClass("dim")) el.addClass("dim"); });
   cy.edges().forEach((el) => { if (el.source().hasClass("dim") || el.target().hasClass("dim")) el.addClass("dim"); });
 }
 // Mute whatever has no relationship with the focus: the lines that do not touch it and the systems or apps only those lines
@@ -389,11 +437,13 @@ function applyFilters() {
 function applyFocus() {
   cy.elements().removeClass("muted");
   const focus = new Set();
-  const addSystem = (id) => { focus.add(id); for (const a of appsOf.get(id) || []) if (shown.has(a)) focus.add(a); };
+  const addApp = (id) => { focus.add(id); if (isOpenApp(id)) for (const c of classesOf.get(id) || []) focus.add(c); };
+  const addSystem = (id) => { focus.add(id); for (const a of appsOf.get(id) || []) if (shown.has(a)) addApp(a); };
   const sel = selected && selected.kind === "node" ? nodes.get(selected.id) : null;
   if (sel) {
     if (sel.kind === "system") addSystem(sel.id);
-    else { focus.add(sel.id); if (sel.parent) focus.add(sel.parent); }
+    else if (sel.kind === "app") { addApp(sel.id); if (sel.parent) focus.add(sel.parent); }
+    else for (let id = sel.id; id; id = nodes.get(id).parent) focus.add(id); // a person, or a class with its app and system
   } else for (const n of data.nodes) if (n.kind === "system" && isOpen(n.id)) addSystem(n.id);
   if (!focus.size) return;
   cy.edges().forEach((e) => { if (!focus.has(e.source().id()) && !focus.has(e.target().id())) e.addClass("muted"); });
@@ -507,14 +557,29 @@ function nodePanel(n) {
     if (n.description) kids.push(h("p", {}, n.description));
     kids.push(h("dl", {}, field("System", n.parent && name(n.parent)), field("Tech", n.tech), field("Owner", n.owner), field("Repository", n.repository), field("Tier", n.tier), field("Lifecycle", n.lifecycle)));
     const hidden = neighboursOf(n.id).length;
+    const classes = (classesOf.get(n.id) || []).length;
     kids.push(h("div", { class: "actions" },
+      classes > 0 && (isOpenApp(n.id) ? act("Hide classes", () => closeApp(n.id)) : act(`Show classes (${classes})`, () => openApp(n.id))),
       h("button", { type: "button", disabled: !hidden, onclick: () => expandNeighbours(n.id) }, hidden ? `Show connected apps (${hidden})` : "All connected apps shown"),
       n.parent && act("Hide", () => hideApp(n.id)),
       act("Centre", () => cy.animate({ center: { eles: cy.getElementById(n.id) }, duration: 250 }))));
     kids.push(section("Responsibilities", (n.responsibilities || []).map((r) => h("li", {}, r))));
+    // the classes that carry the app's attributes, with the file (or referenced assembly) they are in
+    kids.push(section("Components", (n.components || []).map((c) => h("li", { class: "component" }, goto(c.id), c.source && h("div", { class: "muted source" }, c.source)))));
     const mine = touching.get(n.id) || [];
     kids.push(section("Inbound", mine.filter((e) => e.to === n.id).map((e) => relRow(e, n.id))));
     kids.push(section("Outbound", mine.filter((e) => e.from === n.id).map((e) => relRow(e, n.id))));
+  } else if (n.kind === "component") {
+    // a class of an app: where it is, what it does, and the relationships written on it (or that name it from another app)
+    kids.push(h("p", {}, h("span", { class: "pill" }, "class"), " in ", goto(n.parent)));
+    if (n.source) kids.push(h("p", { class: "muted source" }, n.source));
+    kids.push(h("div", { class: "actions" }, act("Centre", () => cy.animate({ center: { eles: cy.getElementById(n.id) }, duration: 250 }))));
+    kids.push(section("Responsibilities", (n.responsibilities || []).map((r) => h("li", {}, r))));
+    const mine = classTouching.get(n.id) || [];
+    const other = (e) => ((e.fromComponents || []).includes(n.id) ? e.to : e.from);
+    const row = (e) => h("li", {}, goto(other(e)), " · " + note(e));
+    kids.push(section("Inbound", mine.filter((e) => (e.toComponents || []).includes(n.id)).map(row)));
+    kids.push(section("Outbound", mine.filter((e) => (e.fromComponents || []).includes(n.id)).map(row)));
   } else if (n.kind === "person") {
     if (n.description) kids.push(h("p", {}, n.description));
     kids.push(h("dl", {}, field("Owner", n.owner)));
@@ -563,7 +628,7 @@ function overviewPanel() {
   return [
     h("h2", {}, "Overview"),
     h("p", {}, `${systems.length} systems, ${apps.length} apps, ${people.length ? people.length + " people, " : ""}${data.edges.length} relationships.`),
-    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to show the apps it connects to. Press Enter or Space to do the same to the selected node, Esc to deselect, r to start over. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
+    h("p", { class: "muted" }, "Select a node or line for details. Selecting a node mutes what has no relationship with it. Double-click a system to open it, or an app to open it into its classes (with the apps it connects to) or, for an app without classes, to show the apps it connects to. Press Enter or Space to do the same to the selected node, Esc to deselect, r to start over. Search (press / to jump to it) finds anything, hidden or not. Switch a kind, tier or lifecycle off to fade those apps."),
     section("Systems", systems.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("People", people.map((n) => h("li", {}, goto(n.id), " ", factPills(n)))),
     section("Undocumented apps", undocumented.map((n) => h("li", {}, goto(n.id), n.parent ? " · " + name(n.parent) : ""))),

@@ -15,6 +15,16 @@ module Graph =
         /// A person who uses (or is used by) our apps. Known only from collaborators: no app, no system, no `[Meta]`.
         | Person = 3
 
+    /// A class of an app that carries a `[Responsibility]` or `[Collaborator]`: its name and the source it was found in
+    /// (relative to the analysed root; `Assembly::Namespace.Type` for a type from a referenced assembly).
+    type Component =
+        { /// The app id, `__`, then the class name; a second class of the same name in the app gets `_2`, and so on.
+          Id: string
+          Name: string
+          Source: string
+          /// The descriptions of the class's responsibilities, in the order they were found.
+          Responsibilities: string list }
+
     type Node =
         { Id: string
           Kind: NodeKind
@@ -33,21 +43,29 @@ module Graph =
           Repository: string
           Tier: string
           Lifecycle: string
-          Responsibilities: string list }
+          Responsibilities: string list
+          /// Apps with a `Meta` only: each class that carries a responsibility or collaborator, once, by name then source.
+          Components: Component list }
 
     type Edge =
         { From: string
           To: string
           Direction: Direction
           Protocol: string
-          Label: string }
+          Label: string
+          /// The ids of the classes at the `From` end: the class the collaborator is on, or, at the far end of one, the
+          /// classes of that app that name this one back. Empty when the end is the node as a whole.
+          FromComponents: string list
+          /// The ids of the classes at the `To` end, as `FromComponents`.
+          ToComponents: string list }
 
     type Graph = { Nodes: Node list; Edges: Edge list }
 
     let private emptyNode =
         { Id = ""; Kind = NodeKind.App; Name = ""; Parent = None; OwnSystem = false; HasMeta = false
           AppKind = AppKind.Unspecified; Relationship = Relationship.Owned
-          Description = ""; Tech = ""; Owner = ""; Repository = ""; Tier = ""; Lifecycle = ""; Responsibilities = [] }
+          Description = ""; Tech = ""; Owner = ""; Repository = ""; Tier = ""; Lifecycle = ""; Responsibilities = []
+          Components = [] }
 
     let private appId (system: string) (appName: string) = Naming.mermaidId (Naming.createName system appName)
     let private systemId (system: string) = Naming.mermaidId system
@@ -82,6 +100,27 @@ module Graph =
             |> List.filter (fun c -> c.Kind = AppKind.Person && c.AppName <> "")
             |> List.distinctBy (fun c -> String.toLower c.AppName)
 
+        // one entry per class, however many attributes it carries; a descriptor without a class name is not one
+        let componentsOf ((m: MetaDescriptor), (a: App)) =
+            (a.Responsibilities |> List.map (fun r -> r.ComponentName, r.ComponentSource))
+            @ (a.Collaborators |> List.map (fun c -> c.ComponentName, c.ComponentSource))
+            |> List.filter (fun (name, _) -> name <> "")
+            |> List.distinct
+            |> List.sort
+            |> List.mapi (fun i (name, source) -> i, (name, source))
+            |> fun all ->
+                all
+                |> List.map (fun (i, (name, source)) ->
+                    let before = all |> List.filter (fun (j, (n, _)) -> j < i && n = name) |> List.length
+                    let id = appId m.System m.AppName + "__" + Naming.mermaidId name
+                    { Id = (if before = 0 then id else $"{id}_{before + 1}")
+                      Name = name
+                      Source = source
+                      Responsibilities =
+                          a.Responsibilities
+                          |> List.filter (fun r -> r.ComponentName = name && r.ComponentSource = source)
+                          |> List.map (_.Description) })
+
         let parentOf (system: string) = if system = "" then None else Some (systemId system)
 
         let appNodes =
@@ -99,7 +138,8 @@ module Graph =
                     Repository = m.Repository
                     Tier = m.Tier
                     Lifecycle = m.Lifecycle
-                    Responsibilities = a.Responsibilities |> List.map (_.Description) })
+                    Responsibilities = a.Responsibilities |> List.map (_.Description)
+                    Components = componentsOf (m, a) })
         let declaredNodes =
             declaredHere
             |> List.map (fun c ->
@@ -146,18 +186,52 @@ module Graph =
             elif c.System <> "" then Some (systemId c.System)
             else None
 
-        let edges =
+        // the classes of an app that a collaborator is on, by app id
+        let componentsById = ownApps |> List.map (fun (m, a) -> appId m.System m.AppName, componentsOf (m, a))
+        let classesOf (app: string) (c: CollaboratorDescriptor) =
+            componentsById
+            |> List.tryFind (fun (id, _) -> id = app)
+            |> Option.bind (fun (_, cs) -> cs |> List.tryFind (fun x -> x.Name = c.ComponentName && x.Source = c.ComponentSource))
+            |> Option.map (_.Id)
+            |> Option.toList
+        // every collaborator of an own app, resolved: (app id, collaborator, target id)
+        let resolved =
             ownApps
             |> List.collect (fun (m, a) ->
                 let self = appId m.System m.AppName
                 a.Collaborators
-                |> List.choose (fun c ->
-                    targetOf c
-                    |> Option.filter (fun target -> target <> self)
-                    |> Option.map (fun target ->
-                        let from, to_ = if c.Direction = Direction.Upstream then target, self else self, target
-                        { From = from; To = to_; Direction = c.Direction; Protocol = c.Protocol; Label = c.DataDescription })))
+                |> List.choose (fun c -> targetOf c |> Option.filter (fun target -> target <> self) |> Option.map (fun target -> self, c, target)))
+        // the classes of `app` whose collaborators name `other`
+        let namingBack (app: string) (other: string) =
+            resolved
+            |> List.filter (fun (self, _, target) -> self = app && target = other)
+            |> List.collect (fun (self, c, _) -> classesOf self c)
             |> List.distinct
+
+        let edges =
+            resolved
+            |> List.map (fun (self, c, target) ->
+                let mine = classesOf self c
+                let theirs = namingBack target self
+                let edge =
+                    if c.Direction = Direction.Upstream then
+                        { From = target; To = self; Direction = c.Direction; Protocol = c.Protocol; Label = c.DataDescription
+                          FromComponents = []; ToComponents = [] }
+                    else
+                        { From = self; To = target; Direction = c.Direction; Protocol = c.Protocol; Label = c.DataDescription
+                          FromComponents = []; ToComponents = [] }
+                let fromClasses, toClasses = if c.Direction = Direction.Upstream then theirs, mine else mine, theirs
+                edge, (fromClasses, toClasses))
+            // one edge per app pair, direction, protocol and label, as before; the classes of all its collaborators together
+            |> fun all ->
+                all
+                |> List.map fst
+                |> List.distinct
+                |> List.map (fun edge -> edge, all |> List.filter (fun (e, _) -> e = edge))
+            |> List.map (fun (edge, xs) ->
+                { edge with
+                    FromComponents = xs |> List.collect (fun (_, (f, _)) -> f) |> List.distinct
+                    ToComponents = xs |> List.collect (fun (_, (_, t)) -> t) |> List.distinct })
 
         let nodes =
             ownSystemNodes @ otherSystemNodes @ personNodes @ appNodes @ declaredNodes

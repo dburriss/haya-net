@@ -52,7 +52,7 @@ A [describe file](describe-format.md) of the analysed code.
 | Flag | Meaning | Default |
 | --- | --- | --- |
 | `-o`, `--output-path` | Output file | `./c4-system-context.mermaid`, or `./diagram.html` for `-f html` |
-| `-t`, `--diagram-type` | `c4system` (level 1) or `c4container` (level 2). Ignored by `-f html` | `c4system` |
+| `-t`, `--diagram-type` | `c4system` (level 1), `c4container` (level 2) or `c4component` (level 3: the classes inside each app). Ignored by `-f html` | `c4system` |
 | `-f`, `--diagram-format` | `mermaid`, or `html` (an interactive explorer, one self-contained page) | `mermaid` |
 
 ## `backstage`

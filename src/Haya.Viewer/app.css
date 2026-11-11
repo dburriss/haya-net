@@ -44,6 +44,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .actions button:hover { border-color: var(--accent); }
 .note { padding: 6px 8px; border-left: 3px solid #b7791f; background: var(--card); margin: 8px 0; }
 .muted { color: var(--muted); }
+.component .source { font-size: 0.85em; overflow-wrap: anywhere; }
 @media (max-width: 800px) { #bar-main { grid-template-columns: 1fr; } #bar-actions { justify-content: flex-start; } }
 @media (max-width: 700px) { #main { flex-direction: column; } #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: 45%; } }
 .actions button:disabled { opacity: .5; cursor: default; }

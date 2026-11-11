@@ -297,6 +297,70 @@ let ``Container diagram skips apps without a meta`` () =
     Assert.DoesNotContain("Rel(", text)
     Assert.DoesNotContain("Container(", text)
 
+// --- Component diagram (level 3) ---
+
+let private onClass (name: string) (source: string) (a: App) =
+    { a with
+        Responsibilities = a.Responsibilities |> List.map (fun r -> { r with ComponentName = name; ComponentSource = source })
+        Collaborators = a.Collaborators |> List.map (fun c -> { c with ComponentName = name; ComponentSource = source }) }
+
+[<Fact>]
+let ``Component diagram draws each app's classes in its boundary with the technology of their file`` () =
+    let api =
+        { (app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ]) with
+            Responsibilities = [ { Description = "Takes orders"; ComponentName = ""; ComponentSource = "" }; { Description = "Checks stock"; ComponentName = ""; ComponentSource = "" } ] }
+        |> onClass "OrdersController" "src/Orders.cs"
+    let text = Haya.Core.Diagram.sprintMermaidC4L3 [ api ]
+    Assert.StartsWith("C4Component", text)
+    Assert.Contains("title C4 Component Diagram for Api", text)
+    Assert.Contains("System_Boundary(ordering, \"Ordering\") {", text)
+    Assert.Contains("Container_Boundary(ordering_api, \"Api\") {", text)
+    Assert.Contains("Component(ordering_api__orders_controller, \"OrdersController\", \"C#\", \"Takes orders; Checks stock\")", text)
+    Assert.Contains("System_Ext(visa, \"Visa\",", text)
+    Assert.Contains("Rel(ordering_api__orders_controller, visa, \"uses\")", text)
+    Assert.DoesNotContain("ordering_api__app", text) // every relationship has a class
+
+[<Fact>]
+let ``Component diagram links classes that name each other, and falls back to the app's container`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Db", "Ordering", Relationship.Internal ] |> onClass "PaymentsClient" "src/a.ts"
+    let payments = app "Payments" "Ordering" [ "Api", "Ordering", Relationship.Internal ] |> onClass "ApiCallback" "Lib::Payments.ApiCallback"
+    let db = app "Db" "Ordering" [] |> withMeta (fun m -> { m with Kind = AppKind.Database; Tech = "PostgreSQL" })
+    let lonely = app "Lonely" "Ordering" [ "Api", "Ordering", Relationship.Internal ] // no class names: falls back on both ends
+    let text = Haya.Core.Diagram.sprintMermaidC4L3 [ api; payments; db; lonely ]
+    Assert.Contains("title C4 Component Diagram for Ordering", text)
+    Assert.Contains("Component(ordering_api__payments_client, \"PaymentsClient\", \"TypeScript\",", text)
+    Assert.Contains("Component(ordering_payments__api_callback, \"ApiCallback\", \"\",", text) // referenced type: no technology
+    Assert.Contains("Rel(ordering_api__payments_client, ordering_payments__api_callback, \"uses\")", text)
+    Assert.Contains("Rel(ordering_payments__api_callback, ordering_api__payments_client, \"uses\")", text)
+    Assert.Contains("ContainerDb(ordering_db, \"Db\", \"PostgreSQL\",", text) // no classes: a container, as at level 2
+    Assert.Contains("Rel(ordering_api__payments_client, ordering_db, \"uses\")", text)
+    Assert.Contains("Container(ordering_lonely, \"Lonely\",", text)
+    Assert.Contains("Rel(ordering_lonely, ordering_api__app, \"uses\")", text)
+    Assert.Contains("Container(ordering_api__app, \"Api\",", text) // drawn inside the Api boundary, because a line needs it
+
+[<Fact>]
+let ``Component diagram numbers classes of the same name in one app`` () =
+    let a = app "Api" "Ordering" [] |> withMeta id
+    let a =
+        { a with
+            Responsibilities =
+                [ { Description = "one"; ComponentName = "Handler"; ComponentSource = "a/Handler.cs" }
+                  { Description = "two"; ComponentName = "Handler"; ComponentSource = "b/Handler.cs" } ] }
+    let text = Haya.Core.Diagram.sprintMermaidC4L3 [ a ]
+    Assert.Contains("Component(ordering_api__handler, \"Handler\", \"C#\", \"one\")", text)
+    Assert.Contains("Component(ordering_api__handler_2, \"Handler\", \"C#\", \"two\")", text)
+
+[<Theory>]
+[<InlineData("src/a.cs", "C#")>]
+[<InlineData("src/A.FS", "F#")>]
+[<InlineData("src/a.tsx", "TypeScript")>]
+[<InlineData("lib/a.mjs", "JavaScript")>]
+[<InlineData("Acme.Shared::Acme.Shared.Client", "")>]
+[<InlineData("src.v2/Makefile", "")>]
+[<InlineData("", "")>]
+let ``Component technology comes from the file extension`` (source: string, expected: string) =
+    Assert.Equal(expected, Haya.Core.Diagram.componentTech source)
+
 [<Fact>]
 let ``Crc renders the container diagram only for -cc, after the system diagram`` () =
     let crc l1 l2 : Haya.Core.CrcCommand = { InputPaths = []; OutputPath = ""; IncludeL1Diagram = l1; IncludeL2Diagram = l2; CurrentDirectory = "" }
@@ -537,6 +601,78 @@ let ``Graph json lists nodes and edges, leaves out empty values and is valid jso
     let edge = root.GetProperty("edges").EnumerateArray() |> Seq.head
     Assert.Equal("HTTPS", edge.GetProperty("protocol").GetString())
     Assert.DoesNotContain("language", json)
+
+let private withComponents (api: App) =
+    let resp name source description : ResponsibilityDescriptor = { Description = description; ComponentName = name; ComponentSource = source }
+    let collabs =
+        api.Collaborators
+        |> List.mapi (fun i c ->
+            match i with
+            | 0 -> { c with ComponentName = "Usecase"; ComponentSource = "src/Usecase.cs" } // also has a responsibility
+            | 1 -> { c with ComponentName = "Client"; ComponentSource = "src/Client.cs" }
+            | _ -> { c with ComponentName = ""; ComponentSource = "" }) // no class: not a component
+    { api with
+        Responsibilities =
+            [ resp "Usecase" "src/Usecase.cs" "Does one thing"
+              resp "Usecase" "src/Usecase.cs" "Does another thing" // same class twice
+              resp "Controller" "src/b/Controller.cs" "Takes requests"
+              resp "Controller" "src/a/Controller.cs" "Takes other requests" // same name, other source
+              resp "Ref" "" "From a class without a source" ]
+        Collaborators = collabs }
+
+[<Fact>]
+let ``Graph lists each class of an app once, sorted by name then source`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Visa", "Visa", Relationship.External; "Shipping", "Logistics", Relationship.Internal ] |> withComponents
+    let g = Haya.Core.Graph.ofApps [ api ]
+    let node id = g.Nodes |> List.find (fun n -> n.Id = id)
+    let components = (node "ordering_api").Components |> List.map (fun c -> c.Name, c.Source)
+    Assert.Equal<(string * string) list>(
+        [ "Client", "src/Client.cs"
+          "Controller", "src/a/Controller.cs"
+          "Controller", "src/b/Controller.cs"
+          "Ref", ""
+          "Usecase", "src/Usecase.cs" ],
+        components)
+    Assert.Equal<string list>([ "Does one thing"; "Does another thing"; "Takes requests"; "Takes other requests"; "From a class without a source" ], (node "ordering_api").Responsibilities)
+    Assert.Empty((node "ordering_payments").Components) // declared from a collaborator: no classes of ours
+    Assert.Empty((node "ordering").Components)
+    Assert.Empty((node "visa").Components)
+
+[<Fact>]
+let ``Graph gives classes ids and puts them at the ends of edges, naming back when the other app does`` () =
+    let classes name source (a: App) =
+        { a with Collaborators = a.Collaborators |> List.map (fun c -> { c with ComponentName = name; ComponentSource = source }) }
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Db", "Ordering", Relationship.Internal ] |> classes "Client" "a.cs"
+    let payments = app "Payments" "Ordering" [ "Api", "Ordering", Relationship.Internal ] |> classes "Callback" "b.cs"
+    let g = Haya.Core.Graph.ofApps [ api; payments ]
+    let node id = g.Nodes |> List.find (fun n -> n.Id = id)
+    Assert.Equal<string list>([ "ordering_api__client" ], (node "ordering_api").Components |> List.map (_.Id))
+    let edge from to_ = g.Edges |> List.find (fun e -> e.From = from && e.To = to_)
+    Assert.Equal<string list>([ "ordering_api__client" ], (edge "ordering_api" "ordering_payments").FromComponents)
+    Assert.Equal<string list>([ "ordering_payments__callback" ], (edge "ordering_api" "ordering_payments").ToComponents)
+    Assert.Equal<string list>([ "ordering_api__client" ], (edge "ordering_api" "ordering_db").FromComponents)
+    Assert.Empty((edge "ordering_api" "ordering_db").ToComponents) // the db has no classes: the app as a whole
+    Assert.Equal(3, g.Edges.Length) // still one edge per app pair and label
+
+[<Fact>]
+let ``Graph json lists components with name and source, and leaves out empty ones`` () =
+    let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal; "Visa", "Visa", Relationship.External ] |> withComponents
+    let json = Haya.Core.Graph.ofApps [ api ] |> Haya.Core.Encode.graph |> Haya.Core.Serializer.toScriptSafeJson
+    use doc = System.Text.Json.JsonDocument.Parse json
+    let nodes = doc.RootElement.GetProperty("nodes").EnumerateArray() |> Seq.toList
+    let byId id = nodes |> List.find (fun n -> n.GetProperty("id").GetString() = id)
+    let components = (byId "ordering_api").GetProperty("components").EnumerateArray() |> Seq.toList
+    Assert.Equal("ordering_api__client", components.Head.GetProperty("id").GetString())
+    Assert.Equal("Client", components.Head.GetProperty("name").GetString())
+    Assert.Equal("src/Client.cs", components.Head.GetProperty("source").GetString())
+    let mutable ignored = Unchecked.defaultof<System.Text.Json.JsonElement>
+    let noSource = components |> List.find (fun c -> c.GetProperty("name").GetString() = "Ref")
+    Assert.False(noSource.TryGetProperty("source", &ignored)) // empty source is omitted
+    Assert.False((byId "ordering_payments").TryGetProperty("components", &ignored)) // empty list is omitted
+    let edges = doc.RootElement.GetProperty("edges").EnumerateArray() |> Seq.toList
+    let toPayments = edges |> List.find (fun e -> e.GetProperty("to").GetString() = "ordering_payments")
+    Assert.Equal("ordering_api__usecase", (toPayments.GetProperty("fromComponents").EnumerateArray() |> Seq.head).GetString())
+    Assert.False(toPayments.TryGetProperty("toComponents", &ignored)) // the other end has no classes
 
 [<Fact>]
 let ``Graph json is safe inside a script element`` () =

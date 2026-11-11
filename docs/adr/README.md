@@ -14,6 +14,8 @@ Why Haya is built the way it is. Each record is one decision; newer records can 
 | [ADR008](ADR008-custom-attribute-defaults.md) | Defaults for custom attributes and annotations | |
 | [ADR009](ADR009-referenced-assembly-analysis.md) | Opt-in analysis of referenced assemblies (C#) | |
 | [ADR010](ADR010-datadog-command-and-language.md) | Datadog command, analyser-stamped language, lifecycle and tier, describe format 0.3 | Describe format superseded by 0.4 in ADR013 |
-| [ADR011](ADR011-interactive-html-explorer.md) | Interactive html graph explorer (`diagram -f html`) | |
+| [ADR011](ADR011-interactive-html-explorer.md) | Interactive html graph explorer (`diagram -f html`) | Component sources added to the graph in ADR014 |
 | [ADR012](ADR012-complexity-colours-in-the-explorer.md) | Complexity colours in the explorer: a ramp from a cutoff, by apps + relationships | |
 | [ADR013](ADR013-person-collaborators.md) | Person collaborators: a `Kind` on `Collaborator`, `InternalUser`/`ExternalUser` removed, describe format 0.4 | |
+| [ADR014](ADR014-components-in-the-explorer-panel.md) | Components (classes and their source) listed in the explorer panel, graph format 0.3 | Component diagram added in ADR015 |
+| [ADR015](ADR015-component-diagram.md) | C4 component diagram (`diagram -t c4component`) and opening apps into their classes in the explorer | |
