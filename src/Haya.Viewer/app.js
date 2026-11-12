@@ -431,7 +431,7 @@ const reveal = (id) => {
   setTimeout(() => { const el = cy.getElementById(id); if (el.nonempty()) cy.animate({ center: { eles: el }, duration: 250 }); }, 350);
 };
 const narrow = window.matchMedia("(max-width: 700px)");
-const select = (sel) => { selected = sel; if (sel && narrow.matches) setPanel(true); applySelection(); renderPanel(); writeHash(); };
+const select = (sel) => { selected = sel; applySelection(); renderPanel(); writeHash(); };
 const applySelection = () => {
   cy.elements().removeClass("sel");
   if (selected) cy.getElementById(selected.id).addClass("sel");
@@ -580,7 +580,7 @@ panelButton.addEventListener("click", () => {
   setPanel(show);
   if (!narrow.matches) try { localStorage.setItem("haya-panel", show ? "open" : "closed"); } catch { /* not remembered */ }
 });
-// desktop: open unless the user closed it last time; phone: closed until asked for or something is selected
+// desktop: open unless the user closed it last time; phone: closed until the Panel button is pressed
 let savedPanel = null;
 try { savedPanel = localStorage.getItem("haya-panel"); } catch { /* not remembered */ }
 setPanel(narrow.matches ? false : savedPanel !== "closed");
