@@ -645,13 +645,13 @@ function nodePanel(n) {
     const row = (e) => h("li", {}, goto(other(e)), " · " + note(e));
     kids.push(section("Inbound", mine.filter((e) => (e.toComponents || []).includes(n.id)).map(row)));
     kids.push(section("Outbound", mine.filter((e) => (e.fromComponents || []).includes(n.id)).map(row)));
-    // `--detail members` only, after the relationships: what the class takes, the classes of its app it reaches in code (and
-    // through which unannotated types), the classes that reach it, and what it offers
+    // `--detail members` only, after the relationships: the classes of its app it reaches in code (and through which
+    // unannotated types), the classes that reach it, what the class takes, and what it offers
     const params = (ps) => "(" + (ps || []).map((p) => `${p.name}: ${p.type}`).join(", ") + ")";
-    kids.push(foldable("Constructor", (n.constructors || []).map((ps) => h("li", { class: "code" }, params(ps)))));
     const via = (l) => (l.via && l.via.length ? h("span", { class: "muted" }, " via " + l.via.join(" → ")) : null);
     kids.push(foldable("Depends on", (n.dependsOn || []).filter((l) => nodes.has(l.id)).map((l) => h("li", {}, goto(l.id), via(l)))));
     kids.push(foldable("Used by", (n.usedBy || []).filter((id) => nodes.has(id)).map((id) => h("li", {}, goto(id)))));
+    kids.push(foldable("Constructor", (n.constructors || []).map((ps) => h("li", { class: "code" }, params(ps)))));
     kids.push(foldable("Members", (n.members || []).map((m) =>
       h("li", { class: "code" }, h("span", { class: "muted" }, m.kind.toLowerCase() + " "),
         m.kind === "Method" ? `${m.name}${params(m.parameters)}: ${m.type}` : `${m.name}: ${m.type}`))));
