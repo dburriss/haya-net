@@ -50,6 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to are shown, and lines go to the classes they are written on. Click a class for its source, responsibilities and
   relationships. Graph format `0.3` gives each component an `id` and edges `fromComponents`/`toComponents`.
 
+### Fixed
+- In the explorer, selecting a class (or searching for one) no longer keeps its app's and system's own lines and neighbours
+  lit; only the class and its lines stay focused, with the app and system boundaries still drawn around it.
+
 ## [0.0.6] - 2026-11-11
 
 ### Changed

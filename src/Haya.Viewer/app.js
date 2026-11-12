@@ -450,7 +450,7 @@ function applyFocus() {
   if (sel) {
     if (sel.kind === "system") addSystem(sel.id);
     else if (sel.kind === "app") { addApp(sel.id); if (sel.parent) focus.add(sel.parent); }
-    else for (let id = sel.id; id; id = nodes.get(id).parent) focus.add(id); // a person, or a class with its app and system
+    else focus.add(sel.id); // a person, or a class: its app and system are not focused, so their own lines and neighbours stay muted (the boundaries stay visible below)
   } else for (const n of data.nodes) if (n.kind === "system" && isOpen(n.id)) addSystem(n.id);
   if (!focus.size) return;
   cy.edges().forEach((e) => { if (!focus.has(e.source().id()) && !focus.has(e.target().id())) e.addClass("muted"); });
