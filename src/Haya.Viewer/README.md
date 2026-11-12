@@ -40,7 +40,7 @@ stretches to the largest value in the page.
 ## Poking at it
 
 - `window.__haya` is the Cytoscape instance.
-- `#open=system_id,other&select=node_id` in the address opens systems and selects a node (ids as in the
+- `#open=system_id,other&show=app_id&classes=app_id&select=node_id&edge=a,b` in the address (kept up to date as you explore, and applied on `hashchange`) opens systems, shows apps, opens apps to their classes and selects a node or line (ids as in the
   [graph format](../../docs/reference/graph-format.md)).
 - Open a generated page straight from disk: `haya diagram -f html -o /tmp/x.html ./Example.sln`.
 

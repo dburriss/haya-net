@@ -44,8 +44,8 @@ Then rebuild (`dotnet build`; `bun run build` in `src/Haya.Bun`), run `bun run p
 your change. CI runs `check` (the `viewer` job in `build.yml`) and fails when the committed file is stale. It pins Bun,
 because the minified bundle can differ between Bun versions: if you bump Bun there, regenerate with that version. Parity shows the two tools emit the same page, not
 that it works: open a generated page in a browser (it runs from `file://`) and try opening a system, selecting nodes,
-search and the filters. `window.__haya` is the Cytoscape instance, for poking at it in the console, and `#open=` and
-`#select=` in the address open systems or select a node. The design is in [ADR011](adr/ADR011-interactive-html-explorer.md).
+search and the filters. `window.__haya` is the Cytoscape instance, for poking at it in the console, and the address
+holds the view (`#open=`, `#show=`, `#classes=`, `#select=`, `#edge=`, see ADR019), so a link restores it. The design is in [ADR011](adr/ADR011-interactive-html-explorer.md).
 
 ## Docs
 

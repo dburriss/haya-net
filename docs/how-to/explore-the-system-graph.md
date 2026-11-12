@@ -87,8 +87,21 @@ To see one first, open the [live example](https://dburriss.github.io/haya-net/),
 
 ## Link to a view
 
-The address can open systems or select a node: `system.html#open=ordering,billing&select=ordering_payments_api`. The ids are
-the lower-case names with `_` between words, as in the Mermaid output.
+The address always holds a link to what you are looking at, so copy it from the address bar to share the view. It records the
+apps shown, the apps opened to show their classes, and the selected node or line; the position of boxes is not recorded, so
+the layout can differ. You can also write one by hand:
+`system.html#open=ordering,billing&show=web_shop_api&classes=ordering_payments_api&select=ordering_payments_api__charge`.
+
+| Part | Meaning |
+| --- | --- |
+| `open` | systems to open, showing all their apps |
+| `show` | individual apps to show |
+| `classes` | apps to open so their classes show |
+| `select` | a system, app, class or person to select and centre on |
+| `edge` | a selected line, as its two ends: `edge=ordering,billing` |
+
+The ids are the lower-case names with `_` between words, as in the Mermaid output (a class is `app__class`). Ids the page
+does not know are ignored.
 
 ## Know the limits
 

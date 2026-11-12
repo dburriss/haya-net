@@ -108,6 +108,30 @@ enableAll();
 const resetShown = () => { shown = new Set(data.nodes.filter((n) => n.kind === "app" && !n.parent).map((n) => n.id)); };
 const isOpen = (systemId) => (appsOf.get(systemId) || []).some((a) => shown.has(a));
 const isOpenApp = (id) => opened.has(id) && shown.has(id);
+
+// ---------------------------------------------------------------- deep links
+// The address bar always holds a link to the current view: #open=<systems>&show=<apps>&classes=<apps>&select=<id>&edge=<a>,<b>
+// `open` is systems with every app shown, `show` the other shown apps, `classes` the apps opened to show their classes,
+// `select` the selected node and `edge` the selected line (its two ends). Layout positions are not part of it.
+const encodeHash = () => {
+  const open = [], show = [];
+  for (const [sys, apps] of appsOf) {
+    if (apps.length && apps.every((a) => shown.has(a))) open.push(sys);
+    else for (const a of apps) if (shown.has(a)) show.push(a);
+  }
+  const p = new URLSearchParams();
+  const put = (k, v) => { if (v.length) p.set(k, v.join(",")); };
+  put("open", open); put("show", show); put("classes", [...opened].filter((a) => shown.has(a)));
+  if (selected && selected.kind === "node") p.set("select", selected.id);
+  else if (selected && selected.id.includes("|")) p.set("edge", selected.id.split("|").join(","));
+  return p.toString().replace(/%2C/g, ",");
+};
+const writeHash = () => {
+  const h = encodeHash();
+  if (h === location.hash.slice(1)) return;
+  // replaceState does not fire hashchange and keeps back/forward clean; it can throw on some file:// pages, then the link just is not updated
+  try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch { /* address bar not updated */ }
+};
 const rep = (id) => {
   const n = nodes.get(id);
   return n.kind === "system" || shown.has(id) ? id : n.parent || id;
@@ -347,7 +371,7 @@ const ensureVisible = () => {
   const ext = cy.extent(), bb = cy.elements().boundingBox();
   if (bb.x1 < ext.x1 || bb.y1 < ext.y1 || bb.x2 > ext.x2 || bb.y2 > ext.y2) cy.animate({ fit: { eles: cy.elements(), padding: 40 }, duration: 250 });
 };
-const update = (seeds) => { const fresh = sync(seeds); layout(false, fresh); renderPanel(); };
+const update = (seeds) => { const fresh = sync(seeds); layout(false, fresh); renderPanel(); writeHash(); };
 
 // ---------------------------------------------------------------- actions
 const posOf = (id) => { const el = cy.getElementById(id); return el.nonempty() ? el.position() : undefined; };
@@ -403,9 +427,10 @@ const reveal = (id) => {
   }
   applySelection();
   renderPanel();
+  writeHash();
   setTimeout(() => { const el = cy.getElementById(id); if (el.nonempty()) cy.animate({ center: { eles: el }, duration: 250 }); }, 350);
 };
-const select = (sel) => { selected = sel; applySelection(); renderPanel(); };
+const select = (sel) => { selected = sel; applySelection(); renderPanel(); writeHash(); };
 const applySelection = () => {
   cy.elements().removeClass("sel");
   if (selected) cy.getElementById(selected.id).addClass("sel");
@@ -414,7 +439,7 @@ const applySelection = () => {
 const reset = () => {
   resetShown(); opened = new Set(); selected = null; enableAll();
   document.getElementById("search").value = ""; closeResults(); renderFilters();
-  cy.elements().remove(); sync(); layout(true); renderPanel();
+  cy.elements().remove(); sync(); layout(true); renderPanel(); writeHash();
 };
 
 cy.on("tap", "node", (e) => select({ kind: "node", id: e.target.id() }));
@@ -699,13 +724,20 @@ themeButton.addEventListener("click", () => {
   applyTheme();
   restyle();
 });
-resetShown();
+// rebuild the view from the address bar: on load, and when the hash is edited or a link is followed within the page
+const applyHash = () => {
+  const p = new URLSearchParams(location.hash.slice(1));
+  const ids = (k) => (p.get(k) || "").split(",").filter(Boolean);
+  resetShown(); opened = new Set(); selected = null;
+  for (const sys of ids("open")) for (const a of appsOf.get(sys) || []) shown.add(a);
+  for (const a of ids("show")) if (nodes.has(a) && nodes.get(a).kind === "app") shown.add(a);
+  for (const a of ids("classes")) if (classesOf.has(a)) { shown.add(a); opened.add(a); }
+  cy.elements().remove(); sync(); layout(true); renderPanel();
+  const sel = p.get("select"), edge = ids("edge");
+  if (sel && nodes.has(sel)) reveal(sel);
+  else if (edge.length === 2 && cy.getElementById(pairKey(edge[0], edge[1])).nonempty()) select({ kind: "edge", id: pairKey(edge[0], edge[1]) });
+  else writeHash();
+};
 renderFilters();
-sync();
-layout(true);
-renderPanel();
-// deep links: #open=system-id,other&select=node-id
-const params = new URLSearchParams(location.hash.slice(1));
-for (const id of (params.get("open") || "").split(",")) if (nodes.has(id) && appsOf.has(id)) for (const a of appsOf.get(id)) shown.add(a);
-if (params.get("open")) { sync(); layout(true); }
-if (params.get("select") && nodes.has(params.get("select"))) reveal(params.get("select"));
+applyHash();
+window.addEventListener("hashchange", applyHash);

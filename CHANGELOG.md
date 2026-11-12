@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The html explorer's address now always holds a link to the current view: shown apps, apps opened to their classes, and the
+  selected node or line (`#open=…&show=…&classes=…&select=…&edge=…`). Opening such a link, or editing the hash, restores the
+  view. Existing `#open=` and `#select=` links still work. See ADR019.
+
 ### Changed
 - **Breaking:** `--detail members` records **dependencies** between annotated classes instead of `Uses`. When an annotated
   class reaches another annotated class of its app in code, directly or through any number of classes and interfaces without
