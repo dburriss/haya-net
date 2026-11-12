@@ -20,13 +20,14 @@
       </div>
       <div id="bar-actions">
         <button id="fit" type="button">Fit</button>
+        <button id="filters-toggle" type="button" title="Show or hide the filters" aria-controls="filters" aria-expanded="false">Filters</button>
         <button id="panel-toggle" type="button" title="Show or hide the side panel (p)" aria-keyshortcuts="p" aria-controls="panel" aria-expanded="true">Panel</button>
         <button id="reset" type="button" title="Start over (r)" aria-keyshortcuts="r">Reset</button>
         <a id="docs" href="https://github.com/dburriss/haya-net/blob/main/docs/index.md" target="_blank" rel="noopener noreferrer" title="Haya documentation">Docs</a>
         <button id="theme" type="button" title="Switch between automatic, light and dark"></button>
       </div>
     </div>
-    <div id="filters" role="group" aria-label="Filters"></div>
+    <div id="filters" hidden role="group" aria-label="Filters"></div>
   </header>
   <main id="main">
     <div id="graph" role="application" aria-label="System graph"></div>

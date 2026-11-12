@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The html explorer's filters are hidden until the **Filters** button is pressed.
 - The html explorer's side panel can be hidden and shown again with the **Panel** button or `p`. It is open by default on a
   wide screen (the choice is remembered) and a sheet over the graph on a phone, opened only with the Panel button.
 - The html explorer's address now always holds a link to the current view: shown apps, apps opened to their classes, and the

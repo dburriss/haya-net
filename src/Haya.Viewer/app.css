@@ -18,6 +18,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 .chip[aria-pressed="false"] { opacity: .5; text-decoration: line-through; }
 .chip[aria-pressed="true"] { border-color: var(--muted); }
+#filters[hidden] { display: none; }
 #filters { display: flex; flex-wrap: wrap; gap: 4px 4px; align-items: center; margin-top: 6px; font-size: 13px; }
 .fgroup { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-right: 6px; max-width: 100%; }
 .fgroup > span { color: var(--muted); font-size: 12px; }

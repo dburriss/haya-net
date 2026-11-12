@@ -504,6 +504,13 @@ function renderFilters() {
   }
 }
 
+const filtersButton = document.getElementById("filters-toggle");
+filtersButton.addEventListener("click", () => {
+  const box = document.getElementById("filters");
+  box.hidden = !box.hidden;
+  filtersButton.setAttribute("aria-expanded", String(!box.hidden));
+});
+
 // ---------------------------------------------------------------- search
 const searchBox = document.getElementById("search"), resultsEl = document.getElementById("results");
 function closeResults() { resultsEl.hidden = true; resultsEl.replaceChildren(); }
