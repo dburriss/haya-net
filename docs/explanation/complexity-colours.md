@@ -73,7 +73,7 @@ smaller. The stretch rule keeps the "most complex is deepest" part for large sys
 
 ## Changing the numbers
 
-The stops, `HEAT_SYSTEMS` and `HEAT_LINKS`, and the colours, `HEAT_COLOURS`, are constants at the top of `src/Haya.Viewer/app.js`.
+The stops, `HEAT_SYSTEMS` and `HEAT_LINKS`, and the colours, `HEAT_COLOURS`, are constants at the top of `src/Haya.Viewer/app.js`. The stops can be overridden per project or machine with `viewer.complexity.systems` and `viewer.complexity.links` in the [configuration](../reference/configuration.md); the colours stay in `app.js`.
 After changing them run `bun run gen` in `src/Haya.Viewer` and commit the regenerated `ViewerAssets.fs`; see
 [the viewer README](../../src/Haya.Viewer/README.md) and [Contributing](../contributing.md). They are not command-line options
 yet.

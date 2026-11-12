@@ -4,7 +4,7 @@
 // Each tool runs from its own example directory, because ComponentSource is relative to the current directory.
 //
 //   bun run parity            # needs the .NET SDK (the baseline) and `bun install` in examples/typescript/example and examples/typescript/custom-annotations
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -38,8 +38,11 @@ const cases: { file: string; args: string[] }[] = [
   { file: "datadog.json", args: ["datadog", "-f", "json", "-o", "datadog.json"] },
 ];
 
-const run = (cmd: string[], cwd: string) => {
-  const p = Bun.spawnSync(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
+// Never read the developer's own global config: both tools look here instead (and find nothing unless a case writes it).
+process.env.HAYA_CONFIG_DIR = join(out, "global-config");
+
+const run = (cmd: string[], cwd: string, env: Record<string, string> = {}) => {
+  const p = Bun.spawnSync(cmd, { cwd, stdout: "pipe", stderr: "pipe", env: { ...process.env, ...env } });
   if (p.exitCode !== 0) {
     console.error(`FAILED: ${cmd.join(" ")}\n${p.stdout.toString()}${p.stderr.toString()}`);
     process.exit(1);
@@ -84,6 +87,7 @@ const orgCases: { file: string; args: string[] }[] = [
 
 let failed = 0;
 const total = cases.length * 2 + multiCases.length + orgCases.length;
+// (the configuration cases below are counted as they run)
 const check = (file: string, net: string, actual: string) => {
   const expected = readFileSync(net, "utf8");
   if (expected === actual) {
@@ -166,9 +170,45 @@ compareExamples(
   "src/checkout.ts",
   "Checkout/Checkout.cs",
 );
+
+// Configuration (ADR020): a local .haya/config.json, a global one and an environment variable, no flags. Both tools run in
+// their own directory with the same files and must write the same files with the same content.
+const configJson = {
+  output: { path: "generated", formats: ["yaml"] },
+  crc: { diagram: "apps" },
+  diagram: { format: "html", detail: "components" },
+  backstage: { format: "json" },
+  viewer: { detail: "apps", complexity: { systems: [2, 3, 4, 5], links: [1, 2, 3, 4] } },
+};
+const configCommands = [["crc"], ["describe"], ["diagram"], ["backstage"], ["datadog"]];
+const configRuns: Record<string, string>[] = [{}, { HAYA_VIEWER__DETAIL: "components", HAYA_DIAGRAM__FORMAT: "mermaid" }];
+const configResult = (cwd: string, env: Record<string, string>) => {
+  mkdirSync(join(cwd, ".haya"), { recursive: true });
+  writeFileSync(join(cwd, ".haya/config.json"), JSON.stringify(configJson));
+  mkdirSync(process.env.HAYA_CONFIG_DIR!, { recursive: true });
+  writeFileSync(join(process.env.HAYA_CONFIG_DIR!, "config.json"), JSON.stringify({ output: { path: "overridden" }, backstage: { output: "generated/catalog.json" } }));
+  for (const c of configCommands) {
+    run(cwd === join(out, "config-net") ? ["dotnet", "run", "--no-build", "--project", tool, "--", ...c, ...orgFiles] : ["bun", "run", hayaTs, ...c, ...orgFiles], cwd, env);
+  }
+  const dir = join(cwd, "generated");
+  return Object.fromEntries(readdirSync(dir).sort().map((f) => [f, readFileSync(join(dir, f), "utf8")]));
+};
+let configTotal = 0;
+configRuns.forEach((env, i) => {
+  const net = join(out, `config-net`), bun = join(out, `config-bun`);
+  for (const d of [net, bun]) { rmSync(d, { recursive: true, force: true }); mkdirSync(d, { recursive: true }); }
+  const a = configResult(net, env), b = configResult(bun, env);
+  const names = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+  for (const n of names) {
+    configTotal++;
+    const label = `config-${i}-${n}`;
+    if (a[n] !== undefined && a[n] === b[n]) console.log(`PASS  ${label}`);
+    else { failed++; console.log(`FAIL  ${label} (${a[n] === undefined ? "missing from .NET" : b[n] === undefined ? "missing from Bun" : "content differs"})`); }
+  }
+});
 rmSync(out, { recursive: true, force: true });
 if (failed > 0) {
-  console.error(`${failed} of ${total} outputs differ`);
+  console.error(`${failed} of ${total + configTotal} outputs differ`);
   process.exit(1);
 }
-console.log(`All ${total} outputs identical`);
+console.log(`All ${total + configTotal} outputs identical`);

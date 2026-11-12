@@ -307,4 +307,4 @@ module Diagram =
         | Components, Mermaid
         | Members, Mermaid -> sprintMermaidC4L3 cmd.Detail apps
         // the explorer always shows systems and apps; the detail only decides whether the classes are in it
-        | detail, Html -> Explore.sprintHtml detail apps
+        | detail, Html -> Explore.sprintHtml cmd.Viewer detail apps

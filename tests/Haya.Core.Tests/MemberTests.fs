@@ -240,7 +240,7 @@ let ``Graph document carries constructors, dependencies and members only at memb
 
 [<Fact>]
 let ``The component diagram draws dependencies between classes only at members`` () =
-    let gen detail = Diagram.generateDiagram { InputPaths = []; OutputPath = ""; Detail = detail; DiagramFormat = DiagramFormat.Mermaid; CurrentDirectory = "" } [ shopApp ]
+    let gen detail = Diagram.generateDiagram { InputPaths = []; OutputPath = ""; Detail = detail; DiagramFormat = DiagramFormat.Mermaid; Viewer = ViewerSettings.none; CurrentDirectory = "" } [ shopApp ]
     let uses = [ "Rel(shop_api__controller, shop_api__usecase, \"uses\")"; "Rel(shop_api__usecase, shop_api__repo, \"uses\")" ]
     Assert.DoesNotContain("\"uses\"", gen Detail.Components)
     let members = gen Detail.Members

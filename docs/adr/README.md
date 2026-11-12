@@ -23,3 +23,4 @@ Why Haya is built the way it is. Each record is one decision; newer records can 
 | [ADR017](ADR017-member-detail.md) | A `members` detail level: constructors, public members and `Uses` per class, describe format 0.5, graph format 0.4 | `Uses` replaced by dependencies in ADR018 |
 | [ADR018](ADR018-component-dependencies.md) | Dependencies between annotated classes, walked through unannotated types, under `members`; describe format 0.6, graph format 0.5 | |
 | [ADR019](ADR019-viewer-deep-links.md) | The explorer keeps its view in the address hash: shown apps, opened apps, selection | |
+| [ADR020](ADR020-layered-config.md) | Layered configuration: env vars, local and global `config.json`, sectioned keys, `haya config` | |

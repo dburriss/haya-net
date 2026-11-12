@@ -32,6 +32,9 @@ values are written as `\u` escapes, so the document is still valid JSON and no v
 }
 ```
 
+The optional `viewer` object (`detail`, and `complexity` with `systems` and `links`: four numbers each) is written only when the
+[configuration](configuration.md) sets viewer settings; it does not change the version. The viewer ignores what is missing.
+
 Nodes are sorted by `id`; edges keep the order in which the apps and collaborators appear. Empty strings and empty lists are left out.
 
 ## Nodes

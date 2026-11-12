@@ -40,6 +40,7 @@
         <Compile Include="Graph.fs" />
         <Compile Include="Encode.fs" />
         <Compile Include="Decode.fs" />
+        <Compile Include="Config.fs" />
         <Compile Include="Merge.fs" />
         <Compile Include="Describe.fs" />
         <Compile Include="ViewerAssets.fs" />

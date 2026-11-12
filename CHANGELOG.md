@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configuration: defaults for output path, formats, detail, `crc` diagrams, referenced assemblies (`dotnet.references`) and the
+  explorer's detail and complexity colours (`viewer`) can be set in `.haya/config.json`, a global `haya/config.json` in the OS
+  config directory, or `HAYA_*` environment variables. Flags still win. `haya config list | get | set | unset` reads and writes
+  it on both CLIs. The graph's optional `viewer` object carries the explorer settings. Output directories are created when
+  missing. See ADR020 and the [configuration reference](docs/reference/configuration.md).
 - The html explorer's filters are hidden until the **Filters** button is pressed.
 - The html explorer's side panel can be hidden and shown again with the **Panel** button or `p`. It is open by default on a
   wide screen (the choice is remembered) and covers the whole graph on a phone, opened only with the Panel button, sliding in from the right.

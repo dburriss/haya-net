@@ -148,7 +148,7 @@ module Encode =
 
     /// The resolved graph the html explorer reads: `{ edges: [...], nodes: [...], version }`. Empty strings and lists
     /// are left out. `Language` is deliberately not part of it.
-    let graph (g: Graph.Graph) =
+    let graphWith (viewer: ViewerSettings) (g: Graph.Graph) =
         let optional (name: string) (value: string) = if value = "" then [] else [ name, str value ]
         let node (n: Graph.Node) =
             record [
@@ -202,10 +202,21 @@ module Encode =
                 if not e.ToComponents.IsEmpty then yield "toComponents", strings e.ToComponents
             ]
         record [
-            "edges", g.Edges |> List.map edge |> List.toArray |> JsonValue.Array
-            "nodes", g.Nodes |> List.map node |> List.toArray |> JsonValue.Array
-            "version", str GraphVersion
+            yield "edges", g.Edges |> List.map edge |> List.toArray |> JsonValue.Array
+            yield "nodes", g.Nodes |> List.map node |> List.toArray |> JsonValue.Array
+            // optional, only when the configuration sets something: the page falls back to its own defaults
+            let ints (xs: int list) = xs |> List.map (fun i -> JsonValue.Integer (int64 i)) |> List.toArray |> JsonValue.Array
+            let complexity =
+                [ match viewer.Links with Some xs -> yield "links", ints xs | None -> ()
+                  match viewer.Systems with Some xs -> yield "systems", ints xs | None -> () ]
+            let settings =
+                [ match viewer.Detail with Some d -> yield "detail", str (Detail.name d) | None -> ()
+                  if not complexity.IsEmpty then yield "complexity", record complexity ]
+            if not settings.IsEmpty then yield "viewer", record settings
+            yield "version", str GraphVersion
         ]
+
+    let graph (g: Graph.Graph) = graphWith ViewerSettings.none g
 
     /// Backstage `Component` entity.
     let backstageComponent

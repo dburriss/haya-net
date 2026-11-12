@@ -17,12 +17,14 @@ Pick the page that matches what you are doing right now.
 - [Publish to the Datadog Software Catalog](how-to/publish-to-datadog.md)
 - [Document several systems together](how-to/document-multiple-systems.md)
 - [Include attributes from referenced packages](how-to/include-referenced-packages.md)
+- [Configure Haya](how-to/configure-haya.md): keep flags in `.haya/config.json`
 - [Run Haya in CI](how-to/run-in-ci.md)
 - [Troubleshoot errors](how-to/troubleshoot.md)
 
 ## Reference: look something up
 
 - [CLI](reference/cli.md): commands, flags and defaults for `haya` (C#) and the TypeScript CLI.
+- [Configuration](reference/configuration.md): settings, files, environment variables and `haya config`.
 - [Attributes and annotations](reference/attributes.md): `Meta`, `Responsibility`, `Collaborator` and their enums.
 - [Describe file format](reference/describe-format.md)
 - [Graph format](reference/graph-format.md): the data embedded in the interactive html diagram.

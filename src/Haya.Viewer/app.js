@@ -44,8 +44,11 @@ const within = (id, ancestor) => {
 // the second is full yellow (fading to orange from there), the third is orange (fading to red from there) and the fourth is the
 // deepest red, kept for the most complex. If the data goes past the last stop, the red end stretches to the largest value, so the most
 // complex system or pair always has the deepest red. Change the numbers here.
-const HEAT_SYSTEMS = [7, 9, 13, 20]; // apps + relationships of a system: the border of an own system
-const HEAT_LINKS = [3, 4, 6, 9];    // relationships between two systems: the line between them
+// `haya config` can override the numbers: the generator embeds them as data.viewer.complexity (four rising numbers each).
+const settings = data.viewer || {};
+const stopsOf = (given, fallback) => (Array.isArray(given) && given.length === 4 && given.every(Number.isFinite) ? given : fallback);
+const HEAT_SYSTEMS = stopsOf(settings.complexity && settings.complexity.systems, [7, 9, 13, 20]); // apps + relationships of a system: the border of an own system
+const HEAT_LINKS = stopsOf(settings.complexity && settings.complexity.links, [3, 4, 6, 9]);    // relationships between two systems: the line between them
 const HEAT_COLOURS = [[58, 0.42, 0.6], [48, 0.5, 0.52], [28, 0.5, 0.5], [4, 0.5, 0.44]]; // hue, saturation, lightness: muted
 const hsl = (h, s, l) => {
   const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -106,6 +109,16 @@ const enabled = {};
 const enableAll = () => { for (const f of FILTERS) enabled[f.key] = new Set(valuesOf(f.key, f.of)); };
 enableAll();
 const resetShown = () => { shown = new Set(data.nodes.filter((n) => n.kind === "app" && !n.parent).map((n) => n.id)); };
+// How deep the page opens when the address has no view of its own (data.viewer.detail, from `haya config`): systems only, every
+// app shown, or also every app opened into its classes.
+const defaultDetail = settings.detail || "systems";
+const applyDefaultDetail = () => {
+  if (defaultDetail === "systems") return;
+  for (const n of data.nodes) if (n.kind === "app") {
+    shown.add(n.id);
+    if (defaultDetail !== "apps" && classesOf.has(n.id)) opened.add(n.id);
+  }
+};
 const isOpen = (systemId) => (appsOf.get(systemId) || []).some((a) => shown.has(a));
 const isOpenApp = (id) => opened.has(id) && shown.has(id);
 
@@ -438,7 +451,7 @@ const applySelection = () => {
   applyFocus();
 };
 const reset = () => {
-  resetShown(); opened = new Set(); selected = null; enableAll();
+  resetShown(); opened = new Set(); applyDefaultDetail(); selected = null; enableAll();
   document.getElementById("search").value = ""; closeResults(); renderFilters();
   cy.elements().remove(); sync(); layout(true); renderPanel(); writeHash();
 };
@@ -755,6 +768,7 @@ const applyHash = () => {
   const p = new URLSearchParams(location.hash.slice(1));
   const ids = (k) => (p.get(k) || "").split(",").filter(Boolean);
   resetShown(); opened = new Set(); selected = null;
+  if ([...p.keys()].length === 0) applyDefaultDetail();
   for (const sys of ids("open")) for (const a of appsOf.get(sys) || []) shown.add(a);
   for (const a of ids("show")) if (nodes.has(a) && nodes.get(a).kind === "app") shown.add(a);
   for (const a of ids("classes")) if (classesOf.has(a)) { shown.add(a); opened.add(a); }

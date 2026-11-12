@@ -13,8 +13,8 @@ module Explore =
 
     /// The page for a graph. The title goes into the head (before the data) and the data is not scanned for tokens, so
     /// neither can inject into the other.
-    let render (title: string) (graph: Graph.Graph) =
-        let json = graph |> Encode.graph |> Serializer.toScriptSafeJson
+    let render (viewer: ViewerSettings) (title: string) (graph: Graph.Graph) =
+        let json = graph |> Encode.graphWith viewer |> Serializer.toScriptSafeJson
         let template = ViewerAssets.template
         let at = template.IndexOf dataToken
         let before = template.Substring(0, at).Replace(titleToken, escapeHtml title)
@@ -23,4 +23,4 @@ module Explore =
 
     /// The page for the apps. The title is short on purpose: the systems are in the graph itself.
     /// The classes are on the page from `Detail.Components`; their constructors, members and dependencies at `Detail.Members`.
-    let sprintHtml (detail: Detail) (apps: App list) = render "Haya Explorer" (Graph.ofApps detail apps)
+    let sprintHtml (viewer: ViewerSettings) (detail: Detail) (apps: App list) = render viewer "Haya Explorer" (Graph.ofApps detail apps)

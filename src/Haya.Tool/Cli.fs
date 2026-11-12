@@ -104,7 +104,21 @@ type DatadogArgs =
             | OutputPath _ -> "Path to output folder or file (default: ./entity.datadog.yaml)"
             | Format _ -> "Output format. json | yaml (default: yaml)"
 
+type ConfigArgs =
+    | [<MainCommand>] Words of words: string list
+    | Local
+    | Global
+    | [<CustomCommandLine("--show-origin")>] ShowOrigin
+    interface IArgParserTemplate with
+        member s.Usage =
+            match s with
+            | Words _ -> "list | get <key> | set <key> <value> | unset <key>"
+            | Local -> "Read or write the nearest .haya/config.json (set and unset default to it; for a new file, the current directory)"
+            | Global -> "Read or write the global file in the OS config directory (haya/config.json)"
+            | ShowOrigin -> "With list: show which file or environment variable each value comes from"
+
 type CliArguments =
+    | [<CliPrefix(CliPrefix.None)>] Config of ParseResults<ConfigArgs>
     | [<CliPrefix(CliPrefix.None)>] Crc of ParseResults<CrcArgs>
     | [<CliPrefix(CliPrefix.None)>] Describe of ParseResults<DescribeArgs>
     | [<CliPrefix(CliPrefix.None)>] Backstage of ParseResults<BackstageArgs>
@@ -113,6 +127,7 @@ type CliArguments =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
+            | Config _ -> "Get and set configuration (env vars, .haya/config.json, global config)"
             | Crc _ -> "Generate Components, Responsibilities, and Collaborator documentation"
             | Describe _ -> "Generate Haya solution description"
             | Backstage _ -> "Generate Backstage catalog data"
@@ -130,6 +145,21 @@ module Cli =
         | DataFormat.Json -> $"./{filename}.json"
         | DataFormat.Yaml -> $"./{filename}.yaml"
     
+    let private dataFormatOf (name: string) = if name = "json" then DataFormat.Json else DataFormat.Yaml
+
+    /// The configuration for commands run in `currentDir`; a broken file or variable stops the command with its message.
+    let private loadConfig (currentDir: string) (fail: string -> Config.Resolved) : Config.Resolved =
+        match Config.load currentDir with
+        | Ok cfg ->
+            for w in cfg.Warnings do eprintfn "Warning: %s" w
+            cfg
+        | Error m -> fail m
+
+    /// Command line values beat configuration; the two lists are joined.
+    let private referenceSettings (cfg: Config.Resolved) (includeFlag: bool) (globs: string list) =
+        let include' = includeFlag || (Config.flag cfg "dotnet.references.include" = Some true)
+        include', (globs @ Config.list cfg "dotnet.references.assemblies") |> List.distinct
+
     /// How a solution is analysed beyond its own source: which compiled references to read, whether to report them, and
     /// whether to collect the constructors and members of the annotated classes (`Detail.Members`).
     type AnalysisOptions = { References: Roslyn.ReferenceOptions; Verbose: bool; Members: bool }
@@ -178,16 +208,24 @@ module Cli =
         if parserResults.Contains(CliArguments.Describe) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Describe)
+            let cfg = loadConfig currentDir pr.Raise
             let sln = inputList (pr.GetResults(DescribeArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let format = pr.GetResult(DescribeArgs.Format, defaultValue = DataFormat.Json)
+            let format =
+                pr.TryGetResult(DescribeArgs.Format)
+                |> Option.orElse (Config.format cfg "describe" [ "json"; "yaml" ] |> Option.map dataFormatOf)
+                |> Option.defaultValue DataFormat.Json
             //todo: check if output path is a file or a directory
-            let outputPath: string = pr.TryGetResult(DescribeArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "haya")
+            let outputPath: string =
+                pr.TryGetResult(DescribeArgs.OutputPath)
+                |> Option.defaultWith (fun () -> Config.outputPath cfg "describe" (defaultFile format "haya"))
             let detail =
-                match pr.GetResult(DescribeArgs.Detail, defaultValue = DescribeDetail.Apps) with
-                | DescribeDetail.Apps -> Detail.Apps
-                | DescribeDetail.Components -> Detail.Components
-                | DescribeDetail.Members -> Detail.Members
-            let options = analysisOptions (pr.Contains DescribeArgs.IncludeReferences) (pr.GetResults DescribeArgs.IncludeAssembly) (pr.Contains DescribeArgs.Verbose)
+                match pr.TryGetResult(DescribeArgs.Detail) with
+                | Some DescribeDetail.Apps -> Detail.Apps
+                | Some DescribeDetail.Components -> Detail.Components
+                | Some DescribeDetail.Members -> Detail.Members
+                | None -> Config.detail cfg "describe.detail" |> Option.defaultValue Detail.Apps
+            let includeRefs, globs = referenceSettings cfg (pr.Contains DescribeArgs.IncludeReferences) (pr.GetResults DescribeArgs.IncludeAssembly)
+            let options = analysisOptions includeRefs globs (pr.Contains DescribeArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath
                     Format = format
@@ -211,11 +249,16 @@ module Cli =
         if parserResults.Contains(CliArguments.Crc) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Crc)
+            let cfg = loadConfig currentDir pr.Raise
             let sln = inputList (pr.GetResults(CrcArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let outputPath: string = pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultValue "./CRC.md"
-            let includeL1Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 0
-            let includeL2Diagram = pr.GetResults(CrcArgs.C4) |> List.length > 1
-            let options = analysisOptions (pr.Contains CrcArgs.IncludeReferences) (pr.GetResults CrcArgs.IncludeAssembly) (pr.Contains CrcArgs.Verbose)
+            let outputPath: string =
+                pr.TryGetResult(CrcArgs.OutputPath) |> Option.defaultWith (fun () -> Config.outputPath cfg "crc" "./CRC.md")
+            let c4 = pr.GetResults(CrcArgs.C4) |> List.length
+            // -c on the command line decides; without it crc.diagram does
+            let includeL1Diagram, includeL2Diagram =
+                if c4 > 0 then true, c4 > 1 else Config.crcDiagrams cfg |> Option.defaultValue (false, false)
+            let includeRefs, globs = referenceSettings cfg (pr.Contains CrcArgs.IncludeReferences) (pr.GetResults CrcArgs.IncludeAssembly)
+            let options = analysisOptions includeRefs globs (pr.Contains CrcArgs.Verbose)
             Some ({ InputPaths = sln; OutputPath = outputPath
                     IncludeL1Diagram = includeL1Diagram
                     IncludeL2Diagram = includeL2Diagram
@@ -238,10 +281,17 @@ module Cli =
         if parserResults.Contains(CliArguments.Backstage) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Backstage)
+            let cfg = loadConfig currentDir pr.Raise
             let sln = inputList (pr.GetResults(BackstageArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let format = pr.GetResult(BackstageArgs.Format, defaultValue = DataFormat.Yaml)
-            let outputPath: string = pr.TryGetResult(BackstageArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "backstage")
-            let options = analysisOptions (pr.Contains BackstageArgs.IncludeReferences) (pr.GetResults BackstageArgs.IncludeAssembly) (pr.Contains BackstageArgs.Verbose)
+            let format =
+                pr.TryGetResult(BackstageArgs.Format)
+                |> Option.orElse (Config.format cfg "backstage" [ "json"; "yaml" ] |> Option.map dataFormatOf)
+                |> Option.defaultValue DataFormat.Yaml
+            let outputPath: string =
+                pr.TryGetResult(BackstageArgs.OutputPath)
+                |> Option.defaultWith (fun () -> Config.outputPath cfg "backstage" (defaultFile format "backstage"))
+            let includeRefs, globs = referenceSettings cfg (pr.Contains BackstageArgs.IncludeReferences) (pr.GetResults BackstageArgs.IncludeAssembly)
+            let options = analysisOptions includeRefs globs (pr.Contains BackstageArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath
                     Format = format
@@ -265,10 +315,17 @@ module Cli =
         if parserResults.Contains(CliArguments.Datadog) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Datadog)
+            let cfg = loadConfig currentDir pr.Raise
             let sln = inputList (pr.GetResults(DatadogArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let format = pr.GetResult(DatadogArgs.Format, defaultValue = DataFormat.Yaml)
-            let outputPath: string = pr.TryGetResult(DatadogArgs.OutputPath) |> Option.defaultWith (fun () -> defaultFile format "entity.datadog")
-            let options = analysisOptions (pr.Contains DatadogArgs.IncludeReferences) (pr.GetResults DatadogArgs.IncludeAssembly) (pr.Contains DatadogArgs.Verbose)
+            let format =
+                pr.TryGetResult(DatadogArgs.Format)
+                |> Option.orElse (Config.format cfg "datadog" [ "json"; "yaml" ] |> Option.map dataFormatOf)
+                |> Option.defaultValue DataFormat.Yaml
+            let outputPath: string =
+                pr.TryGetResult(DatadogArgs.OutputPath)
+                |> Option.defaultWith (fun () -> Config.outputPath cfg "datadog" (defaultFile format "entity.datadog"))
+            let includeRefs, globs = referenceSettings cfg (pr.Contains DatadogArgs.IncludeReferences) (pr.GetResults DatadogArgs.IncludeAssembly)
+            let options = analysisOptions includeRefs globs (pr.Contains DatadogArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath
                     Format = format
@@ -292,16 +349,26 @@ module Cli =
         if parserResults.Contains(CliArguments.Diagram) then
             let currentDir = Environment.CurrentDirectory
             let pr = parserResults.GetResult(CliArguments.Diagram)
+            let cfg = loadConfig currentDir pr.Raise
             let sln = inputList (pr.GetResults(DiagramArgs.InputPath) |> List.concat) (fun m -> pr.Raise m)
-            let detail = pr.GetResult(DiagramArgs.Detail, defaultValue = Detail.Systems)
-            let diagramFormat = pr.GetResult(DiagramArgs.DiagramFormat, defaultValue = DiagramFormat.Mermaid)
+            let detail =
+                pr.TryGetResult(DiagramArgs.Detail)
+                |> Option.orElse (Config.detail cfg "diagram.detail")
+                |> Option.defaultValue Detail.Systems
+            let diagramFormat =
+                pr.TryGetResult(DiagramArgs.DiagramFormat)
+                |> Option.orElse (Config.format cfg "diagram" [ "mermaid"; "html" ] |> Option.map (fun f -> if f = "html" then DiagramFormat.Html else DiagramFormat.Mermaid))
+                |> Option.defaultValue DiagramFormat.Mermaid
             let defaultOutput = match diagramFormat with | DiagramFormat.Html -> "./diagram.html" | DiagramFormat.Mermaid -> "./c4-system-context.mermaid"
-            let outputPath: string = pr.TryGetResult(DiagramArgs.OutputPath) |> Option.defaultValue defaultOutput
-            let options = analysisOptions (pr.Contains DiagramArgs.IncludeReferences) (pr.GetResults DiagramArgs.IncludeAssembly) (pr.Contains DiagramArgs.Verbose)
+            let outputPath: string =
+                pr.TryGetResult(DiagramArgs.OutputPath) |> Option.defaultWith (fun () -> Config.outputPath cfg "diagram" defaultOutput)
+            let includeRefs, globs = referenceSettings cfg (pr.Contains DiagramArgs.IncludeReferences) (pr.GetResults DiagramArgs.IncludeAssembly)
+            let options = analysisOptions includeRefs globs (pr.Contains DiagramArgs.Verbose)
             Some ({ InputPaths = sln
                     OutputPath = outputPath
                     Detail = detail
                     DiagramFormat = diagramFormat
+                    Viewer = Config.viewer cfg
                     CurrentDirectory = currentDir }, { options with Members = detail = Detail.Members })
         else None
         
@@ -317,3 +384,35 @@ module Cli =
                 | Ok _ -> Ok(0, $"Diagram successfully generated from {pathToSln}")
                 | Error e -> Error(1, e)    
     }
+
+    /// `haya config list | get | set | unset`. Needs no analysis, so it has its own entry rather than an active pattern with options.
+    let (|IsConfigCommand|_|) (parserResults: ParseResults<CliArguments>) : Result<int * string, int * string> option =
+        if parserResults.Contains(CliArguments.Config) then
+            let currentDir = Environment.CurrentDirectory
+            let pr = parserResults.GetResult(CliArguments.Config)
+            let words = pr.GetResults(ConfigArgs.Words) |> List.concat
+            let isGlobal = pr.Contains ConfigArgs.Global
+            let isLocal = pr.Contains ConfigArgs.Local
+            if isGlobal && isLocal then pr.Raise "Use either --local or --global, not both"
+            let target = Config.targetFile currentDir isGlobal
+            let ofResult (r: Result<string, string>) (message: string -> string) =
+                match r with
+                | Ok file -> Ok (0, message file)
+                | Error m -> Error (1, m)
+            let loaded () = Config.load currentDir
+            let result =
+                match words with
+                | [ "list" ] ->
+                    loaded () |> Result.map (fun cfg -> 0, String.concat "\n" (Config.lines cfg (pr.Contains ConfigArgs.ShowOrigin)))
+                    |> Result.mapError (fun m -> 1, m)
+                | [ "get"; key ] ->
+                    let value = if isGlobal || isLocal then Config.getFrom target key else loaded () |> Result.bind (fun cfg -> Config.get cfg key)
+                    match value with
+                    | Ok (Some v) -> Ok (0, v)
+                    | Ok None -> Error (1, $"{key} is not set")
+                    | Error m -> Error (1, m)
+                | [ "set"; key; value ] -> ofResult (Config.set target key value) (fun f -> $"{key} = {value} ({f})")
+                | [ "unset"; key ] -> ofResult (Config.unset target key) (fun f -> $"Removed {key} ({f})")
+                | _ -> pr.Raise "Usage: haya config list | get <key> | set <key> <value> | unset <key>"
+            Some result
+        else None

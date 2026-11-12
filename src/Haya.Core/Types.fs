@@ -27,6 +27,13 @@ module Detail =
         | Components -> "components"
         | Members -> "members"
 
+/// Settings of the html explorer from the configuration (ADR020). Every field is optional: the page keeps its own default
+/// for what is not set. `Systems` and `Links` are the four thresholds of the complexity colours.
+type ViewerSettings = { Detail: Detail option; Systems: int list option; Links: int list option }
+
+module ViewerSettings =
+    let none : ViewerSettings = { Detail = None; Systems = None; Links = None }
+
 type DescribeCommand = {
     InputPaths: string list
     OutputPath: string
@@ -64,6 +71,8 @@ type DiagramCommand = {
     OutputPath: string
     Detail: Detail
     DiagramFormat: DiagramFormat
+    /// Only read for `DiagramFormat.Html`.
+    Viewer: ViewerSettings
     CurrentDirectory: string
 }
 

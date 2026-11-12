@@ -15,6 +15,9 @@ haya <command> [options] <inputPath...>
 (`Haya.Bun`), or a [describe file](describe-format.md) (`.json`, `.yaml`, `.yml`) for either tool. Inputs are merged
 into one system. `haya --help` and `haya <command> --help` list the options.
 
+Defaults for most flags can be set in [configuration](configuration.md) (`haya config`); a flag on the command line always wins, and
+`haya config` itself is a command of both CLIs. The defaults listed below are the built-in ones.
+
 Exit code is `0` on success and `1` on error. Warnings go to stderr.
 
 ## Referenced assemblies (`Haya.Tool` only)

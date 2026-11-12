@@ -698,20 +698,20 @@ let ``Graph leaves out the classes below Detail.Components`` (level: string) =
 [<Fact>]
 let ``Explore page has classes only at Detail.Components`` () =
     let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal ] |> withComponents
-    Assert.DoesNotContain("ordering_api__usecase", Haya.Core.Explore.sprintHtml Detail.Apps [ api ])
-    Assert.Contains("ordering_api__usecase", Haya.Core.Explore.sprintHtml Detail.Components [ api ])
+    Assert.DoesNotContain("ordering_api__usecase", Haya.Core.Explore.sprintHtml ViewerSettings.none Detail.Apps [ api ])
+    Assert.Contains("ordering_api__usecase", Haya.Core.Explore.sprintHtml ViewerSettings.none Detail.Components [ api ])
 
 [<Fact>]
 let ``Diagram detail picks the mermaid diagram, and html is the explorer at that detail`` () =
     let api = app "Api" "Ordering" [ "Payments", "Ordering", Relationship.Internal ] |> withComponents
     let gen detail format =
         Haya.Core.Diagram.generateDiagram
-            { InputPaths = []; OutputPath = ""; Detail = detail; DiagramFormat = format; CurrentDirectory = "" } [ api ]
+            { InputPaths = []; OutputPath = ""; Detail = detail; DiagramFormat = format; Viewer = ViewerSettings.none; CurrentDirectory = "" } [ api ]
     Assert.StartsWith("C4Context", gen Detail.Systems DiagramFormat.Mermaid)
     Assert.StartsWith("C4Container", gen Detail.Apps DiagramFormat.Mermaid)
     Assert.StartsWith("C4Component", gen Detail.Components DiagramFormat.Mermaid)
-    Assert.Equal(Haya.Core.Explore.sprintHtml Detail.Components [ api ], gen Detail.Components DiagramFormat.Html)
-    Assert.Equal(Haya.Core.Explore.sprintHtml Detail.Systems [ api ], gen Detail.Systems DiagramFormat.Html)
+    Assert.Equal(Haya.Core.Explore.sprintHtml ViewerSettings.none Detail.Components [ api ], gen Detail.Components DiagramFormat.Html)
+    Assert.Equal(Haya.Core.Explore.sprintHtml ViewerSettings.none Detail.Systems [ api ], gen Detail.Systems DiagramFormat.Html)
 
 [<Fact>]
 let ``Graph json is safe inside a script element`` () =
@@ -730,7 +730,7 @@ let ``Graph json is safe inside a script element`` () =
 [<Fact>]
 let ``Explore page embeds the graph once, escapes the title and keeps the viewer`` () =
     let api = app "Api" "Ordering" [ "Visa", "Visa", Relationship.External ] |> withMeta (fun m -> { m with Description = "</script><b>" })
-    let html = Haya.Core.Explore.render "T <&> \"x\"" (Haya.Core.Graph.ofApps Detail.Apps [ api ])
+    let html = Haya.Core.Explore.render ViewerSettings.none "T <&> \"x\"" (Haya.Core.Graph.ofApps Detail.Apps [ api ])
     Assert.StartsWith("<!doctype html>", html)
     Assert.Contains("<title>T &lt;&amp;&gt; &quot;x&quot;</title>", html)
     Assert.Equal(1, html.Split("id=\"haya-data\"").Length - 1)
@@ -743,7 +743,7 @@ let ``Explore page embeds the graph once, escapes the title and keeps the viewer
 
 [<Fact>]
 let ``Explore page has a short fixed title however many systems there are`` () =
-    let html = Haya.Core.Explore.sprintHtml Detail.Apps [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
+    let html = Haya.Core.Explore.sprintHtml ViewerSettings.none Detail.Apps [ app "Api" "Ordering" []; app "Payments" "Billing" [] ]
     Assert.Contains("<title>Haya Explorer</title>", html)
     Assert.DoesNotContain("Billing", html.Substring(0, html.IndexOf "</title>"))
 

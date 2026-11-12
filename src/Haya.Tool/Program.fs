@@ -14,6 +14,7 @@ module Program =
             let pr = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
             let result = 
                 match pr with
+                | IsConfigCommand result -> result
                 | IsCrcCommand cmd ->
                     execCrcAsync cmd |> Async.AwaitTask |> Async.RunSynchronously
                 | IsDescribeCommand cmd ->
@@ -32,7 +33,8 @@ module Program =
                 code
             | Error(code, msg) ->
                 eprintfn "Error: %s" msg
-                eprintfn "%s" (parser.PrintUsage())
+                // a failed `config get` is an answer, not a usage mistake
+                if not (pr.Contains CliArguments.Config) then eprintfn "%s" (parser.PrintUsage())
                 code
                 
         with :? ArguParseException as e ->
