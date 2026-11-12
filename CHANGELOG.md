@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-12
+
 ### Added
 - Configuration: defaults for output path, formats, detail, `crc` diagrams, referenced assemblies (`dotnet.references`) and the
   explorer's detail and complexity colours (`viewer`) can be set in `.haya/config.json`, a global `haya/config.json` in the OS
