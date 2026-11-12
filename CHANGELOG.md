@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - The html explorer's filters are hidden until the **Filters** button is pressed.
 - The html explorer's side panel can be hidden and shown again with the **Panel** button or `p`. It is open by default on a
-  wide screen (the choice is remembered) and a sheet over the graph on a phone, opened only with the Panel button.
+  wide screen (the choice is remembered) and covers the whole graph on a phone, opened only with the Panel button, sliding in from the right.
 - The html explorer's address now always holds a link to the current view: shown apps, apps opened to their classes, and the
   selected node or line (`#open=…&show=…&classes=…&select=…&edge=…`). Opening such a link, or editing the hash, restores the
   view. Existing `#open=` and `#select=` links still work. See ADR019.

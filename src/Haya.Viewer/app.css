@@ -52,8 +52,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* a constructor or member of a class (`--detail members`) */
 li.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
 @media (max-width: 800px) { #bar-main { grid-template-columns: 1fr; } #bar-actions { justify-content: flex-start; } }
-/* on a phone the panel is a sheet over the bottom of the graph, so opening it does not squash the graph */
-@media (max-width: 700px) { #panel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; width: auto; max-height: 50%; border-left: 0; border-top: 1px solid var(--line); background: var(--bg); box-shadow: 0 -4px 16px rgba(0,0,0,.2); } }
+/* on a phone the panel covers the whole graph (not the top bar), so opening it does not squash the graph */
+@media (max-width: 700px) {
+  #main.no-panel #panel { display: block; transform: translateX(100%); visibility: hidden; }
+  #panel { transition: transform .2s ease, visibility 0s; }
+  #main.no-panel #panel { transition: transform .2s ease, visibility 0s .2s; }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) { #panel, #main.no-panel #panel { transition: none; } }
+@media (max-width: 700px) { #panel { position: absolute; inset: 0; z-index: 3; width: auto; border-left: 0; border-top: 1px solid var(--line); background: var(--bg); box-shadow: 0 -4px 16px rgba(0,0,0,.2); } }
 .actions button:disabled { opacity: .5; cursor: default; }
 .actions button:disabled:hover { border-color: var(--line); }
 #legend { position: absolute; left: 8px; bottom: 8px; z-index: 2; max-width: 260px; padding: 2px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
