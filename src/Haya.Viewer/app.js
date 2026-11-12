@@ -430,7 +430,8 @@ const reveal = (id) => {
   writeHash();
   setTimeout(() => { const el = cy.getElementById(id); if (el.nonempty()) cy.animate({ center: { eles: el }, duration: 250 }); }, 350);
 };
-const select = (sel) => { selected = sel; applySelection(); renderPanel(); writeHash(); };
+const narrow = window.matchMedia("(max-width: 700px)");
+const select = (sel) => { selected = sel; if (sel && narrow.matches) setPanel(true); applySelection(); renderPanel(); writeHash(); };
 const applySelection = () => {
   cy.elements().removeClass("sel");
   if (selected) cy.getElementById(selected.id).addClass("sel");
@@ -550,6 +551,9 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     searchBox.focus();
     searchBox.select();
+  } else if (e.key === "p") {
+    e.preventDefault();
+    panelButton.click();
   } else if (e.key === "r") {
     // start over, like the Reset button
     e.preventDefault();
@@ -565,6 +569,21 @@ document.getElementById("reset").addEventListener("click", reset);
 
 // ---------------------------------------------------------------- side panel
 const panel = document.getElementById("panel");
+const panelButton = document.getElementById("panel-toggle");
+function setPanel(show) {
+  document.getElementById("main").classList.toggle("no-panel", !show);
+  panelButton.setAttribute("aria-expanded", String(show));
+  panelButton.setAttribute("aria-pressed", String(show));
+}
+panelButton.addEventListener("click", () => {
+  const show = document.getElementById("main").classList.contains("no-panel");
+  setPanel(show);
+  if (!narrow.matches) try { localStorage.setItem("haya-panel", show ? "open" : "closed"); } catch { /* not remembered */ }
+});
+// desktop: open unless the user closed it last time; phone: closed until asked for or something is selected
+let savedPanel = null;
+try { savedPanel = localStorage.getItem("haya-panel"); } catch { /* not remembered */ }
+setPanel(narrow.matches ? false : savedPanel !== "closed");
 const act = (text, fn) => h("button", { type: "button", onclick: fn }, text);
 const goto = (id) => h("button", { type: "button", class: "link", onclick: () => reveal(id) }, name(id));
 // The glyph before an app in a system's list: its kind once it is drawn, a closed eye while it is not. Screen readers get words.
